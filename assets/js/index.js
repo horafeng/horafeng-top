@@ -11,8 +11,11 @@
 
 let allEntries = [];
 let visibleEntries = [];
-let currentPostId = null;
 let siteConfig = null;
+let currentPostId = null;
+let currentImages = [];
+let currentImageIndex = 0;
+let wheelLock = false;
 
 function renderTimeline(entries) {
   const timeline = document.getElementById("timeline");
@@ -31,7 +34,7 @@ function renderTimeline(entries) {
         : "";
 
       return `
-        <article class="entry-card">
+        <article class="entry-card" data-entry-card="${entry.id}">
           <a class="entry-link" href="entry.html?id=${encodeURIComponent(entry.id)}" data-entry-id="${entry.id}">
             ${cover}
             <div class="entry-meta"><span>${entry.date}</span><span>${entry.mood}</span></div>
@@ -86,7 +89,6 @@ function renderProfile(config) {
   const bio = document.getElementById("profile-bio");
   const lastSeen = document.getElementById("profile-last-seen");
   const emailButton = document.getElementById("email-button");
-  const imButton = document.getElementById("im-button");
 
   if (profile.cover) {
     cover.style.backgroundImage = `url(${profile.cover})`;
@@ -101,15 +103,13 @@ function renderProfile(config) {
   bio.textContent = profile.bio || "这里是我的轻日记与生活记事。";
   lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
 
-  emailButton.href = profile.email ? `mailto:${profile.email}` : "mailto:hello@example.com";
-  emailButton.textContent = profile.emailLabel || "发送邮件";
-  imButton.href = profile.im?.url || "#";
-  imButton.textContent = profile.im?.label || "即时消息";
+  emailButton.href = "mailto:horafeng@outlook.com";
+  emailButton.textContent = "发送邮件";
 
   const mobileSlot = document.getElementById("mobile-profile-slot");
   mobileSlot.innerHTML = `
     <div class="profile-cover" style="background-image:url(${profile.cover || ""});background-size:cover;background-position:center;"></div>
-    <div class="profile-main">
+    <div class="profile-main compact">
       <img class="profile-avatar" src="${profile.avatar || avatar.src}" alt="博主头像" />
       <h1>${profile.name || "HoraFeng"}</h1>
       <p class="profile-handle">${profile.handle || "@horafeng"}</p>
@@ -117,9 +117,8 @@ function renderProfile(config) {
       <p class="subtle">${profile.bio || "这里是我的轻日记与生活记事。"}</p>
       <p class="last-seen subtle">${formatLastSeen(profile.lastSeenAt)}</p>
     </div>
-    <div class="profile-actions">
-      <a class="profile-action-btn" href="${profile.email ? `mailto:${profile.email}` : "mailto:hello@example.com"}">${profile.emailLabel || "发送邮件"}</a>
-      <a class="profile-action-btn ghost" href="${profile.im?.url || "#"}" target="_blank" rel="noopener noreferrer">${profile.im?.label || "即时消息"}</a>
+    <div class="profile-actions compact">
+      <a class="profile-action-btn" href="mailto:horafeng@outlook.com">发送邮件</a>
     </div>
   `;
 }
@@ -156,11 +155,7 @@ function setupSearch() {
     renderTimeline(results);
     bindTimelineClicks();
 
-    if (input.value.trim()) {
-      hint.textContent = `关键词 “${input.value.trim()}” 命中 ${results.length} 条`;
-    } else {
-      hint.textContent = "";
-    }
+    hint.textContent = input.value.trim() ? `关键词 “${input.value.trim()}” 命中 ${results.length} 条` : "";
   });
 
   input.addEventListener("input", () => {
@@ -174,8 +169,82 @@ function setupSearch() {
   });
 }
 
-function renderPostModal(entry) {
+function renderMediaCarousel(images, title) {
   const media = document.getElementById("post-media");
+  currentImages = images || [];
+  currentImageIndex = 0;
+
+  if (!currentImages.length) {
+    media.innerHTML = '<div class="media-empty subtle">这条帖子没有配图。</div>';
+    return;
+  }
+
+  media.innerHTML = `
+    <div class="media-viewer" id="media-viewer">
+      <button type="button" class="media-nav prev" id="media-prev" aria-label="上一张">‹</button>
+      <img id="post-main-image" class="post-main-image" src="${currentImages[0]}" alt="${title}" loading="lazy" />
+      <button type="button" class="media-nav next" id="media-next" aria-label="下一张">›</button>
+      <p class="media-counter" id="media-counter">1/${currentImages.length}</p>
+    </div>
+  `;
+
+  const update = (nextIndex) => {
+    currentImageIndex = (nextIndex + currentImages.length) % currentImages.length;
+    const image = document.getElementById("post-main-image");
+    const counter = document.getElementById("media-counter");
+
+    image.classList.add("switching");
+    window.setTimeout(() => {
+      image.src = currentImages[currentImageIndex];
+      counter.textContent = `${currentImageIndex + 1}/${currentImages.length}`;
+      image.classList.remove("switching");
+    }, 120);
+  };
+
+  document.getElementById("media-prev").addEventListener("click", () => update(currentImageIndex - 1));
+  document.getElementById("media-next").addEventListener("click", () => update(currentImageIndex + 1));
+
+  const viewer = document.getElementById("media-viewer");
+  viewer.addEventListener(
+    "wheel",
+    (event) => {
+      if (window.innerWidth < 768 || wheelLock || currentImages.length < 2) {
+        return;
+      }
+
+      event.preventDefault();
+      wheelLock = true;
+      update(event.deltaY > 0 ? currentImageIndex + 1 : currentImageIndex - 1);
+      window.setTimeout(() => {
+        wheelLock = false;
+      }, 180);
+    },
+    { passive: false },
+  );
+
+  let start = null;
+  viewer.addEventListener("pointerdown", (event) => {
+    start = { x: event.clientX, y: event.clientY };
+  });
+  viewer.addEventListener("pointerup", (event) => {
+    if (!start || currentImages.length < 2) {
+      start = null;
+      return;
+    }
+
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    start = null;
+
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) {
+      return;
+    }
+
+    update(dx < 0 ? currentImageIndex + 1 : currentImageIndex - 1);
+  });
+}
+
+function renderPostModal(entry) {
   const title = document.getElementById("post-title");
   const meta = document.getElementById("post-meta");
   const tags = document.getElementById("post-tags");
@@ -185,55 +254,166 @@ function renderPostModal(entry) {
   title.textContent = entry.title;
   meta.innerHTML = `<span>${entry.date}</span><span>${entry.mood}</span>`;
   tags.innerHTML = entry.tags.map((tag) => `<span class="chip">#${tag}</span>`).join("");
-
-  if (entry.images.length) {
-    media.innerHTML = entry.images.map((url) => `<img src="${url}" alt="${entry.title}" loading="lazy" />`).join("");
-  } else {
-    media.innerHTML = '<div class="subtle">这条帖子没有配图。</div>';
-  }
-
   body.innerHTML = entry.content.map((line) => `<p>${linkify(line)}</p>`).join("");
+
+  renderMediaCarousel(entry.images, entry.title);
   renderMockComments(comments, siteConfig.comments?.entryMock || [], 10);
 }
 
-function setMobilePostOrigin(sourceRect) {
-  const modal = document.getElementById("post-modal");
-
-  if (!sourceRect || window.innerWidth >= 768) {
-    modal.style.removeProperty("--from-x");
-    modal.style.removeProperty("--from-y");
-    modal.style.removeProperty("--from-scale-x");
-    modal.style.removeProperty("--from-scale-y");
-    return false;
+function getSharedSourceElement(entryId) {
+  const card = document.querySelector(`.entry-link[data-entry-id="${CSS.escape(entryId)}"]`);
+  if (!card) {
+    return null;
   }
 
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const scaleX = Math.max(0.2, sourceRect.width / vw);
-  const scaleY = Math.max(0.2, sourceRect.height / vh);
-
-  modal.style.setProperty("--from-x", `${sourceRect.left}px`);
-  modal.style.setProperty("--from-y", `${sourceRect.top}px`);
-  modal.style.setProperty("--from-scale-x", `${scaleX}`);
-  modal.style.setProperty("--from-scale-y", `${scaleY}`);
-  return true;
+  return card.querySelector(".entry-cover") || card;
 }
 
-function closePostDirect() {
+function getSharedTargetElement() {
+  return document.getElementById("post-main-image") || document.getElementById("post-modal");
+}
+
+function createSharedClone(source) {
+  const rect = source.getBoundingClientRect();
+  const clone = source.cloneNode(true);
+  clone.classList.add("shared-clone");
+  clone.style.position = "fixed";
+  clone.style.left = `${rect.left}px`;
+  clone.style.top = `${rect.top}px`;
+  clone.style.width = `${rect.width}px`;
+  clone.style.height = `${rect.height}px`;
+  clone.style.margin = "0";
+  clone.style.transform = "translateZ(0)";
+  clone.style.zIndex = "140";
+  clone.style.pointerEvents = "none";
+  clone.style.objectFit = "cover";
+  document.body.appendChild(clone);
+  return { clone, rect };
+}
+
+function animateSharedOpen(entryId) {
+  const source = getSharedSourceElement(entryId);
+  const target = getSharedTargetElement();
+  if (!source || !target) {
+    return Promise.resolve(false);
+  }
+
+  const overlay = document.getElementById("post-overlay");
+  overlay.classList.add("shared-transition");
+
+  const { clone, rect: sourceRect } = createSharedClone(source);
+  const targetRect = target.getBoundingClientRect();
+
+  source.style.visibility = "hidden";
+  target.style.visibility = "hidden";
+
+  return new Promise((resolve) => {
+    const animation = clone.animate(
+      [
+        {
+          left: `${sourceRect.left}px`,
+          top: `${sourceRect.top}px`,
+          width: `${sourceRect.width}px`,
+          height: `${sourceRect.height}px`,
+          borderRadius: "12px",
+        },
+        {
+          left: `${targetRect.left}px`,
+          top: `${targetRect.top}px`,
+          width: `${targetRect.width}px`,
+          height: `${targetRect.height}px`,
+          borderRadius: window.innerWidth < 768 ? "0px" : "12px",
+        },
+      ],
+      {
+        duration: window.innerWidth < 768 ? 360 : 300,
+        easing: "cubic-bezier(0.2, 0.85, 0.22, 1)",
+        fill: "forwards",
+      },
+    );
+
+    animation.onfinish = () => {
+      clone.remove();
+      source.style.visibility = "";
+      target.style.visibility = "";
+      overlay.classList.remove("shared-transition");
+      resolve(true);
+    };
+  });
+}
+
+function animateSharedClose(entryId) {
+  const source = getSharedSourceElement(entryId);
+  const target = getSharedTargetElement();
+  if (!source || !target) {
+    return Promise.resolve(false);
+  }
+
+  const overlay = document.getElementById("post-overlay");
+  overlay.classList.add("shared-transition", "closing");
+
+  const sourceRect = source.getBoundingClientRect();
+  const { clone, rect: targetRect } = createSharedClone(target);
+
+  source.style.visibility = "hidden";
+  target.style.visibility = "hidden";
+
+  return new Promise((resolve) => {
+    const animation = clone.animate(
+      [
+        {
+          left: `${targetRect.left}px`,
+          top: `${targetRect.top}px`,
+          width: `${targetRect.width}px`,
+          height: `${targetRect.height}px`,
+          borderRadius: window.innerWidth < 768 ? "0px" : "12px",
+        },
+        {
+          left: `${sourceRect.left}px`,
+          top: `${sourceRect.top}px`,
+          width: `${sourceRect.width}px`,
+          height: `${sourceRect.height}px`,
+          borderRadius: "12px",
+        },
+      ],
+      {
+        duration: window.innerWidth < 768 ? 320 : 260,
+        easing: "ease",
+        fill: "forwards",
+      },
+    );
+
+    animation.onfinish = () => {
+      clone.remove();
+      source.style.visibility = "";
+      target.style.visibility = "";
+      overlay.classList.remove("shared-transition", "closing");
+      resolve(true);
+    };
+  });
+}
+
+function hidePostOverlay() {
+  const overlay = document.getElementById("post-overlay");
+  overlay.hidden = true;
+  overlay.classList.remove("open", "closing", "shared-transition");
+  document.body.classList.remove("no-scroll");
+}
+
+async function closePostDirect() {
   const overlay = document.getElementById("post-overlay");
   if (overlay.hidden) {
     return;
   }
 
-  overlay.classList.remove("open");
-  overlay.classList.add("closing");
-  window.setTimeout(() => {
-    overlay.classList.remove("closing");
-    overlay.classList.remove("mobile-from-card");
-    overlay.hidden = true;
-    document.body.classList.remove("no-scroll");
-    currentPostId = null;
-  }, 260);
+  const didShared = currentPostId ? await animateSharedClose(currentPostId) : false;
+  if (!didShared) {
+    overlay.classList.add("closing");
+    await new Promise((resolve) => window.setTimeout(resolve, 220));
+  }
+
+  hidePostOverlay();
+  currentPostId = null;
 }
 
 function closePost() {
@@ -246,7 +426,7 @@ function closePost() {
   closePostDirect();
 }
 
-function openPostById(id, pushState = true, sourceRect = null) {
+async function openPostById(id, pushState = true) {
   const entry = allEntries.find((item) => item.id === id);
   if (!entry) {
     return;
@@ -257,14 +437,11 @@ function openPostById(id, pushState = true, sourceRect = null) {
 
   const overlay = document.getElementById("post-overlay");
   overlay.hidden = false;
-  overlay.classList.remove("closing", "mobile-from-card");
-
-  if (setMobilePostOrigin(sourceRect)) {
-    overlay.classList.add("mobile-from-card");
-  }
-
+  overlay.classList.remove("closing");
   overlay.classList.add("open");
   document.body.classList.add("no-scroll");
+
+  await animateSharedOpen(id);
 
   if (pushState) {
     const params = new URLSearchParams(window.location.search);
@@ -308,29 +485,28 @@ function setupOverlayControls() {
     const dy = event.clientY - start.y;
     start = null;
 
-    if (dx > 80 && Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 90 && Math.abs(dx) > Math.abs(dy)) {
       closePost();
     }
   });
 
-  window.addEventListener("popstate", () => {
+  window.addEventListener("popstate", async () => {
     const params = new URLSearchParams(window.location.search);
     const postId = params.get("post");
 
     if (postId) {
-      openPostById(postId, false, null);
+      await openPostById(postId, false);
     } else {
-      closePostDirect();
+      await closePostDirect();
     }
   });
 }
 
 function bindTimelineClicks() {
   document.querySelectorAll(".entry-link[data-entry-id]").forEach((link) => {
-    link.addEventListener("click", (event) => {
+    link.addEventListener("click", async (event) => {
       event.preventDefault();
-      const id = link.dataset.entryId;
-      openPostById(id, true, link.getBoundingClientRect());
+      await openPostById(link.dataset.entryId, true);
     });
   });
 }
@@ -383,7 +559,7 @@ async function main() {
   const params = new URLSearchParams(window.location.search);
   const postId = params.get("post");
   if (postId) {
-    openPostById(postId, false, null);
+    await openPostById(postId, false);
   }
 }
 

@@ -1,8 +1,68 @@
-﻿# HoraFeng 日记专区（当前迭代版）
+﻿# HoraFeng 日记专区（迭代版）
 
-本项目继续基于原有结构迭代，没有推翻重做，仍是轻量静态维护方案。
+本项目保持轻量静态结构，在原有基础上持续迭代，不做重后台。
 
-## 1. 本地运行
+## 一、当前目录与职责
+
+- 日记文案数据：`content/diaries.json`
+- 站点资料配置：`content/site.json`
+- 日记图片素材目录：`assets/images/diary/`
+- 页面样式：`assets/css/diary.css`
+- 页面脚本：`assets/js/*.js`
+
+推荐你后续长期遵循：
+
+- 文案只改 `content/diaries.json`
+- 站点名片只改 `content/site.json`
+- 图片只放 `assets/images/diary/`
+
+## 二、日记数据结构（支持无图 / 单图 / 多图）
+
+每条日记核心字段：
+
+```json
+{
+  "id": "YYYY-MM-DD-your-slug",
+  "date": "YYYY-MM-DD",
+  "mood": "🙂",
+  "title": "标题",
+  "tags": ["标签1", "标签2"],
+  "images": [
+    "assets/images/diary/cover-01.jpg",
+    "assets/images/diary/cover-02.jpg"
+  ],
+  "content": [
+    "第一段文案",
+    "第二段文案",
+    "链接：https://example.com"
+  ]
+}
+```
+
+写法说明：
+
+- 无图：`"images": []`
+- 单图：`"images": ["assets/images/diary/xxx.jpg"]`
+- 多图：`"images": ["assets/images/diary/a.jpg", "assets/images/diary/b.jpg"]`
+
+模板文件：`content/diary-entry.template.json`
+
+## 三、你最简单的维护工作流
+
+1. 把新图片放入 `assets/images/diary/`
+2. 打开 `content/diaries.json`
+3. 复制一条旧日记，改 `id/date/title/tags/content/images`
+4. 刷新页面检查展示
+
+你也可以用脚本快速新增：
+
+```powershell
+.\scripts\add-diary.ps1 -Title "雨后散步" -Mood "🙂" -Tags "日常,夜晚" -Content "第一段|第二段|链接 https://example.com" -Images "assets/images/diary/a.jpg,assets/images/diary/b.jpg"
+```
+
+## 四、本地运行与手机预览
+
+### 本地运行
 
 ```bash
 python -m http.server 5173
@@ -10,151 +70,34 @@ python -m http.server 5173
 
 打开：`http://localhost:5173/index.html`
 
-## 2. 本轮重点升级
+### 手机端预览
 
-- Splash Screen 触发逻辑修正
-- 右侧边栏压紧为连续信息流样式
-- 左侧资料卡升级为更完整的个人主页卡片
-- 手机端改为左侧抽屉，不再做整页横向轮播
-- 右侧功能页在手机端取消，整合进主页面折叠区
-- 帖子改为“小红书风格”详情弹层打开
-- 日记数据结构支持图片（无图 / 单图 / 多图）
-- 评论功能降级为本地占位展示（暂不接入 Waline）
+1. 按 `F12`
+2. 按 `Ctrl + Shift + M` 开启设备模拟
+3. 选择 iPhone/Android 设备
+4. 刷新页面后测试帖子打开动画与滑动
 
-## 3. Splash Screen 触发规则
+## 五、当前评论状态
 
-当前逻辑：
+当前评论功能仍是**前端占位**：
 
-- 第一次进入网站：播放 Splash
-- 同一次访问内，点击界面、切换页面、打开帖子详情：不重复播放
-- 只有刷新网页（reload）后：再次播放
+- 右侧“近期评论”展示本地模拟数据
+- 帖子详情评论区展示本地模拟评论
+- 未接 Waline、未接数据库、未接后端
 
-实现方式：
+## 六、推荐部署方式（适合当前项目）
 
-- 通过 `sessionStorage` 记录是否播放过
-- 仅在导航类型为 `reload` 时清理该标记
+因为当前是纯静态站，最适合：
 
-## 4. 评论状态（本轮暂缓真实接入）
+1. GitHub + Cloudflare Pages
+2. Vercel
+3. Netlify
 
-当前评论功能 **未真实启用**。
+这些方案都适合原因：
 
-现在仅保留：
+- 零后端依赖
+- 部署快
+- 成本低
+- 回滚和持续更新方便
 
-- 帖子详情中的评论区域布局
-- 右侧近期评论模块布局
-- 本地模拟评论数据展示
-
-后续若要接入 Waline 或其他评论服务，再单独开启。
-
-## 5. 帖子打开方式（新）
-
-### 桌面端
-
-- 点击日记卡片后，打开居中详情弹层（非普通页面跳转）
-- 背景列表弱化（遮罩 + 模糊）
-- 详情层包含：图片区 + 文案 + 评论占位区
-- 支持关闭方式：右上角关闭按钮 / 点击遮罩 / `Esc`
-
-### 移动端
-
-- 仍是一列日记流
-- 点击后打开全屏底部弹出式详情层
-- 单列纵向滚动阅读
-- 支持右滑关闭（近似手势退出）
-
-## 6. 手机端结构（新）
-
-- 默认主视图：中间日记流
-- 左侧资料区：改为覆盖式抽屉（类似 QQ 侧栏）
-- 右侧功能页：取消独立侧页
-- 标签、归档、近期评论：在手机端整合到主页面底部折叠区
-
-## 7. 日记数据结构（支持图片）
-
-数据源：`content/diaries.json`
-
-每条日记新增字段 `images`：
-
-- 无图：`"images": []`
-- 单图：`"images": ["https://..."]`
-- 多图：`"images": ["https://...", "https://..."]`
-
-示例模板见：`content/diary-entry.template.json`
-
-模板示例：
-
-```json
-{
-  "id": "YYYY-MM-DD-your-slug",
-  "date": "YYYY-MM-DD",
-  "mood": "🙂",
-  "title": "今天的标题",
-  "tags": ["标签1", "标签2"],
-  "images": [
-    "https://example.com/image-1.jpg",
-    "https://example.com/image-2.jpg"
-  ],
-  "content": [
-    "第一段文字。",
-    "第二段文字。",
-    "可以放链接：https://example.com"
-  ]
-}
-```
-
-## 8. 如何新增一条带图日记
-
-### 手动方式
-
-1. 打开 `content/diaries.json`
-2. 复制一条对象并修改字段
-3. `images` 按需填 0~N 张图链接
-4. 保证 `id` 唯一
-5. 保存并刷新页面
-
-### 脚本方式（轻量）
-
-脚本：`scripts/add-diary.ps1`
-
-```powershell
-.\scripts\add-diary.ps1 -Title "雨后散步" -Mood "🙂" -Tags "日常,夜晚" -Content "第一段|第二段|链接 https://example.com" -Images "https://img1.jpg,https://img2.jpg"
-```
-
-说明：
-
-- `Tags` 用英文逗号分隔
-- `Content` 用 `|` 分段
-- `Images` 用英文逗号分隔，可留空
-
-## 9. 关键配置
-
-配置文件：`content/site.json`
-
-你可以在这里修改：
-
-- 头像、头图、名称、@标识、签名、简介
-- 最近来过时间
-- 邮件按钮
-- 即时消息按钮（标签和链接，可替换为 GitHub/X 等）
-- 本地模拟评论内容
-
-## 10. 目录结构（保持原项目形态）
-
-```text
-assets/
-  css/diary.css
-  js/common.js
-  js/index.js
-  js/entry.js
-  js/tags.js
-content/
-  diaries.json
-  diary-entry.template.json
-  site.json
-scripts/
-  add-diary.ps1
-index.html
-entry.html
-tags.html
-README.md
-```
+建议你优先 Cloudflare Pages 或 Vercel，后续如恢复真实评论，再补服务端即可。
