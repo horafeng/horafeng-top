@@ -9,7 +9,9 @@
   [string]$Tags,
 
   [Parameter(Mandatory = $true)]
-  [string]$Content
+  [string]$Content,
+
+  [string]$Images = ""
 )
 
 $diaryFile = Join-Path $PSScriptRoot "..\content\diaries.json"
@@ -24,6 +26,10 @@ if ([string]::IsNullOrWhiteSpace($slug)) {
 $entryId = "$today-$slug"
 $tagList = $Tags.Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
 $contentList = $Content.Split("|") | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+$imageList = @()
+if (-not [string]::IsNullOrWhiteSpace($Images)) {
+  $imageList = $Images.Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+}
 
 $newEntry = [PSCustomObject]@{
   id = $entryId
@@ -31,6 +37,7 @@ $newEntry = [PSCustomObject]@{
   mood = $Mood
   title = $Title
   tags = $tagList
+  images = $imageList
   content = $contentList
 }
 

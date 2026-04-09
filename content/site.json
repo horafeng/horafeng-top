@@ -1,8 +1,12 @@
 ﻿{
   "profile": {
     "name": "HoraFeng",
+    "handle": "@horafeng",
+    "subtitle": "个人日记空间",
     "signature": "把普通日子写成会发光的碎片。",
+    "bio": "喜欢记录通勤、雨天、夜晚散步和慢节奏生活。",
     "avatar": "https://dummyimage.com/240x240/f2f5fa/7c8799&text=HF",
+    "cover": "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=1200&q=60",
     "lastSeenAt": "2026-04-09T10:00:00+08:00",
     "email": "hello@example.com",
     "emailLabel": "发送邮件",
@@ -12,7 +16,25 @@
     }
   },
   "comments": {
-    "provider": "waline",
-    "serverURL": ""
+    "enabled": false,
+    "note": "当前评论功能暂未真实启用，页面仅保留评论区展示空间。",
+    "recentMock": [
+      { "nick": "木木", "content": "这篇通勤记录很有画面感。" },
+      { "nick": "阿青", "content": "喜欢这种慢慢写生活的节奏。" },
+      { "nick": "Nan", "content": "夜晚散步那条我也有同感。" },
+      { "nick": "Rin", "content": "卡片和排版好舒服。" },
+      { "nick": "Luna", "content": "期待你更新更多雨天日记。" },
+      { "nick": "白砂", "content": "看完想去散步了。" },
+      { "nick": "小北", "content": "文字很温柔，收藏了。" },
+      { "nick": "Sora", "content": "这条链接我去看了，确实不错。" },
+      { "nick": "Aki", "content": "主页气质很统一，喜欢。" },
+      { "nick": "Mia", "content": "等你下一条更新。" },
+      { "nick": "Tom", "content": "第十一条不会展示，用于验证限制。" }
+    ],
+    "entryMock": [
+      { "nick": "木木", "content": "这条帖子读起来很舒服。" },
+      { "nick": "阿青", "content": "想看你写更多城市路线。" },
+      { "nick": "Luna", "content": "收藏了，晚点再来读。" }
+    ]
   }
 }

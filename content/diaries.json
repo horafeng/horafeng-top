@@ -6,6 +6,9 @@
       "mood": "🙂",
       "title": "晚风和便利店热牛奶",
       "tags": ["日常", "散步", "夜晚"],
+      "images": [
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60"
+      ],
       "content": [
         "晚饭后慢慢走到河边，耳机里是 Lo-Fi，风刚好不冷。",
         "路过便利店买了热牛奶，坐在路口看人群，有一种被城市轻轻接住的感觉。",
@@ -18,9 +21,13 @@
       "mood": "🌧️",
       "title": "下雨天躲进书店",
       "tags": ["雨天", "阅读", "日常"],
+      "images": [
+        "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1200&q=60",
+        "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=60"
+      ],
       "content": [
         "午后突然下雨，鞋边都湿了，索性拐进小书店。",
-        "翻到一本关于写作节奏的书，里面说“先记录，再理解”，很受用。",
+        "翻到一本关于写作节奏的书，里面说先记录，再理解，很受用。",
         "书店主页在这里：https://example.com/bookstore"
       ]
     },
@@ -30,6 +37,7 @@
       "mood": "🫖",
       "title": "周日宅家也有光",
       "tags": ["周末", "居家", "慢生活"],
+      "images": [],
       "content": [
         "把房间角落重新整理了一下，白色桌布配木头托盘，意外治愈。",
         "下午泡茶写下周计划，没有强行追进度，反而更踏实。",
@@ -42,6 +50,9 @@
       "mood": "🌤️",
       "title": "换一条上班路",
       "tags": ["通勤", "城市", "记录"],
+      "images": [
+        "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1200&q=60"
+      ],
       "content": [
         "今天提前二十分钟出门，绕了一段老街，早餐摊的烟火气很足。",
         "同样的目的地，不同的路径，心情真的会不一样。",
@@ -54,9 +65,10 @@
       "mood": "✨",
       "title": "小进步也值得写下来",
       "tags": ["成长", "写作", "慢生活"],
+      "images": [],
       "content": [
         "今天把拖了很久的小功能做完了，虽然不大，但终于前进了一步。",
-        "开始相信“细小但稳定”的力量。",
+        "开始相信细小但稳定的力量。",
         "灵感来源这篇文章：https://example.com/tiny-steps"
       ]
     }

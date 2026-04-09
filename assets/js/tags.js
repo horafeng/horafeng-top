@@ -11,7 +11,7 @@ function renderTags(tagsMap) {
 
 function renderArchives(archiveMap) {
   const archiveList = document.getElementById("archive-list");
-  const sorted = [...archiveMap.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  const sorted = [...archiveMap.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10);
 
   archiveList.innerHTML = sorted
     .map(([month, count]) => `<li><a href="tags.html?archive=${month}">${month} (${count})</a></li>`)
@@ -45,17 +45,19 @@ function renderFilterResults(entries) {
   }
 
   results.innerHTML = list
-    .map(
-      (entry) => `
+    .map((entry) => {
+      const cover = entry.images?.[0] ? `<img class="entry-cover" src="${entry.images[0]}" alt="${entry.title}" loading="lazy" />` : "";
+      return `
         <article class="entry-card">
-          <a href="entry.html?id=${entry.id}">
+          <a class="entry-link" href="entry.html?id=${encodeURIComponent(entry.id)}">
+            ${cover}
             <p class="entry-meta"><span>${entry.date}</span><span>${entry.mood}</span></p>
             <h4 class="entry-title">${entry.title}</h4>
             <p class="entry-snippet">${linkify(entry.content[0] || "")}</p>
           </a>
         </article>
-      `,
-    )
+      `;
+    })
     .join("");
 }
 

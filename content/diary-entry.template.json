@@ -4,6 +4,10 @@
   "mood": "🙂",
   "title": "今天的标题",
   "tags": ["标签1", "标签2"],
+  "images": [
+    "https://example.com/image-1.jpg",
+    "https://example.com/image-2.jpg"
+  ],
   "content": [
     "第一段文字。",
     "第二段文字。",

@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -8,69 +8,107 @@
   </head>
   <body data-page="home">
     <div class="bg-layer"></div>
+
     <div id="splash-screen" class="splash-screen" aria-hidden="true">
       <span class="splash-logo">HoraFeng</span>
     </div>
 
     <div class="app-shell home-shell">
-      <div class="mobile-stage-controls">
-        <button type="button" data-pane-target="left">资料</button>
-        <button type="button" data-pane-target="center" class="active">日记</button>
-        <button type="button" data-pane-target="right">功能</button>
-      </div>
+      <button id="mobile-drawer-trigger" class="mobile-drawer-trigger" type="button">☰ 个人页</button>
 
-      <div class="home-stage" id="home-stage" data-pane="center">
-        <aside class="panel profile-panel home-pane home-pane-left">
-          <div class="profile-main">
-            <img id="profile-avatar" class="profile-avatar" src="https://dummyimage.com/96x96/f3f5f8/8a94a6&text=HF" alt="博主头像" />
-            <h1 id="profile-name">HoraFeng</h1>
-            <p id="profile-signature" class="subtle">把普通日子写成会发光的碎片。</p>
-            <p id="profile-last-seen" class="last-seen subtle">博主最近来过</p>
-          </div>
-          <div class="profile-actions">
-            <a id="email-button" class="profile-action-btn" href="mailto:hello@example.com">发送邮件</a>
-            <a id="im-button" class="profile-action-btn ghost" href="#" target="_blank" rel="noopener noreferrer">即时消息</a>
-          </div>
-          <nav class="soft-nav">
-            <a class="active" href="index.html">日记流</a>
-            <a href="tags.html">标签 / 归档</a>
-          </nav>
-        </aside>
+      <aside class="panel profile-panel" id="desktop-profile-panel">
+        <div class="profile-cover" id="profile-cover"></div>
+        <div class="profile-main">
+          <img id="profile-avatar" class="profile-avatar" src="https://dummyimage.com/120x120/f3f5f8/8a94a6&text=HF" alt="博主头像" />
+          <h1 id="profile-name">HoraFeng</h1>
+          <p id="profile-handle" class="profile-handle">@horafeng</p>
+          <p id="profile-signature" class="subtle">把普通日子写成会发光的碎片。</p>
+          <p id="profile-bio" class="subtle">这里是我的轻日记与生活记事。</p>
+          <p id="profile-last-seen" class="last-seen subtle">博主最近来过</p>
+        </div>
+        <div class="profile-actions">
+          <a id="email-button" class="profile-action-btn" href="mailto:hello@example.com">发送邮件</a>
+          <a id="im-button" class="profile-action-btn ghost" href="#" target="_blank" rel="noopener noreferrer">即时消息</a>
+        </div>
+        <nav class="soft-nav">
+          <a class="active" href="index.html">日记流</a>
+          <a href="tags.html">标签 / 归档</a>
+        </nav>
+      </aside>
 
-        <main class="panel flow-panel home-pane home-pane-center">
-          <header class="section-head">
-            <h2 id="timeline-heading">最近日记</h2>
-            <p class="subtle">只收录文字、emoji 与网页链接</p>
-          </header>
+      <main class="panel flow-panel">
+        <header class="section-head">
+          <h2 id="timeline-heading">最近日记</h2>
+          <p class="subtle">文字、emoji、链接、图片小记</p>
+        </header>
 
-          <form id="search-form" class="search-bar" role="search">
-            <input id="search-input" type="search" placeholder="搜索标题、正文或标签..." aria-label="搜索日记" />
-            <button type="submit">搜索</button>
-          </form>
-          <p id="search-hint" class="search-hint subtle"></p>
+        <form id="search-form" class="search-bar" role="search">
+          <input id="search-input" type="search" placeholder="搜索标题、正文或标签..." aria-label="搜索日记" />
+          <button type="submit">搜索</button>
+        </form>
+        <p id="search-hint" class="search-hint subtle"></p>
 
-          <div id="timeline" class="timeline"></div>
-        </main>
+        <div id="timeline" class="timeline"></div>
 
-        <aside class="panel side-panel home-pane home-pane-right">
-          <section>
-            <h3>标签预览</h3>
-            <div id="tag-preview" class="chips"></div>
+        <section class="panel mobile-right-stack" id="mobile-right-stack">
+          <details open>
+            <summary>标签预览</summary>
+            <div id="mobile-tag-preview" class="chips compact"></div>
+          </details>
+          <details>
+            <summary>归档预览</summary>
+            <ul id="mobile-archive-preview" class="archive-list compact"></ul>
+          </details>
+          <details>
+            <summary>近期评论</summary>
+            <ul id="mobile-recent-comments" class="comment-list compact"></ul>
+          </details>
+        </section>
+      </main>
+
+      <aside class="panel side-panel" id="desktop-side-panel">
+        <section class="side-block">
+          <h3>标签预览</h3>
+          <div id="tag-preview" class="chips compact"></div>
+        </section>
+        <section class="side-block">
+          <h3>归档预览</h3>
+          <ul id="archive-preview" class="archive-list compact"></ul>
+        </section>
+        <section class="side-block">
+          <h3>近期评论</h3>
+          <ul id="recent-comments" class="comment-list compact"></ul>
+        </section>
+      </aside>
+    </div>
+
+    <div id="mobile-drawer-overlay" class="mobile-drawer-overlay" hidden>
+      <aside id="mobile-drawer" class="mobile-drawer panel" aria-label="个人资料侧边栏">
+        <button id="mobile-drawer-close" class="drawer-close" type="button">关闭</button>
+        <div id="mobile-profile-slot"></div>
+      </aside>
+    </div>
+
+    <div id="post-overlay" class="post-overlay" hidden>
+      <div class="post-backdrop" data-close-overlay="1"></div>
+      <article id="post-modal" class="post-modal" role="dialog" aria-modal="true" aria-label="帖子详情">
+        <button id="post-close" class="post-close" type="button">×</button>
+        <div class="post-layout" id="post-layout">
+          <section class="post-media" id="post-media"></section>
+          <section class="post-content">
+            <h3 id="post-title">标题</h3>
+            <p id="post-meta" class="entry-meta"></p>
+            <div id="post-tags" class="chips compact"></div>
+            <div id="post-body" class="entry-detail"></div>
+            <section class="post-comments">
+              <h4>评论区（预留）</h4>
+              <ul id="post-comments-list" class="comment-list compact"></ul>
+            </section>
           </section>
-          <section>
-            <h3>归档预览</h3>
-            <ul id="archive-preview" class="archive-list"></ul>
-          </section>
-          <section>
-            <h3>近期评论</h3>
-            <ul id="recent-comments" class="comment-list">
-              <li class="subtle">正在加载评论...</li>
-            </ul>
-          </section>
-        </aside>
-      </div>
+        </div>
+      </article>
     </div>
 
     <script type="module" src="assets/js/index.js"></script>
   </body>
-  </html>
+</html>

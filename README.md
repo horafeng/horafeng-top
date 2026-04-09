@@ -1,6 +1,6 @@
-﻿# HoraFeng 日记专区（第二阶段增强版）
+﻿# HoraFeng 日记专区（当前迭代版）
 
-本项目已在第一阶段基础上完成第二阶段迭代，保留原目录结构并做最小侵入升级。
+本项目继续基于原有结构迭代，没有推翻重做，仍是轻量静态维护方案。
 
 ## 1. 本地运行
 
@@ -10,48 +10,78 @@ python -m http.server 5173
 
 打开：`http://localhost:5173/index.html`
 
-## 2. 第二阶段已实现内容
+## 2. 本轮重点升级
 
-- 移动端中部优先：默认先看到日记流
-- 移动端左右侧栏改为侧页：可按钮切换，也可左右滑动切换
-- 桌面端保留三栏：左资料 / 中日记 / 右功能
-- 平板端过渡布局：主栏 + 右栏并行，左资料卡上置
-- 首页搜索：按标题、正文、标签模糊匹配
-- 右栏顺序：标签预览 -> 归档预览 -> 近期评论
-- 左栏升级为可配置个人资料卡
-- 详情页接入真实可维护评论系统入口（Waline）
-- 全站 Splash Screen（HoraFeng 文本标志，淡入淡出 + 轻缩放）
+- Splash Screen 触发逻辑修正
+- 右侧边栏压紧为连续信息流样式
+- 左侧资料卡升级为更完整的个人主页卡片
+- 手机端改为左侧抽屉，不再做整页横向轮播
+- 右侧功能页在手机端取消，整合进主页面折叠区
+- 帖子改为“小红书风格”详情弹层打开
+- 日记数据结构支持图片（无图 / 单图 / 多图）
+- 评论功能降级为本地占位展示（暂不接入 Waline）
 
-## 3. 如何查看手机端效果
+## 3. Splash Screen 触发规则
 
-以 Chrome 为例：
+当前逻辑：
 
-1. 打开 `http://localhost:5173/index.html`
-2. 按 `F12`
-3. 点击设备切换按钮（或按 `Ctrl + Shift + M`）
-4. 选择手机型号（如 iPhone 14 Pro）
-5. 刷新页面，观察移动端默认中栏体验
+- 第一次进入网站：播放 Splash
+- 同一次访问内，点击界面、切换页面、打开帖子详情：不重复播放
+- 只有刷新网页（reload）后：再次播放
 
-移动端首页交互：
+实现方式：
 
-- 默认停留在“日记”中栏
-- 顶部按钮可切换：`资料 / 日记 / 功能`
-- 可在首页左右滑动进入左右侧页
+- 通过 `sessionStorage` 记录是否播放过
+- 仅在导航类型为 `reload` 时清理该标记
 
-## 4. 如何手动新增日记
+## 4. 评论状态（本轮暂缓真实接入）
 
-当前数据源：`content/diaries.json`
+当前评论功能 **未真实启用**。
 
-### 4.1 标准手动流程
+现在仅保留：
 
-1. 打开 `content/diaries.json`
-2. 复制一条已有条目并修改字段
-3. 确保 `id` 全局唯一（建议格式：`YYYY-MM-DD-your-slug`）
-4. 保存后刷新页面
+- 帖子详情中的评论区域布局
+- 右侧近期评论模块布局
+- 本地模拟评论数据展示
 
-### 4.2 数据结构模板
+后续若要接入 Waline 或其他评论服务，再单独开启。
 
-模板文件：`content/diary-entry.template.json`
+## 5. 帖子打开方式（新）
+
+### 桌面端
+
+- 点击日记卡片后，打开居中详情弹层（非普通页面跳转）
+- 背景列表弱化（遮罩 + 模糊）
+- 详情层包含：图片区 + 文案 + 评论占位区
+- 支持关闭方式：右上角关闭按钮 / 点击遮罩 / `Esc`
+
+### 移动端
+
+- 仍是一列日记流
+- 点击后打开全屏底部弹出式详情层
+- 单列纵向滚动阅读
+- 支持右滑关闭（近似手势退出）
+
+## 6. 手机端结构（新）
+
+- 默认主视图：中间日记流
+- 左侧资料区：改为覆盖式抽屉（类似 QQ 侧栏）
+- 右侧功能页：取消独立侧页
+- 标签、归档、近期评论：在手机端整合到主页面底部折叠区
+
+## 7. 日记数据结构（支持图片）
+
+数据源：`content/diaries.json`
+
+每条日记新增字段 `images`：
+
+- 无图：`"images": []`
+- 单图：`"images": ["https://..."]`
+- 多图：`"images": ["https://...", "https://..."]`
+
+示例模板见：`content/diary-entry.template.json`
+
+模板示例：
 
 ```json
 {
@@ -60,6 +90,10 @@ python -m http.server 5173
   "mood": "🙂",
   "title": "今天的标题",
   "tags": ["标签1", "标签2"],
+  "images": [
+    "https://example.com/image-1.jpg",
+    "https://example.com/image-2.jpg"
+  ],
   "content": [
     "第一段文字。",
     "第二段文字。",
@@ -68,89 +102,43 @@ python -m http.server 5173
 }
 ```
 
-### 4.3 轻量维护方案（无需后端）
+## 8. 如何新增一条带图日记
 
-已提供脚本：`scripts/add-diary.ps1`
+### 手动方式
 
-示例：
+1. 打开 `content/diaries.json`
+2. 复制一条对象并修改字段
+3. `images` 按需填 0~N 张图链接
+4. 保证 `id` 唯一
+5. 保存并刷新页面
+
+### 脚本方式（轻量）
+
+脚本：`scripts/add-diary.ps1`
 
 ```powershell
-.\scripts\add-diary.ps1 -Title "散步后的晚风" -Mood "🙂" -Tags "日常,夜晚" -Content "第一段|第二段|链接 https://example.com"
+.\scripts\add-diary.ps1 -Title "雨后散步" -Mood "🙂" -Tags "日常,夜晚" -Content "第一段|第二段|链接 https://example.com" -Images "https://img1.jpg,https://img2.jpg"
 ```
 
 说明：
 
-- `Tags` 用英文逗号 `,` 分隔
+- `Tags` 用英文逗号分隔
 - `Content` 用 `|` 分段
-- 脚本会自动生成 `id` 并写回 `content/diaries.json`
+- `Images` 用英文逗号分隔，可留空
 
-## 5. 评论系统技术路线（真实可维护）
+## 9. 关键配置
 
-### 5.1 当前采用方案
+配置文件：`content/site.json`
 
-采用 **Waline** 评论系统（静态博客友好、成本低、可持续维护）。
+你可以在这里修改：
 
-选择原因：
+- 头像、头图、名称、@标识、签名、简介
+- 最近来过时间
+- 邮件按钮
+- 即时消息按钮（标签和链接，可替换为 GitHub/X 等）
+- 本地模拟评论内容
 
-- 适合个人博客，不需要一开始自建重后台
-- 与静态站点集成轻量
-- 部署门槛低（可配合 Vercel/Netlify + Waline Server）
-- 支持后续扩展，便于长期维护
-- 支持评论管理、删除、回复等运营能力
-
-### 5.2 访客如何发表评论
-
-在 `entry.html` 详情页下方留言区发表评论。
-
-当前前端要求：
-
-- 必填：昵称（nick）
-- 必填：联系方式（mail）
-
-未填写这两项将不能提交（由 Waline `requiredMeta` 约束）。
-
-### 5.3 博主如何删除评论、回复评论
-
-部署并配置 Waline 管理后：
-
-- 查看评论：Waline 管理界面
-- 删除违规评论：Waline 管理界面删除
-- 回复评论：在 Waline 评论交互中回复
-
-### 5.4 你需要补的配置项
-
-编辑：`content/site.json`
-
-```json
-{
-  "comments": {
-    "provider": "waline",
-    "serverURL": "https://your-waline-server.example.com"
-  }
-}
-```
-
-同时可配置左栏个人信息：
-
-- `profile.avatar`
-- `profile.name`
-- `profile.signature`
-- `profile.lastSeenAt`
-- `profile.email`
-- `profile.im.label`
-- `profile.im.url`
-
-### 5.5 上线部署注意事项（评论相关）
-
-1. 先部署 Waline Server
-2. 配置 Waline 的存储（MongoDB/LeanCloud 等）
-3. 配置 Waline 管理员身份
-4. 将 `content/site.json` 的 `comments.serverURL` 填为线上地址
-5. 重新部署静态站点
-
-如果 `serverURL` 为空，前端会显示“评论服务未配置”提示，不会报错中断。
-
-## 6. 目录结构（保持原结构升级）
+## 10. 目录结构（保持原项目形态）
 
 ```text
 assets/
@@ -168,6 +156,5 @@ scripts/
 index.html
 entry.html
 tags.html
-.gitignore
 README.md
 ```
