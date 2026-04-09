@@ -31,7 +31,6 @@
         </div>
         <nav class="soft-nav">
           <a class="active" href="index.html">日记流</a>
-          <a href="tags.html">标签 / 归档</a>
         </nav>
       </aside>
 
@@ -92,6 +91,13 @@
       <div class="post-backdrop" data-close-overlay="1"></div>
       <article id="post-modal" class="post-modal" role="dialog" aria-modal="true" aria-label="帖子详情">
         <button id="post-close" class="post-close" type="button">×</button>
+        <header id="post-mobile-header" class="post-mobile-header">
+          <button id="post-close-mobile" class="post-close-mobile" type="button" aria-label="返回">‹</button>
+          <div class="post-mobile-author">
+            <img id="post-mobile-avatar" class="post-mobile-avatar" src="https://dummyimage.com/80x80/f3f5f8/8a94a6&text=HF" alt="作者头像" />
+            <p id="post-mobile-name">HoraFeng</p>
+          </div>
+        </header>
         <div class="post-layout" id="post-layout">
           <section class="post-media" id="post-media"></section>
           <section class="post-content">
