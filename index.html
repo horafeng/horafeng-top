@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>日记流 | Horafeng</title>
+    <link rel="stylesheet" href="assets/css/diary.css" />
+  </head>
+  <body data-page="home">
+    <div class="bg-layer"></div>
+    <div class="app-shell">
+      <aside class="panel profile-panel">
+        <h1>Horafeng Diary</h1>
+        <p class="subtle">记录生活节奏、心情温度与日常碎碎念。</p>
+        <nav class="soft-nav">
+          <a class="active" href="index.html">日记流</a>
+          <a href="tags.html">标签 / 归档</a>
+        </nav>
+      </aside>
+
+      <main class="panel flow-panel">
+        <header class="section-head">
+          <h2>最近日记</h2>
+          <p class="subtle">只收录文字、emoji 与网页链接</p>
+        </header>
+        <div id="timeline" class="timeline"></div>
+      </main>
+
+      <aside class="panel side-panel">
+        <section>
+          <h3>标签预览</h3>
+          <div id="tag-preview" class="chips"></div>
+        </section>
+        <section>
+          <h3>归档预览</h3>
+          <ul id="archive-preview" class="archive-list"></ul>
+        </section>
+      </aside>
+    </div>
+    <script type="module" src="assets/js/index.js"></script>
+  </body>
+  </html>
