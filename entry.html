@@ -3,11 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>日记详情 | Horafeng</title>
+    <title>日记详情 | HoraFeng</title>
     <link rel="stylesheet" href="assets/css/diary.css" />
   </head>
   <body data-page="entry">
     <div class="bg-layer"></div>
+    <div id="splash-screen" class="splash-screen" aria-hidden="true">
+      <span class="splash-logo">HoraFeng</span>
+    </div>
+
     <div class="app-shell single-column">
       <main class="panel flow-panel">
         <header class="section-head">
@@ -18,9 +22,18 @@
           </nav>
           <h2 id="entry-title">加载中...</h2>
         </header>
+
         <article id="entry-body" class="entry-detail"></article>
+
+        <section class="comment-section">
+          <h3>留言区</h3>
+          <p class="subtle">请填写昵称和联系信息后再提交，方便我回复你。</p>
+          <div id="comment-box"></div>
+          <p id="comment-setup-hint" class="subtle"></p>
+        </section>
       </main>
     </div>
+
     <script type="module" src="assets/js/entry.js"></script>
   </body>
   </html>

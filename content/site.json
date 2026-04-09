@@ -1,0 +1,18 @@
+﻿{
+  "profile": {
+    "name": "HoraFeng",
+    "signature": "把普通日子写成会发光的碎片。",
+    "avatar": "https://dummyimage.com/240x240/f2f5fa/7c8799&text=HF",
+    "lastSeenAt": "2026-04-09T10:00:00+08:00",
+    "email": "hello@example.com",
+    "emailLabel": "发送邮件",
+    "im": {
+      "label": "即时消息",
+      "url": "https://github.com/"
+    }
+  },
+  "comments": {
+    "provider": "waline",
+    "serverURL": ""
+  }
+}

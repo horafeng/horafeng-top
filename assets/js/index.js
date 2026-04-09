@@ -1,10 +1,20 @@
-﻿import { getStats, linkify, loadEntries } from "./common.js";
+﻿import {
+  formatLastSeen,
+  getStats,
+  linkify,
+  loadEntries,
+  loadSiteConfig,
+  renderRecentComments,
+  searchEntries,
+  setupMobileStage,
+  setupSplash,
+} from "./common.js";
 
 function renderTimeline(entries) {
   const timeline = document.getElementById("timeline");
 
   if (!entries.length) {
-    timeline.innerHTML = '<p class="subtle">当前筛选条件下还没有日记。</p>';
+    timeline.innerHTML = '<p class="subtle">没有匹配结果，换个关键词试试。</p>';
     return;
   }
 
@@ -35,7 +45,7 @@ function renderPreview(entries) {
   const tagPreview = document.getElementById("tag-preview");
   const archivePreview = document.getElementById("archive-preview");
 
-  const topTags = [...tags.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const topTags = [...tags.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
   tagPreview.innerHTML = topTags
     .map(([tag, count]) => `<a class="chip" href="index.html?tag=${encodeURIComponent(tag)}">#${tag} (${count})</a>`)
     .join("");
@@ -46,34 +56,100 @@ function renderPreview(entries) {
     .join("");
 }
 
-function filterEntries(entries) {
+function renderProfile(config) {
+  const profile = config.profile || {};
+
+  const avatar = document.getElementById("profile-avatar");
+  const name = document.getElementById("profile-name");
+  const signature = document.getElementById("profile-signature");
+  const lastSeen = document.getElementById("profile-last-seen");
+  const emailButton = document.getElementById("email-button");
+  const imButton = document.getElementById("im-button");
+
+  avatar.src = profile.avatar || avatar.src;
+  name.textContent = profile.name || "HoraFeng";
+  signature.textContent = profile.signature || "记录生活的呼吸感";
+  lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
+
+  emailButton.href = profile.email ? `mailto:${profile.email}` : "mailto:hello@example.com";
+  emailButton.textContent = profile.emailLabel || "发送邮件";
+
+  imButton.href = profile.im?.url || "#";
+  imButton.textContent = profile.im?.label || "即时消息";
+}
+
+function filterByParams(entries) {
   const params = new URLSearchParams(window.location.search);
   const tag = params.get("tag");
   const archive = params.get("archive");
-  const heading = document.querySelector(".section-head h2");
-
-  let list = entries;
+  const heading = document.getElementById("timeline-heading");
 
   if (tag) {
-    list = list.filter((entry) => entry.tags.includes(tag));
     heading.textContent = `标签：#${tag}`;
-  } else if (archive) {
-    list = list.filter((entry) => entry.date.startsWith(archive));
-    heading.textContent = `归档：${archive}`;
+    return entries.filter((entry) => entry.tags.includes(tag));
   }
 
-  return list;
+  if (archive) {
+    heading.textContent = `归档：${archive}`;
+    return entries.filter((entry) => entry.date.startsWith(archive));
+  }
+
+  heading.textContent = "最近日记";
+  return entries;
+}
+
+function setupSearch(entries) {
+  const form = document.getElementById("search-form");
+  const input = document.getElementById("search-input");
+  const hint = document.getElementById("search-hint");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const query = input.value;
+    const results = searchEntries(entries, query);
+    renderTimeline(results);
+
+    if (query.trim()) {
+      hint.textContent = `关键词 “${query.trim()}” 匹配到 ${results.length} 条日记`;
+    } else {
+      hint.textContent = "";
+    }
+  });
+
+  input.addEventListener("input", () => {
+    if (input.value.trim()) {
+      return;
+    }
+
+    hint.textContent = "";
+    renderTimeline(entries);
+  });
 }
 
 async function main() {
-  const entries = await loadEntries();
-  const filtered = filterEntries(entries);
+  setupSplash();
+  setupMobileStage();
 
-  renderTimeline(filtered);
+  const [entries, config] = await Promise.all([loadEntries(), loadSiteConfig()]);
+  const preFiltered = filterByParams(entries);
+
+  renderProfile(config);
+  renderTimeline(preFiltered);
   renderPreview(entries);
+
+  setupSearch(preFiltered);
+
+  await renderRecentComments({
+    listEl: document.getElementById("recent-comments"),
+    serverURL: config.comments?.serverURL,
+    path: "/",
+    count: 6,
+  });
 }
 
 main().catch((error) => {
   const timeline = document.getElementById("timeline");
   timeline.innerHTML = `<p class="subtle">${error.message}</p>`;
 });
+

@@ -1,0 +1,12 @@
+﻿{
+  "id": "YYYY-MM-DD-your-slug",
+  "date": "YYYY-MM-DD",
+  "mood": "🙂",
+  "title": "今天的标题",
+  "tags": ["标签1", "标签2"],
+  "content": [
+    "第一段文字。",
+    "第二段文字。",
+    "可以放链接：https://example.com"
+  ]
+}

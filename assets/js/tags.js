@@ -1,4 +1,4 @@
-﻿import { getStats, linkify, loadEntries } from "./common.js";
+﻿import { getStats, linkify, loadEntries, setupSplash } from "./common.js";
 
 function renderTags(tagsMap) {
   const tagList = document.getElementById("tag-list");
@@ -35,8 +35,8 @@ function renderFilterResults(entries) {
     title.textContent = `筛选结果：${archive}`;
     list = entries.filter((entry) => entry.date.startsWith(archive));
   } else {
-    title.textContent = "筛选结果：最近 5 条";
-    list = entries.slice(0, 5);
+    title.textContent = "筛选结果：最近 6 条";
+    list = entries.slice(0, 6);
   }
 
   if (!list.length) {
@@ -51,7 +51,7 @@ function renderFilterResults(entries) {
           <a href="entry.html?id=${entry.id}">
             <p class="entry-meta"><span>${entry.date}</span><span>${entry.mood}</span></p>
             <h4 class="entry-title">${entry.title}</h4>
-            <p class="entry-snippet">${linkify(entry.content[0])}</p>
+            <p class="entry-snippet">${linkify(entry.content[0] || "")}</p>
           </a>
         </article>
       `,
@@ -60,6 +60,8 @@ function renderFilterResults(entries) {
 }
 
 async function main() {
+  setupSplash();
+
   const entries = await loadEntries();
   const { tags, archives } = getStats(entries);
 
