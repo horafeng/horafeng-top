@@ -110,6 +110,61 @@ export function setupSplash() {
   }, 1220);
 }
 
+export function setupPageTransition() {
+  const markerKey = "horafeng-page-transition";
+  const enterFlag = sessionStorage.getItem(markerKey) === "1";
+
+  if (enterFlag) {
+    document.body.classList.add("page-entering");
+    requestAnimationFrame(() => {
+      document.body.classList.add("page-enter-active");
+    });
+    window.setTimeout(() => {
+      document.body.classList.remove("page-entering", "page-enter-active");
+      sessionStorage.removeItem(markerKey);
+    }, 320);
+  }
+
+  document.addEventListener("click", (event) => {
+    const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+    if (!link) {
+      return;
+    }
+
+    if (link.dataset.noTransition === "1") {
+      return;
+    }
+    if (link.target && link.target !== "_self") {
+      return;
+    }
+    if (link.hasAttribute("download")) {
+      return;
+    }
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    const nextUrl = new URL(link.href, window.location.href);
+    if (nextUrl.origin !== window.location.origin) {
+      return;
+    }
+    if (nextUrl.pathname === window.location.pathname && nextUrl.search === window.location.search) {
+      return;
+    }
+
+    event.preventDefault();
+    if (document.body.classList.contains("page-leaving")) {
+      return;
+    }
+
+    document.body.classList.add("page-leaving");
+    sessionStorage.setItem(markerKey, "1");
+    window.setTimeout(() => {
+      window.location.assign(nextUrl.toString());
+    }, 180);
+  });
+}
+
 export function renderMockComments(listEl, comments, limit = 10) {
   if (!listEl) {
     return;

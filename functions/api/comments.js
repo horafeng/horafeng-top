@@ -20,6 +20,17 @@ function queryInt(params, key, fallback, min, max) {
   return clampInt(params.get(key), min, max, fallback);
 }
 
+function attachAvatarProxy(nodes = []) {
+  return nodes.map((item) => {
+    const stamp = encodeURIComponent(item.updated_at || item.created_at || "");
+    return {
+      ...item,
+      avatar_url: `/api/avatar/${item.id}${stamp ? `?v=${stamp}` : ""}`,
+      children: attachAvatarProxy(item.children || []),
+    };
+  });
+}
+
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
@@ -53,12 +64,14 @@ export async function onRequestGet(context) {
       includeContact: false,
       defaultAvatarUrl: env.DEFAULT_AVATAR_URL || "/assets/images/avatar-default.svg",
       adminAvatarUrl: env.ADMIN_AVATAR_URL || "/assets/images/Profile.png",
-      qqAvatarBaseUrl: env.QQ_AVATAR_BASE_URL || "https://q.qlogo.cn/headimg_dl",
+      qqAvatarBaseUrl: env.QQ_AVATAR_BASE_URL || "https://q1.qlogo.cn/g",
+      emailAvatarBaseUrl: env.EMAIL_AVATAR_BASE_URL || "https://cravatar.cn/avatar",
       gravatarDefault: env.GRAVATAR_DEFAULT_MODE || "identicon",
       avatarSize: clampInt(env.PUBLIC_AVATAR_SIZE, 40, 512, 120),
       rootOrder: "desc",
       childOrder: "asc",
     });
+    const publicItems = attachAvatarProxy(items);
 
     return json({
       ok: true,
@@ -66,7 +79,7 @@ export async function onRequestGet(context) {
       limit,
       offset,
       total: Number(totalRow?.total || 0),
-      items,
+      items: publicItems,
     });
   } catch (error) {
     return json({ ok: false, message: error.message || "Failed to fetch comments." }, 500);

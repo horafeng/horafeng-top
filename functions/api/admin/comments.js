@@ -99,7 +99,8 @@ export async function onRequestGet(context) {
             ? context.env.ADMIN_AVATAR_URL || "/assets/images/Profile.png"
             : buildAvatarUrl(row.contact || "", {
                 defaultAvatarUrl: context.env.DEFAULT_AVATAR_URL || "/assets/images/avatar-default.svg",
-                qqAvatarBaseUrl: context.env.QQ_AVATAR_BASE_URL || "https://q.qlogo.cn/headimg_dl",
+                qqAvatarBaseUrl: context.env.QQ_AVATAR_BASE_URL || "https://q1.qlogo.cn/g",
+                emailAvatarBaseUrl: context.env.EMAIL_AVATAR_BASE_URL || "https://cravatar.cn/avatar",
                 gravatarDefault: context.env.GRAVATAR_DEFAULT_MODE || "identicon",
                 avatarSize: clampInt(context.env.PUBLIC_AVATAR_SIZE, 40, 512, 120),
               }),

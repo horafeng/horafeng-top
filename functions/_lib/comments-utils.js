@@ -3,7 +3,8 @@ const textEncoder = new TextEncoder();
 
 const DEFAULT_AVATAR_URL = "/assets/images/avatar-default.svg";
 const DEFAULT_ADMIN_AVATAR_URL = "/assets/images/Profile.png";
-const DEFAULT_QQ_AVATAR_BASE_URL = "https://q.qlogo.cn/headimg_dl";
+const DEFAULT_QQ_AVATAR_BASE_URL = "https://q1.qlogo.cn/g";
+const DEFAULT_EMAIL_AVATAR_BASE_URL = "https://cravatar.cn/avatar";
 
 export function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -250,7 +251,7 @@ function toHexLE(num) {
   return output;
 }
 
-function md5Hex(input) {
+export function md5Hex(input) {
   const bytes = textEncoder.encode(input);
   const originalBitLen = bytes.length * 8;
   const withPaddingLen = (((bytes.length + 8) >> 6) + 1) << 6;
@@ -332,7 +333,13 @@ function buildGravatarUrl(email, options = {}) {
   const hash = md5Hex(normalized);
   const size = clampInt(options.avatarSize, 40, 512, 120);
   const defaultMode = sanitizeSingleLine(options.gravatarDefault || "identicon", 80) || "identicon";
-  return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=${encodeURIComponent(defaultMode)}`;
+  const configuredBase =
+    sanitizeSingleLine(options.emailAvatarBaseUrl || DEFAULT_EMAIL_AVATAR_BASE_URL, 220) || DEFAULT_EMAIL_AVATAR_BASE_URL;
+  const base = configuredBase.replace(/\/+$/, "");
+  if (base.includes("{hash}")) {
+    return `${base.replace("{hash}", hash)}?s=${size}&d=${encodeURIComponent(defaultMode)}`;
+  }
+  return `${base}/${hash}?s=${size}&d=${encodeURIComponent(defaultMode)}`;
 }
 
 function buildQqAvatarUrl(qq, options = {}) {
@@ -343,7 +350,13 @@ function buildQqAvatarUrl(qq, options = {}) {
 
   const base = sanitizeSingleLine(options.qqAvatarBaseUrl || DEFAULT_QQ_AVATAR_BASE_URL, 180) || DEFAULT_QQ_AVATAR_BASE_URL;
   const size = clampInt(options.avatarSize, 40, 640, 100);
-  return `${base}?dst_uin=${encodeURIComponent(value)}&spec=${size}&img_type=jpg`;
+  if (base.includes("{qq}")) {
+    return base.replace("{qq}", encodeURIComponent(value)).replace("{size}", String(size));
+  }
+  if (base.includes("headimg_dl")) {
+    return `${base}?dst_uin=${encodeURIComponent(value)}&spec=${size}&img_type=jpg`;
+  }
+  return `${base}?b=qq&nk=${encodeURIComponent(value)}&s=${size}`;
 }
 
 export function buildAvatarUrl(contact, options = {}) {
@@ -369,6 +382,7 @@ function mapCommentRow(row, options = {}) {
     defaultAvatarUrl: options.defaultAvatarUrl,
     adminAvatarUrl: options.adminAvatarUrl,
     qqAvatarBaseUrl: options.qqAvatarBaseUrl,
+    emailAvatarBaseUrl: options.emailAvatarBaseUrl,
     gravatarDefault: options.gravatarDefault,
     avatarSize: options.avatarSize,
   };

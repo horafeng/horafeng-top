@@ -1,4 +1,4 @@
-import { escapeHtml, formatLastSeen, linkify, loadSiteConfig, setupSplash } from "./common.js";
+import { escapeHtml, formatLastSeen, linkify, loadSiteConfig, setupPageTransition, setupSplash } from "./common.js";
 
 const state = {
   pageKey: "guestbook",
@@ -8,6 +8,23 @@ const state = {
   adminAvatarUrl: "/assets/images/Profile.png",
   bloggerAvatarUrl: "/assets/images/Profile.png",
 };
+
+const DEFAULT_AVATAR_POOL = [
+  "/assets/images/avatar-default-1.svg",
+  "/assets/images/avatar-default-2.svg",
+  "/assets/images/avatar-default-3.svg",
+  "/assets/images/avatar-default-4.svg",
+  "/assets/images/avatar-default-5.svg",
+  "/assets/images/avatar-default-6.svg",
+];
+
+function hashSeed(text) {
+  return [...String(text || "guest")].reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) >>> 0, 7);
+}
+
+function pickDefaultAvatar(seed) {
+  return DEFAULT_AVATAR_POOL[hashSeed(seed) % DEFAULT_AVATAR_POOL.length];
+}
 
 function formatTime(isoString) {
   const date = new Date(isoString);
@@ -107,7 +124,9 @@ function renderCommentNode(node, depth = 0) {
   const adminClass = node.is_admin ? "is-admin" : "";
   const replyMeta = node.reply_to ? `<span class="reply-to">回复 @${escapeHtml(node.reply_to)}</span>` : "";
   const children = (node.children || []).map((child) => renderCommentNode(child, depth + 1)).join("");
-  const fallbackAvatar = node.is_admin ? state.bloggerAvatarUrl || state.adminAvatarUrl : state.defaultAvatarUrl;
+  const fallbackAvatar = node.is_admin
+    ? state.bloggerAvatarUrl || state.adminAvatarUrl
+    : pickDefaultAvatar(`${node.id}:${node.nickname || "guest"}`);
   const avatarUrl = node.avatar_url || fallbackAvatar;
 
   return `
@@ -370,6 +389,7 @@ function bindForm() {
 
 async function main() {
   setupSplash();
+  setupPageTransition();
 
   if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";

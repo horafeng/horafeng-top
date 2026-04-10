@@ -7,6 +7,7 @@
   loadSiteConfig,
   renderMockComments,
   searchEntries,
+  setupPageTransition,
   setupSplash,
 } from "./common.js";
 
@@ -1037,6 +1038,7 @@ function setupMobileDrawer() {
 
 async function main() {
   setupSplash();
+  setupPageTransition();
 
   const [entries, config] = await Promise.all([loadEntries(), loadSiteConfig()]);
   allEntries = entries;
