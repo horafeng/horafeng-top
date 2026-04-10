@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>留言板 | HoraFeng</title>
+    <link rel="stylesheet" href="assets/css/diary.css" />
+  </head>
+  <body data-page="guestbook">
+    <div class="bg-layer"></div>
+    <div id="splash-screen" class="splash-screen" aria-hidden="true">
+      <span class="splash-logo">HoraFeng</span>
+    </div>
+
+    <div class="app-shell single-column">
+      <main class="panel flow-panel">
+        <header class="section-head">
+          <nav class="breadcrumb">
+            <a href="index.html">日记流</a>
+            <span>/</span>
+            <span>留言板</span>
+          </nav>
+          <h2>留言板</h2>
+          <p class="subtle">欢迎留下你的来访痕迹。公开展示昵称、留言内容与时间，联系方式仅博主可见。</p>
+        </header>
+
+        <section class="guestbook-form-wrap panel-lite">
+          <form id="guestbook-form" class="guestbook-form" novalidate>
+            <input id="guestbook-page-key" type="hidden" value="guestbook" />
+            <input id="guestbook-parent-id" type="hidden" value="" />
+
+            <div id="guestbook-replying" class="replying-hint" hidden></div>
+
+            <label class="field-block" for="guestbook-content">留言内容</label>
+            <textarea id="guestbook-content" rows="5" maxlength="2000" placeholder="写点什么吧..." required></textarea>
+
+            <div class="field-grid">
+              <div>
+                <label class="field-block" for="guestbook-nickname">昵称</label>
+                <input id="guestbook-nickname" type="text" maxlength="24" placeholder="例如：木木" required />
+              </div>
+              <div>
+                <label class="field-block" for="guestbook-contact">联系方式（邮箱或 QQ）</label>
+                <input id="guestbook-contact" type="text" maxlength="120" placeholder="name@example.com 或 12345678" required />
+              </div>
+            </div>
+
+            <div id="turnstile-slot" class="turnstile-slot">
+              <div id="turnstile-widget"></div>
+              <p id="turnstile-hint" class="subtle"></p>
+            </div>
+
+            <div class="guestbook-submit-row">
+              <button id="guestbook-submit" type="submit">发送留言</button>
+              <p id="guestbook-feedback" class="subtle"></p>
+            </div>
+          </form>
+        </section>
+
+        <section class="guestbook-list-wrap">
+          <h3>最新留言</h3>
+          <div id="guestbook-list" class="guestbook-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="assets/js/guestbook.js"></script>
+  </body>
+</html>

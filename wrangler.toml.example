@@ -1,0 +1,8 @@
+name = "horafeng-blog"
+compatibility_date = "2026-04-10"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "COMMENTS_DB"
+database_name = "your-d1-name"
+database_id = "your-d1-id"

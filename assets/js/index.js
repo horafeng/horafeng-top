@@ -189,6 +189,10 @@ function renderProfile(config) {
     <div class="profile-actions compact">
       <a class="profile-action-btn" href="mailto:horafeng@outlook.com">发送邮件</a>
     </div>
+    <nav class="soft-nav">
+      <a class="active" href="index.html">日记流</a>
+      <a href="guestbook.html">留言板</a>
+    </nav>
   `;
 }
 

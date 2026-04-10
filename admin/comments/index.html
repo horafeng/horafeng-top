@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>留言管理 | HoraFeng</title>
+    <link rel="stylesheet" href="../../assets/css/diary.css" />
+  </head>
+  <body data-page="admin-comments">
+    <div class="bg-layer"></div>
+
+    <div class="app-shell single-column admin-shell">
+      <main class="panel flow-panel">
+        <header class="section-head">
+          <nav class="breadcrumb">
+            <a href="../../index.html">日记流</a>
+            <span>/</span>
+            <span>留言管理</span>
+          </nav>
+          <h2>留言管理后台</h2>
+          <p class="subtle">单管理员模式：审核、删除、回复留言。</p>
+        </header>
+
+        <section id="admin-login-panel" class="admin-panel">
+          <h3>管理员登录</h3>
+          <form id="admin-login-form" class="admin-login-form" novalidate>
+            <input id="admin-username" type="text" autocomplete="username" placeholder="账号（默认 admin）" required />
+            <input id="admin-password" type="password" autocomplete="current-password" placeholder="密码" required />
+            <button type="submit">登录</button>
+          </form>
+          <p id="admin-login-feedback" class="subtle"></p>
+        </section>
+
+        <section id="admin-dashboard" class="admin-panel" hidden>
+          <div class="admin-toolbar">
+            <div class="admin-filters">
+              <input id="admin-filter-page-key" type="text" value="guestbook" placeholder="page_key（留空查看全部）" />
+              <select id="admin-filter-status">
+                <option value="all">全部状态</option>
+                <option value="pending">待审核</option>
+                <option value="approved">已通过</option>
+                <option value="deleted">已删除</option>
+                <option value="spam">垃圾</option>
+              </select>
+              <button id="admin-refresh" type="button">刷新</button>
+            </div>
+            <button id="admin-logout" class="ghost-btn" type="button">退出登录</button>
+          </div>
+
+          <p id="admin-feedback" class="subtle"></p>
+          <div id="admin-comments-list" class="admin-comments-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="../../assets/js/admin-comments.js"></script>
+  </body>
+</html>
