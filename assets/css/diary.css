@@ -1251,12 +1251,7 @@ p {
   grid-template-rows: 1fr;
   opacity: 1;
   pointer-events: auto;
-  margin-top: 6px;
-}
-
-.guestbook-form-title {
-  font-size: 1.06rem;
-  margin-bottom: 9px;
+  margin-top: 2px;
 }
 
 .field-grid {
@@ -1434,9 +1429,9 @@ p {
   border-color: rgba(85, 115, 156, 0.72);
 }
 
-.guestbook-item:hover .link-like.guestbook-reply-btn,
-.guestbook-item:focus-within .link-like.guestbook-reply-btn,
-.guestbook-item.is-active .link-like.guestbook-reply-btn {
+.guestbook-item:hover > .link-like.guestbook-reply-btn,
+.guestbook-item:focus-within > .link-like.guestbook-reply-btn,
+.guestbook-item.is-active > .link-like.guestbook-reply-btn {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
