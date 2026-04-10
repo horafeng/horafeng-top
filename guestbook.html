@@ -48,43 +48,59 @@
           <p class="guestbook-note subtle">公开展示昵称、留言内容、时间与回复关系；联系方式仅博主在后台可见。</p>
         </header>
 
-        <section class="panel-lite guestbook-form-wrap">
-          <h2>写一条留言</h2>
-          <form id="guestbook-form" class="guestbook-form" novalidate>
-            <input id="guestbook-page-key" type="hidden" value="guestbook" />
-            <input id="guestbook-parent-id" type="hidden" value="" />
+        <section id="guestbook-form-wrap" class="panel-lite guestbook-form-wrap">
+          <button
+            id="guestbook-form-toggle"
+            class="guestbook-form-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="guestbook-form-collapsible"
+          >
+            <span class="guestbook-form-toggle-text">写一条留言吧</span>
+            <span class="guestbook-form-toggle-arrow" aria-hidden="true"></span>
+          </button>
+          <p id="guestbook-form-toggle-tip" class="subtle guestbook-form-toggle-tip"></p>
 
-            <div id="guestbook-replying" class="replying-hint" hidden></div>
+          <div id="guestbook-form-collapsible" class="guestbook-form-collapsible" aria-hidden="true">
+            <div class="guestbook-form-collapsible-inner">
+              <h2 class="guestbook-form-title">写一条留言</h2>
+              <form id="guestbook-form" class="guestbook-form" novalidate>
+                <input id="guestbook-page-key" type="hidden" value="guestbook" />
+                <input id="guestbook-parent-id" type="hidden" value="" />
 
-            <label class="field-block" for="guestbook-content">留言内容</label>
-            <textarea id="guestbook-content" rows="6" maxlength="2000" placeholder="写点什么吧..." required></textarea>
+                <div id="guestbook-replying" class="replying-hint" hidden></div>
 
-            <div class="field-grid">
-              <div>
-                <label class="field-block" for="guestbook-nickname">昵称</label>
-                <input id="guestbook-nickname" type="text" maxlength="24" placeholder="例如：木木" required />
-              </div>
-              <div>
-                <label class="field-block" for="guestbook-contact">联系方式（邮箱或 QQ）</label>
-                <input id="guestbook-contact" type="text" maxlength="120" placeholder="name@example.com 或 12345678" required />
-              </div>
+                <label class="field-block" for="guestbook-content">留言内容</label>
+                <textarea id="guestbook-content" rows="6" maxlength="2000" placeholder="写点什么吧..." required></textarea>
+
+                <div class="field-grid">
+                  <div>
+                    <label class="field-block" for="guestbook-nickname">昵称</label>
+                    <input id="guestbook-nickname" type="text" maxlength="24" placeholder="例如：木木" required />
+                  </div>
+                  <div>
+                    <label class="field-block" for="guestbook-contact">联系方式（邮箱或 QQ）</label>
+                    <input id="guestbook-contact" type="text" maxlength="120" placeholder="name@example.com 或 12345678" required />
+                  </div>
+                </div>
+
+                <label class="notify-option" for="guestbook-notify">
+                  <input id="guestbook-notify" type="checkbox" checked />
+                  <span>收到回复时，通过邮件提醒我（可随时退订）</span>
+                </label>
+
+                <div id="turnstile-slot" class="turnstile-slot">
+                  <div id="turnstile-widget"></div>
+                  <p id="turnstile-hint" class="subtle"></p>
+                </div>
+
+                <div class="guestbook-submit-row">
+                  <button id="guestbook-submit" type="submit">发送留言</button>
+                  <p id="guestbook-feedback" class="subtle"></p>
+                </div>
+              </form>
             </div>
-
-            <label class="notify-option" for="guestbook-notify">
-              <input id="guestbook-notify" type="checkbox" checked />
-              <span>收到回复时，通过邮件提醒我（可随时退订）</span>
-            </label>
-
-            <div id="turnstile-slot" class="turnstile-slot">
-              <div id="turnstile-widget"></div>
-              <p id="turnstile-hint" class="subtle"></p>
-            </div>
-
-            <div class="guestbook-submit-row">
-              <button id="guestbook-submit" type="submit">发送留言</button>
-              <p id="guestbook-feedback" class="subtle"></p>
-            </div>
-          </form>
+          </div>
         </section>
 
         <section class="guestbook-list-wrap">

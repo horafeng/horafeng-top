@@ -8,6 +8,9 @@ const state = {
   adminAvatarUrl: "/assets/images/Profile.png",
   bloggerAvatarUrl: "/assets/images/Profile.png",
   notifyDefault: true,
+  formExpanded: false,
+  turnstileReady: false,
+  turnstileLoading: false,
 };
 
 const DEFAULT_AVATAR_POOL = [
@@ -25,6 +28,93 @@ function hashSeed(text) {
 
 function pickDefaultAvatar(seed) {
   return DEFAULT_AVATAR_POOL[hashSeed(seed) % DEFAULT_AVATAR_POOL.length];
+}
+
+function truncatePreview(text, maxLen = 78) {
+  const compact = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!compact) {
+    return "（这条留言暂无正文）";
+  }
+  return compact.length > maxLen ? `${compact.slice(0, maxLen)}…` : compact;
+}
+
+function hasReplyTarget() {
+  const parentInput = document.getElementById("guestbook-parent-id");
+  return Boolean(parentInput?.value?.trim());
+}
+
+function isFormDirty() {
+  const content = document.getElementById("guestbook-content")?.value?.trim() || "";
+  const nickname = document.getElementById("guestbook-nickname")?.value?.trim() || "";
+  const contact = document.getElementById("guestbook-contact")?.value?.trim() || "";
+  return Boolean(content || nickname || contact);
+}
+
+function setToggleTip(message = "") {
+  const tip = document.getElementById("guestbook-form-toggle-tip");
+  if (!tip) {
+    return;
+  }
+  tip.textContent = message;
+}
+
+function setFormExpanded(expanded, { focus = false, scroll = false } = {}) {
+  const wrap = document.getElementById("guestbook-form-wrap");
+  const toggle = document.getElementById("guestbook-form-toggle");
+  const collapsible = document.getElementById("guestbook-form-collapsible");
+
+  if (!wrap || !toggle || !collapsible) {
+    return;
+  }
+
+  state.formExpanded = expanded;
+  wrap.classList.toggle("expanded", expanded);
+  wrap.classList.toggle("collapsed", !expanded);
+  toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+  collapsible.setAttribute("aria-hidden", expanded ? "false" : "true");
+
+  if (!expanded) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    setupTurnstile().catch(() => {});
+
+    if (scroll) {
+      wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    if (focus) {
+      document.getElementById("guestbook-content")?.focus();
+    }
+  });
+}
+
+function bindFormToggle() {
+  const toggle = document.getElementById("guestbook-form-toggle");
+  if (!toggle) {
+    return;
+  }
+
+  toggle.addEventListener("click", () => {
+    setToggleTip("");
+    if (!state.formExpanded) {
+      setFormExpanded(true, { focus: true, scroll: true });
+      return;
+    }
+
+    if (hasReplyTarget()) {
+      setToggleTip("正在回复中，请先取消回复后再收起。");
+      return;
+    }
+    if (isFormDirty()) {
+      setToggleTip("你已经输入了内容，为避免丢失，暂不自动收起。");
+      return;
+    }
+
+    setFormExpanded(false);
+  });
 }
 
 function formatTime(isoString) {
@@ -104,7 +194,7 @@ function sortCommentTreeByTime(nodes = [], order = "desc") {
   return next;
 }
 
-function setReplyTarget(commentId, nickname) {
+function setReplyTarget(commentId, nickname, previewText = "") {
   const parentInput = document.getElementById("guestbook-parent-id");
   const hint = document.getElementById("guestbook-replying");
   parentInput.value = commentId ? String(commentId) : "";
@@ -112,11 +202,20 @@ function setReplyTarget(commentId, nickname) {
   if (!commentId) {
     hint.hidden = true;
     hint.innerHTML = "";
+    setToggleTip("");
     return;
   }
 
+  setFormExpanded(true, { focus: true, scroll: true });
+  const preview = truncatePreview(previewText);
   hint.hidden = false;
-  hint.innerHTML = `正在回复 <strong>${escapeHtml(nickname || "访客")}</strong> <button type="button" id="reply-cancel" class="link-like">取消</button>`;
+  hint.innerHTML = `
+    <div class="replying-head">
+      <p class="replying-title">正在回复 <strong>${escapeHtml(nickname || "访客")}</strong> 的留言</p>
+      <button type="button" id="reply-cancel" class="link-like replying-cancel">取消回复</button>
+    </div>
+    <p class="replying-preview">${escapeHtml(preview)}</p>
+  `;
   document.getElementById("reply-cancel")?.addEventListener("click", () => setReplyTarget(null, ""));
 }
 
@@ -125,6 +224,9 @@ function renderCommentNode(node, depth = 0) {
   const adminClass = node.is_admin ? "is-admin" : "";
   const replyMeta = node.reply_to ? `<span class="reply-to">回复 @${escapeHtml(node.reply_to)}</span>` : "";
   const children = (node.children || []).map((child) => renderCommentNode(child, depth + 1)).join("");
+  const replyPreview = String(node.content || "")
+    .replace(/\s+/g, " ")
+    .trim();
   const fallbackAvatar = node.is_admin
     ? state.bloggerAvatarUrl || state.adminAvatarUrl
     : pickDefaultAvatar(`${node.id}:${node.nickname || "guest"}`);
@@ -155,7 +257,13 @@ function renderCommentNode(node, depth = 0) {
       <p class="guestbook-content">${contentToHtml(node.content)}</p>
       <div class="guestbook-meta">
         ${replyMeta}
-        <button type="button" class="link-like" data-reply-id="${node.id}" data-reply-nick="${escapeHtml(node.nickname)}">回复</button>
+        <button
+          type="button"
+          class="link-like"
+          data-reply-id="${node.id}"
+          data-reply-nick="${escapeHtml(node.nickname)}"
+          data-reply-content="${escapeHtml(replyPreview)}"
+        >回复</button>
       </div>
       ${children ? `<div class="guestbook-children">${children}</div>` : ""}
     </article>
@@ -167,7 +275,8 @@ function bindReplyButtons() {
     button.addEventListener("click", () => {
       const commentId = button.getAttribute("data-reply-id");
       const nickname = button.getAttribute("data-reply-nick") || "";
-      setReplyTarget(commentId, nickname);
+      const previewText = button.getAttribute("data-reply-content") || "";
+      setReplyTarget(commentId, nickname, previewText);
       document.getElementById("guestbook-content")?.focus();
     });
   });
@@ -242,23 +351,36 @@ function ensureTurnstileScript() {
 }
 
 async function setupTurnstile() {
+  if (state.turnstileReady || state.turnstileLoading) {
+    return;
+  }
+
+  state.turnstileLoading = true;
   const hint = document.getElementById("turnstile-hint");
   const widget = document.getElementById("turnstile-widget");
 
   if (!state.turnstileSiteKey) {
     hint.textContent = "Turnstile Site Key 未配置。";
+    state.turnstileReady = true;
+    state.turnstileLoading = false;
     return;
   }
 
   try {
     await ensureTurnstileScript();
-    state.widgetId = window.turnstile.render(widget, {
-      sitekey: state.turnstileSiteKey,
-      theme: "light",
-    });
+    if (state.widgetId === null) {
+      state.widgetId = window.turnstile.render(widget, {
+        sitekey: state.turnstileSiteKey,
+        theme: "light",
+      });
+    }
     hint.textContent = "请完成人机验证后再提交留言。";
+    state.turnstileReady = true;
   } catch (error) {
     hint.textContent = error.message;
+    state.turnstileReady = false;
+  } finally {
+    state.turnstileLoading = false;
   }
 }
 
@@ -334,6 +456,13 @@ function renderProfile(config) {
 function bindForm() {
   const form = document.getElementById("guestbook-form");
   const submitButton = document.getElementById("guestbook-submit");
+  const contentInput = document.getElementById("guestbook-content");
+  const nicknameInput = document.getElementById("guestbook-nickname");
+  const contactInput = document.getElementById("guestbook-contact");
+
+  [contentInput, nicknameInput, contactInput].forEach((input) => {
+    input?.addEventListener("input", () => setToggleTip(""));
+  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -389,6 +518,7 @@ function bindForm() {
         notifyToggle.checked = state.notifyDefault;
       }
       setReplyTarget(null, "");
+      setFormExpanded(false);
       resetTurnstileToken();
       await loadComments();
     } catch (error) {
@@ -414,7 +544,8 @@ async function main() {
   const siteConfig = await loadSiteConfig();
 
   renderProfile(siteConfig);
-  await setupTurnstile();
+  bindFormToggle();
+  setFormExpanded(false);
   bindForm();
   await loadComments();
 }
