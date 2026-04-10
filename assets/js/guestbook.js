@@ -67,6 +67,7 @@ function renderCommentNode(node, depth = 0) {
   const adminClass = node.is_admin ? "is-admin" : "";
   const replyMeta = node.reply_to ? `<span class="reply-to">回复 @${escapeHtml(node.reply_to)}</span>` : "";
   const children = (node.children || []).map((child) => renderCommentNode(child, depth + 1)).join("");
+  const avatarUrl = node.avatar_url || state.defaultAvatarUrl;
 
   return `
     <article class="guestbook-item ${levelClass} ${adminClass}" data-comment-id="${node.id}">
@@ -74,9 +75,9 @@ function renderCommentNode(node, depth = 0) {
         <div class="guestbook-user">
           <img
             class="guestbook-avatar"
-            src="${escapeHtml(node.avatar_url || state.defaultAvatarUrl)}"
+            src="${escapeHtml(avatarUrl)}"
             data-default-avatar="${escapeHtml(state.defaultAvatarUrl)}"
-            alt="${escapeHtml(node.nickname || "访客")} 的头像"
+            alt="${escapeHtml(node.nickname || "访客")} avatar"
             loading="lazy"
             referrerpolicy="no-referrer"
           />
@@ -329,7 +330,9 @@ async function main() {
   }
   window.scrollTo(0, 0);
 
-  const [siteConfig] = await Promise.all([loadSiteConfig(), loadConfig()]);
+  await loadConfig();
+  const siteConfig = await loadSiteConfig();
+
   renderProfile(siteConfig);
   await setupTurnstile();
   bindForm();
