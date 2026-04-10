@@ -36,7 +36,7 @@ export async function onRequestGet(context) {
             SELECT id, page_key, parent_id, nickname, contact, content, status, is_admin, created_at, updated_at
             FROM comments
             WHERE page_key = ? AND status = 'approved'
-            ORDER BY datetime(created_at) ASC
+            ORDER BY datetime(created_at) DESC, id DESC
             LIMIT ? OFFSET ?
           `,
         )
@@ -52,9 +52,12 @@ export async function onRequestGet(context) {
     const items = buildCommentTree(rows, {
       includeContact: false,
       defaultAvatarUrl: env.DEFAULT_AVATAR_URL || "/assets/images/avatar-default.svg",
-      qqAvatarBaseUrl: env.QQ_AVATAR_BASE_URL || "https://q1.qlogo.cn/g",
-      gravatarDefault: env.GRAVATAR_DEFAULT_MODE || "404",
+      adminAvatarUrl: env.ADMIN_AVATAR_URL || "/assets/images/Profile.png",
+      qqAvatarBaseUrl: env.QQ_AVATAR_BASE_URL || "https://q.qlogo.cn/headimg_dl",
+      gravatarDefault: env.GRAVATAR_DEFAULT_MODE || "identicon",
       avatarSize: clampInt(env.PUBLIC_AVATAR_SIZE, 40, 512, 120),
+      rootOrder: "desc",
+      childOrder: "asc",
     });
 
     return json({

@@ -94,12 +94,15 @@ export async function onRequestGet(context) {
         id: Number(row.id),
         parent_id: row.parent_id === null ? null : Number(row.parent_id),
         is_admin: Number(row.is_admin) === 1,
-        avatar_url: buildAvatarUrl(row.contact || "", {
-          defaultAvatarUrl: context.env.DEFAULT_AVATAR_URL || "/assets/images/avatar-default.svg",
-          qqAvatarBaseUrl: context.env.QQ_AVATAR_BASE_URL || "https://q1.qlogo.cn/g",
-          gravatarDefault: context.env.GRAVATAR_DEFAULT_MODE || "404",
-          avatarSize: clampInt(context.env.PUBLIC_AVATAR_SIZE, 40, 512, 120),
-        }),
+        avatar_url:
+          Number(row.is_admin) === 1
+            ? context.env.ADMIN_AVATAR_URL || "/assets/images/Profile.png"
+            : buildAvatarUrl(row.contact || "", {
+                defaultAvatarUrl: context.env.DEFAULT_AVATAR_URL || "/assets/images/avatar-default.svg",
+                qqAvatarBaseUrl: context.env.QQ_AVATAR_BASE_URL || "https://q.qlogo.cn/headimg_dl",
+                gravatarDefault: context.env.GRAVATAR_DEFAULT_MODE || "identicon",
+                avatarSize: clampInt(context.env.PUBLIC_AVATAR_SIZE, 40, 512, 120),
+              }),
       })),
     });
   } catch (error) {

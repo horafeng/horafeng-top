@@ -5,6 +5,8 @@ const state = {
   widgetId: null,
   turnstileSiteKey: "",
   defaultAvatarUrl: "/assets/images/avatar-default.svg",
+  adminAvatarUrl: "/assets/images/Profile.png",
+  bloggerAvatarUrl: "/assets/images/Profile.png",
 };
 
 function formatTime(isoString) {
@@ -36,7 +38,7 @@ function bindAvatarFallbacks(scope = document) {
 
     img.dataset.boundError = "1";
     img.addEventListener("error", () => {
-      const fallback = img.dataset.defaultAvatar || state.defaultAvatarUrl;
+      const fallback = img.dataset.fallbackAvatar || img.dataset.defaultAvatar || state.defaultAvatarUrl;
       if (img.src.endsWith(fallback)) {
         return;
       }
@@ -44,6 +46,44 @@ function bindAvatarFallbacks(scope = document) {
       img.classList.add("is-default-avatar");
     });
   });
+}
+
+function parseTimeValue(raw) {
+  const value = String(raw || "").trim();
+  if (!value) {
+    return 0;
+  }
+
+  const direct = Date.parse(value);
+  if (!Number.isNaN(direct)) {
+    return direct;
+  }
+
+  const normalized = value.includes("T") ? value : value.replace(" ", "T");
+  const normalizedValue = Date.parse(normalized);
+  if (!Number.isNaN(normalizedValue)) {
+    return normalizedValue;
+  }
+
+  const utcValue = Date.parse(`${normalized}Z`);
+  return Number.isNaN(utcValue) ? 0 : utcValue;
+}
+
+function sortCommentTreeByTime(nodes = [], order = "desc") {
+  const next = [...nodes];
+  next.sort((a, b) =>
+    order === "asc"
+      ? parseTimeValue(a.created_at) - parseTimeValue(b.created_at) || Number(a.id || 0) - Number(b.id || 0)
+      : parseTimeValue(b.created_at) - parseTimeValue(a.created_at) || Number(b.id || 0) - Number(a.id || 0),
+  );
+
+  next.forEach((node) => {
+    if (Array.isArray(node.children) && node.children.length) {
+      node.children = sortCommentTreeByTime(node.children, "asc");
+    }
+  });
+
+  return next;
 }
 
 function setReplyTarget(commentId, nickname) {
@@ -67,7 +107,8 @@ function renderCommentNode(node, depth = 0) {
   const adminClass = node.is_admin ? "is-admin" : "";
   const replyMeta = node.reply_to ? `<span class="reply-to">回复 @${escapeHtml(node.reply_to)}</span>` : "";
   const children = (node.children || []).map((child) => renderCommentNode(child, depth + 1)).join("");
-  const avatarUrl = node.avatar_url || state.defaultAvatarUrl;
+  const fallbackAvatar = node.is_admin ? state.bloggerAvatarUrl || state.adminAvatarUrl : state.defaultAvatarUrl;
+  const avatarUrl = node.avatar_url || fallbackAvatar;
 
   return `
     <article class="guestbook-item ${levelClass} ${adminClass}" data-comment-id="${node.id}">
@@ -77,6 +118,7 @@ function renderCommentNode(node, depth = 0) {
             class="guestbook-avatar"
             src="${escapeHtml(avatarUrl)}"
             data-default-avatar="${escapeHtml(state.defaultAvatarUrl)}"
+            data-fallback-avatar="${escapeHtml(fallbackAvatar)}"
             alt="${escapeHtml(node.nickname || "访客")} avatar"
             loading="lazy"
             referrerpolicy="no-referrer"
@@ -137,7 +179,7 @@ async function loadComments() {
   list.innerHTML = '<p class="subtle guestbook-empty">正在加载留言…</p>';
 
   const data = await apiJson(`/api/comments?page_key=${encodeURIComponent(state.pageKey)}&limit=100`);
-  const items = data.items || [];
+  const items = sortCommentTreeByTime(data.items || [], "desc");
 
   if (!items.length) {
     list.innerHTML = `
@@ -205,9 +247,11 @@ async function loadConfig() {
     const config = await apiJson("/api/config", { method: "GET", headers: {} });
     state.turnstileSiteKey = config.turnstileSiteKey || "";
     state.defaultAvatarUrl = config.defaultAvatarUrl || "/assets/images/avatar-default.svg";
+    state.adminAvatarUrl = config.adminAvatarUrl || "/assets/images/Profile.png";
   } catch {
     state.turnstileSiteKey = "";
     state.defaultAvatarUrl = "/assets/images/avatar-default.svg";
+    state.adminAvatarUrl = "/assets/images/Profile.png";
   }
 }
 
@@ -247,6 +291,8 @@ function renderProfile(config) {
 
   avatar.src = profile.avatar || state.defaultAvatarUrl;
   avatar.dataset.defaultAvatar = state.defaultAvatarUrl;
+  avatar.dataset.fallbackAvatar = state.defaultAvatarUrl;
+  state.bloggerAvatarUrl = profile.avatar || state.adminAvatarUrl || state.defaultAvatarUrl;
   name.textContent = profile.name || "HoraFeng";
   handle.textContent = profile.handle || "@horafeng";
   signature.textContent = profile.signature || "把普通日子写成会发光的碎片。";

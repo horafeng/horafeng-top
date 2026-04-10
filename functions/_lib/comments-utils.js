@@ -2,7 +2,8 @@ const COMMENT_STATUSES = new Set(["pending", "approved", "deleted", "spam"]);
 const textEncoder = new TextEncoder();
 
 const DEFAULT_AVATAR_URL = "/assets/images/avatar-default.svg";
-const DEFAULT_QQ_AVATAR_BASE_URL = "https://q1.qlogo.cn/g";
+const DEFAULT_ADMIN_AVATAR_URL = "/assets/images/Profile.png";
+const DEFAULT_QQ_AVATAR_BASE_URL = "https://q.qlogo.cn/headimg_dl";
 
 export function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -77,6 +78,12 @@ export function parseContact(contact) {
   const qqPattern = /^[1-9][0-9]{4,11}$/;
   if (qqPattern.test(value)) {
     return { ok: true, type: "qq", value };
+  }
+
+  // Support tolerant QQ input like "QQ: 12345678" while keeping validation strict on digits.
+  const digitsOnly = value.replace(/\D/g, "");
+  if (/^[1-9][0-9]{4,11}$/.test(digitsOnly)) {
+    return { ok: true, type: "qq", value: digitsOnly };
   }
 
   return { ok: false, reason: "Contact must be a valid email address or QQ number.", type: "unknown", value };
@@ -226,6 +233,11 @@ function getDefaultAvatarUrl(options = {}) {
   return fallback || DEFAULT_AVATAR_URL;
 }
 
+function getAdminAvatarUrl(options = {}) {
+  const admin = sanitizeSingleLine(options.adminAvatarUrl || DEFAULT_ADMIN_AVATAR_URL, 300);
+  return admin || getDefaultAvatarUrl(options);
+}
+
 function leftRotate(x, c) {
   return (x << c) | (x >>> (32 - c));
 }
@@ -319,7 +331,7 @@ function buildGravatarUrl(email, options = {}) {
 
   const hash = md5Hex(normalized);
   const size = clampInt(options.avatarSize, 40, 512, 120);
-  const defaultMode = sanitizeSingleLine(options.gravatarDefault || "404", 80) || "404";
+  const defaultMode = sanitizeSingleLine(options.gravatarDefault || "identicon", 80) || "identicon";
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=${encodeURIComponent(defaultMode)}`;
 }
 
@@ -330,8 +342,8 @@ function buildQqAvatarUrl(qq, options = {}) {
   }
 
   const base = sanitizeSingleLine(options.qqAvatarBaseUrl || DEFAULT_QQ_AVATAR_BASE_URL, 180) || DEFAULT_QQ_AVATAR_BASE_URL;
-  const size = clampInt(options.avatarSize, 40, 640, 140);
-  return `${base}?b=qq&nk=${encodeURIComponent(value)}&s=${size}`;
+  const size = clampInt(options.avatarSize, 40, 640, 100);
+  return `${base}?dst_uin=${encodeURIComponent(value)}&spec=${size}&img_type=jpg`;
 }
 
 export function buildAvatarUrl(contact, options = {}) {
@@ -355,14 +367,23 @@ function mapCommentRow(row, options = {}) {
   const includeContact = options.includeContact === true;
   const avatarOptions = {
     defaultAvatarUrl: options.defaultAvatarUrl,
+    adminAvatarUrl: options.adminAvatarUrl,
     qqAvatarBaseUrl: options.qqAvatarBaseUrl,
     gravatarDefault: options.gravatarDefault,
     avatarSize: options.avatarSize,
   };
 
+  const adminRaw = String(row.is_admin ?? "").trim().toLowerCase();
+  const isAdmin =
+    row.is_admin === true ||
+    row.is_admin === 1 ||
+    adminRaw === "1" ||
+    adminRaw === "true" ||
+    adminRaw === "yes" ||
+    adminRaw === "on";
   const avatarUrl =
     sanitizeSingleLine(row.avatar_url, 320) ||
-    buildAvatarUrl(row.contact || "", avatarOptions) ||
+    (isAdmin ? getAdminAvatarUrl(avatarOptions) : buildAvatarUrl(row.contact || "", avatarOptions)) ||
     getDefaultAvatarUrl(avatarOptions);
 
   return {
@@ -372,7 +393,7 @@ function mapCommentRow(row, options = {}) {
     nickname: row.nickname,
     content: row.content,
     status: row.status,
-    is_admin: Number(row.is_admin) === 1,
+    is_admin: isAdmin,
     avatar_url: avatarUrl,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -404,6 +425,47 @@ export function buildCommentTree(rows, options = {}) {
     node.reply_to = parent.nickname;
     parent.children.push(node);
   });
+
+  const timeValue = (item) => {
+    const raw = String(item.created_at || "").trim();
+    if (!raw) {
+      return 0;
+    }
+
+    const parsed = Date.parse(raw);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+
+    const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+    const parsedNormalized = Date.parse(normalized);
+    if (!Number.isNaN(parsedNormalized)) {
+      return parsedNormalized;
+    }
+
+    const parsedUtc = Date.parse(`${normalized}Z`);
+    return Number.isNaN(parsedUtc) ? 0 : parsedUtc;
+  };
+
+  const childOrder = options.childOrder === "desc" ? "desc" : "asc";
+  const rootOrder = options.rootOrder === "asc" ? "asc" : "desc";
+
+  const sortList = (list, order) => {
+    list.sort((a, b) => {
+      const delta = order === "asc" ? timeValue(a) - timeValue(b) : timeValue(b) - timeValue(a);
+      if (delta !== 0) {
+        return delta;
+      }
+      return order === "asc" ? a.id - b.id : b.id - a.id;
+    });
+    list.forEach((item) => {
+      if (item.children?.length) {
+        sortList(item.children, childOrder);
+      }
+    });
+  };
+
+  sortList(roots, rootOrder);
 
   return roots;
 }
