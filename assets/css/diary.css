@@ -1092,11 +1092,57 @@ p {
   text-decoration: none;
 }
 
+.guestbook-shell {
+  width: min(1120px, 100% - 24px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.guestbook-profile-panel {
+  padding-top: 10px;
+}
+
+.guestbook-flow-panel {
+  padding: 18px 16px;
+}
+
+.guestbook-hero {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.67);
+  padding: 16px;
+}
+
+.guestbook-kicker {
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  color: #6d7f99;
+  margin-bottom: 4px;
+}
+
+.guestbook-hero h1 {
+  font-size: 1.48rem;
+  margin-bottom: 8px;
+}
+
+.guestbook-lead {
+  color: #4c586a;
+  line-height: 1.85;
+  margin-bottom: 8px;
+}
+
+.guestbook-note {
+  border-top: 1px dashed rgba(95, 111, 136, 0.22);
+  padding-top: 8px;
+}
+
 .panel-lite {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.68);
-  padding: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 14px;
 }
 
 .field-block {
@@ -1123,7 +1169,16 @@ p {
 
 .guestbook-form textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 136px;
+}
+
+.guestbook-form-wrap {
+  margin-top: 12px;
+}
+
+.guestbook-form-wrap h2 {
+  font-size: 1.06rem;
+  margin-bottom: 10px;
 }
 
 .field-grid {
@@ -1135,12 +1190,16 @@ p {
 
 .turnstile-slot {
   margin-top: 10px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px dashed rgba(101, 126, 162, 0.3);
+  background: rgba(246, 249, 255, 0.52);
 }
 
 .guestbook-submit-row {
-  margin-top: 10px;
+  margin-top: 12px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -1162,43 +1221,90 @@ p {
   margin-top: 14px;
 }
 
+.guestbook-list-head {
+  margin-bottom: 8px;
+}
+
+.guestbook-list-head h2 {
+  font-size: 1.08rem;
+  margin-bottom: 4px;
+}
+
 .guestbook-list {
   display: grid;
-  gap: 9px;
-  margin-top: 8px;
+  gap: 11px;
+}
+
+.guestbook-empty-card {
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.54);
+  padding: 16px;
+}
+
+.guestbook-empty-title {
+  font-size: 1rem;
+  margin-bottom: 6px;
 }
 
 .guestbook-item {
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 9px 10px;
-  background: rgba(255, 255, 255, 0.68);
+  border-radius: 14px;
+  padding: 10px 11px;
+  background: rgba(255, 255, 255, 0.76);
 }
 
 .guestbook-item.is-admin {
-  border-color: rgba(92, 116, 148, 0.32);
-  background: rgba(231, 239, 250, 0.52);
+  border-color: rgba(92, 116, 148, 0.36);
+  background: rgba(232, 240, 252, 0.62);
+}
+
+.guestbook-item.is-reply {
+  border-color: rgba(120, 135, 157, 0.24);
 }
 
 .guestbook-item-head {
+  display: block;
+}
+
+.guestbook-user {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 9px;
   align-items: center;
 }
 
+.guestbook-user-meta {
+  min-width: 0;
+}
+
+.guestbook-avatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.84);
+  box-shadow: 0 4px 12px rgba(32, 53, 84, 0.18);
+  background: rgba(236, 242, 252, 0.8);
+}
+
 .guestbook-author {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .guestbook-time {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  margin-top: 1px;
 }
 
 .guestbook-content {
-  margin-top: 6px;
-  line-height: 1.7;
+  margin-top: 8px;
+  line-height: 1.78;
   overflow-wrap: anywhere;
 }
 
@@ -1207,7 +1313,7 @@ p {
 }
 
 .guestbook-meta {
-  margin-top: 8px;
+  margin-top: 9px;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -1220,9 +1326,9 @@ p {
 }
 
 .guestbook-children {
-  margin-top: 8px;
-  padding-left: 12px;
-  border-left: 2px solid rgba(96, 113, 138, 0.2);
+  margin-top: 10px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(96, 113, 138, 0.18);
   display: grid;
   gap: 8px;
 }
@@ -1258,6 +1364,10 @@ p {
 
 .feedback-error {
   color: #c34f68;
+}
+
+.guestbook-empty {
+  padding: 6px 2px;
 }
 
 .admin-shell {
@@ -1376,6 +1486,22 @@ p {
   .admin-login-form {
     grid-template-columns: 1fr 1fr auto;
     align-items: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .guestbook-shell {
+    grid-template-columns: 226px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .guestbook-profile-panel {
+    position: sticky;
+    top: 10px;
+    align-self: start;
+    max-height: calc(100vh - 20px);
+    overflow: auto;
+    scrollbar-width: thin;
   }
 }
 

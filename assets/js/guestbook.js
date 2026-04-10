@@ -1,9 +1,10 @@
-import { escapeHtml, linkify, setupSplash } from "./common.js";
+import { escapeHtml, formatLastSeen, linkify, loadSiteConfig, setupSplash } from "./common.js";
 
 const state = {
   pageKey: "guestbook",
   widgetId: null,
   turnstileSiteKey: "",
+  defaultAvatarUrl: "/assets/images/avatar-default.svg",
 };
 
 function formatTime(isoString) {
@@ -25,6 +26,24 @@ function setFeedback(message, isError = false) {
   const feedback = document.getElementById("guestbook-feedback");
   feedback.textContent = message || "";
   feedback.classList.toggle("feedback-error", Boolean(isError));
+}
+
+function bindAvatarFallbacks(scope = document) {
+  scope.querySelectorAll("img[data-default-avatar]").forEach((img) => {
+    if (img.dataset.boundError === "1") {
+      return;
+    }
+
+    img.dataset.boundError = "1";
+    img.addEventListener("error", () => {
+      const fallback = img.dataset.defaultAvatar || state.defaultAvatarUrl;
+      if (img.src.endsWith(fallback)) {
+        return;
+      }
+      img.src = fallback;
+      img.classList.add("is-default-avatar");
+    });
+  });
 }
 
 function setReplyTarget(commentId, nickname) {
@@ -52,11 +71,23 @@ function renderCommentNode(node, depth = 0) {
   return `
     <article class="guestbook-item ${levelClass} ${adminClass}" data-comment-id="${node.id}">
       <header class="guestbook-item-head">
-        <p class="guestbook-author">
-          ${escapeHtml(node.nickname)}
-          ${node.is_admin ? '<span class="admin-badge">博主</span>' : ""}
-        </p>
-        <p class="guestbook-time">${formatTime(node.created_at)}</p>
+        <div class="guestbook-user">
+          <img
+            class="guestbook-avatar"
+            src="${escapeHtml(node.avatar_url || state.defaultAvatarUrl)}"
+            data-default-avatar="${escapeHtml(state.defaultAvatarUrl)}"
+            alt="${escapeHtml(node.nickname || "访客")} 的头像"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          />
+          <div class="guestbook-user-meta">
+            <p class="guestbook-author">
+              ${escapeHtml(node.nickname)}
+              ${node.is_admin ? '<span class="admin-badge">博主</span>' : ""}
+            </p>
+            <p class="guestbook-time">${formatTime(node.created_at)}</p>
+          </div>
+        </div>
       </header>
       <p class="guestbook-content">${contentToHtml(node.content)}</p>
       <div class="guestbook-meta">
@@ -91,7 +122,7 @@ async function apiJson(url, options = {}) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = payload.message || "Request failed.";
+    const message = payload.message || "请求失败。";
     const error = new Error(message);
     error.status = response.status;
     throw error;
@@ -102,18 +133,24 @@ async function apiJson(url, options = {}) {
 
 async function loadComments() {
   const list = document.getElementById("guestbook-list");
-  list.innerHTML = '<p class="subtle">正在加载留言…</p>';
+  list.innerHTML = '<p class="subtle guestbook-empty">正在加载留言…</p>';
 
   const data = await apiJson(`/api/comments?page_key=${encodeURIComponent(state.pageKey)}&limit=100`);
   const items = data.items || [];
 
   if (!items.length) {
-    list.innerHTML = '<p class="subtle">还没有公开留言，欢迎做第一个留言的人。</p>';
+    list.innerHTML = `
+      <div class="guestbook-empty-card">
+        <p class="guestbook-empty-title">还没有公开留言</p>
+        <p class="subtle">欢迎写下第一条留言，让这页有一点温度。</p>
+      </div>
+    `;
     return;
   }
 
   list.innerHTML = items.map((item) => renderCommentNode(item)).join("");
   bindReplyButtons();
+  bindAvatarFallbacks(list);
 }
 
 function ensureTurnstileScript() {
@@ -125,7 +162,7 @@ function ensureTurnstileScript() {
     return new Promise((resolve, reject) => {
       const script = document.getElementById("turnstile-script");
       script.addEventListener("load", () => resolve(), { once: true });
-      script.addEventListener("error", () => reject(new Error("Turnstile script failed to load.")), { once: true });
+      script.addEventListener("error", () => reject(new Error("Turnstile 脚本加载失败。")), { once: true });
     });
   }
 
@@ -136,7 +173,7 @@ function ensureTurnstileScript() {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Turnstile script failed to load."));
+    script.onerror = () => reject(new Error("Turnstile 脚本加载失败。"));
     document.head.appendChild(script);
   });
 }
@@ -156,7 +193,7 @@ async function setupTurnstile() {
       sitekey: state.turnstileSiteKey,
       theme: "light",
     });
-    hint.textContent = "请完成上方人机验证后再提交留言。";
+    hint.textContent = "请完成人机验证后再提交留言。";
   } catch (error) {
     hint.textContent = error.message;
   }
@@ -166,8 +203,10 @@ async function loadConfig() {
   try {
     const config = await apiJson("/api/config", { method: "GET", headers: {} });
     state.turnstileSiteKey = config.turnstileSiteKey || "";
+    state.defaultAvatarUrl = config.defaultAvatarUrl || "/assets/images/avatar-default.svg";
   } catch {
     state.turnstileSiteKey = "";
+    state.defaultAvatarUrl = "/assets/images/avatar-default.svg";
   }
 }
 
@@ -186,6 +225,36 @@ function resetTurnstileToken() {
     return;
   }
   window.turnstile.reset(state.widgetId);
+}
+
+function renderProfile(config) {
+  const profile = config.profile || {};
+  const cover = document.getElementById("guestbook-profile-cover");
+  const avatar = document.getElementById("guestbook-profile-avatar");
+  const name = document.getElementById("guestbook-profile-name");
+  const handle = document.getElementById("guestbook-profile-handle");
+  const signature = document.getElementById("guestbook-profile-signature");
+  const bio = document.getElementById("guestbook-profile-bio");
+  const lastSeen = document.getElementById("guestbook-profile-last-seen");
+  const emailButton = document.getElementById("guestbook-email-button");
+
+  if (profile.cover) {
+    cover.style.backgroundImage = `url(${profile.cover})`;
+    cover.style.backgroundSize = "cover";
+    cover.style.backgroundPosition = "center";
+  }
+
+  avatar.src = profile.avatar || state.defaultAvatarUrl;
+  avatar.dataset.defaultAvatar = state.defaultAvatarUrl;
+  name.textContent = profile.name || "HoraFeng";
+  handle.textContent = profile.handle || "@horafeng";
+  signature.textContent = profile.signature || "把普通日子写成会发光的碎片。";
+  bio.textContent = profile.bio || "这里是我的轻日记与生活记事。";
+  lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
+  emailButton.href = `mailto:${profile.email || "horafeng@outlook.com"}`;
+  emailButton.textContent = profile.emailLabel || "发送邮件";
+
+  bindAvatarFallbacks(document.getElementById("guestbook-profile-panel") || document);
 }
 
 function bindForm() {
@@ -237,7 +306,7 @@ function bindForm() {
         body: JSON.stringify(payload),
       });
 
-      setFeedback(result.message || "留言成功。");
+      setFeedback(result.message || "留言成功，感谢来访。");
       form.reset();
       setReplyTarget(null, "");
       resetTurnstileToken();
@@ -254,7 +323,14 @@ function bindForm() {
 
 async function main() {
   setupSplash();
-  await loadConfig();
+
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+  window.scrollTo(0, 0);
+
+  const [siteConfig] = await Promise.all([loadSiteConfig(), loadConfig()]);
+  renderProfile(siteConfig);
   await setupTurnstile();
   bindForm();
   await loadComments();

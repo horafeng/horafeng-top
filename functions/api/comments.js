@@ -33,7 +33,7 @@ export async function onRequestGet(context) {
       db
         .prepare(
           `
-            SELECT id, page_key, parent_id, nickname, content, status, is_admin, created_at, updated_at
+            SELECT id, page_key, parent_id, nickname, contact, content, status, is_admin, created_at, updated_at
             FROM comments
             WHERE page_key = ? AND status = 'approved'
             ORDER BY datetime(created_at) ASC
@@ -49,7 +49,13 @@ export async function onRequestGet(context) {
     ]);
 
     const rows = list.results || [];
-    const items = buildCommentTree(rows, { includeContact: false });
+    const items = buildCommentTree(rows, {
+      includeContact: false,
+      defaultAvatarUrl: env.DEFAULT_AVATAR_URL || "/assets/images/avatar-default.svg",
+      qqAvatarBaseUrl: env.QQ_AVATAR_BASE_URL || "https://q1.qlogo.cn/g",
+      gravatarDefault: env.GRAVATAR_DEFAULT_MODE || "404",
+      avatarSize: clampInt(env.PUBLIC_AVATAR_SIZE, 40, 512, 120),
+    });
 
     return json({
       ok: true,

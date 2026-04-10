@@ -12,19 +12,43 @@
       <span class="splash-logo">HoraFeng</span>
     </div>
 
-    <div class="app-shell single-column">
-      <main class="panel flow-panel">
-        <header class="section-head">
+    <div class="app-shell guestbook-shell">
+      <aside id="guestbook-profile-panel" class="panel profile-panel guestbook-profile-panel">
+        <div class="profile-cover" id="guestbook-profile-cover"></div>
+        <div class="profile-main">
+          <img id="guestbook-profile-avatar" class="profile-avatar" src="assets/images/avatar-default.svg" alt="博主头像" />
+          <h1 id="guestbook-profile-name">HoraFeng</h1>
+          <p id="guestbook-profile-handle" class="profile-handle">@horafeng</p>
+          <p id="guestbook-profile-signature" class="subtle">把普通日子写成会发光的碎片。</p>
+          <p id="guestbook-profile-bio" class="subtle">这里是我的轻日记与生活记事。</p>
+          <p id="guestbook-profile-last-seen" class="last-seen subtle">博主最近来过</p>
+        </div>
+        <div class="profile-actions">
+          <a id="guestbook-email-button" class="profile-action-btn" href="mailto:horafeng@outlook.com">发送邮件</a>
+        </div>
+        <nav class="soft-nav">
+          <a href="index.html">日记流</a>
+          <a class="active" href="guestbook.html">留言板</a>
+        </nav>
+      </aside>
+
+      <main class="panel flow-panel guestbook-flow-panel">
+        <header class="guestbook-hero">
           <nav class="breadcrumb">
             <a href="index.html">日记流</a>
             <span>/</span>
             <span>留言板</span>
           </nav>
-          <h2>留言板</h2>
-          <p class="subtle">欢迎留下你的来访痕迹。公开展示昵称、留言内容与时间，联系方式仅博主可见。</p>
+          <p class="guestbook-kicker">Message Board</p>
+          <h1>留言板</h1>
+          <p class="guestbook-lead">
+            这里是一页完整的长页面，不是弹层。欢迎留下来访痕迹，也欢迎和我聊聊最近在读的书、走过的路、或者某个普通却闪光的日常。
+          </p>
+          <p class="guestbook-note subtle">公开展示昵称、留言内容、时间与回复关系；联系方式仅博主在后台可见。</p>
         </header>
 
-        <section class="guestbook-form-wrap panel-lite">
+        <section class="panel-lite guestbook-form-wrap">
+          <h2>写一条留言</h2>
           <form id="guestbook-form" class="guestbook-form" novalidate>
             <input id="guestbook-page-key" type="hidden" value="guestbook" />
             <input id="guestbook-parent-id" type="hidden" value="" />
@@ -32,7 +56,7 @@
             <div id="guestbook-replying" class="replying-hint" hidden></div>
 
             <label class="field-block" for="guestbook-content">留言内容</label>
-            <textarea id="guestbook-content" rows="5" maxlength="2000" placeholder="写点什么吧..." required></textarea>
+            <textarea id="guestbook-content" rows="6" maxlength="2000" placeholder="写点什么吧..." required></textarea>
 
             <div class="field-grid">
               <div>
@@ -58,7 +82,10 @@
         </section>
 
         <section class="guestbook-list-wrap">
-          <h3>最新留言</h3>
+          <div class="guestbook-list-head">
+            <h2>最新留言</h2>
+            <p class="subtle">按时间顺序展示，支持访客互相回复与博主回复。</p>
+          </div>
           <div id="guestbook-list" class="guestbook-list"></div>
         </section>
       </main>
