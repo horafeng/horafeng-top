@@ -1412,7 +1412,7 @@ p {
 .link-like.guestbook-reply-btn {
   position: absolute;
   right: 10px;
-  bottom: 10px;
+  top: 10px;
   border-radius: 9px;
   border: 1px solid rgba(101, 125, 159, 0.42);
   background: rgba(255, 255, 255, 0.88);
@@ -1429,8 +1429,7 @@ p {
   border-color: rgba(85, 115, 156, 0.72);
 }
 
-.guestbook-item:hover > .link-like.guestbook-reply-btn,
-.guestbook-item:focus-within > .link-like.guestbook-reply-btn,
+.guestbook-item.is-hover-target > .link-like.guestbook-reply-btn,
 .guestbook-item.is-active > .link-like.guestbook-reply-btn {
   opacity: 1;
   transform: translateY(0);

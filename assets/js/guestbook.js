@@ -303,12 +303,26 @@ function renderCommentNode(node, depth = 0) {
 }
 
 function markCommentActive(targetItem) {
-  document.querySelectorAll(".guestbook-item.is-active").forEach((node) => {
+  document.querySelectorAll(".guestbook-item.is-active, .guestbook-item.is-hover-target").forEach((node) => {
     if (node !== targetItem) {
       node.classList.remove("is-active");
+      node.classList.remove("is-hover-target");
     }
   });
   targetItem.classList.add("is-active");
+}
+
+function markCommentHover(targetItem) {
+  document.querySelectorAll(".guestbook-item.is-hover-target").forEach((node) => {
+    if (node !== targetItem) {
+      node.classList.remove("is-hover-target");
+    }
+  });
+  targetItem.classList.add("is-hover-target");
+}
+
+function clearCommentHover(list) {
+  list.querySelectorAll(".guestbook-item.is-hover-target").forEach((node) => node.classList.remove("is-hover-target"));
 }
 
 function bindCommentRevealInteraction() {
@@ -321,6 +335,21 @@ function bindCommentRevealInteraction() {
   }
 
   state.commentRevealBound = true;
+  list.addEventListener("pointerover", (event) => {
+    if (event.pointerType && event.pointerType !== "mouse") {
+      return;
+    }
+    const item = event.target?.closest?.(".guestbook-item");
+    if (!item || !list.contains(item)) {
+      return;
+    }
+    markCommentHover(item);
+  });
+
+  list.addEventListener("pointerleave", () => {
+    clearCommentHover(list);
+  });
+
   list.addEventListener("pointerdown", (event) => {
     const item = event.target?.closest?.(".guestbook-item");
     if (!item) {
@@ -334,14 +363,17 @@ function bindCommentRevealInteraction() {
     if (!item) {
       return;
     }
-    markCommentActive(item);
+    markCommentHover(item);
   });
 
   document.addEventListener("pointerdown", (event) => {
     if (list.contains(event.target)) {
       return;
     }
-    list.querySelectorAll(".guestbook-item.is-active").forEach((node) => node.classList.remove("is-active"));
+    list.querySelectorAll(".guestbook-item.is-active, .guestbook-item.is-hover-target").forEach((node) => {
+      node.classList.remove("is-active");
+      node.classList.remove("is-hover-target");
+    });
   });
 }
 
