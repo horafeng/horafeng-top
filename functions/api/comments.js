@@ -176,7 +176,7 @@ export async function onRequestPost(context) {
             created_at,
             updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)
         `,
       )
       .bind(
