@@ -1,154 +1,250 @@
-# HoraFeng Diary Blog (Cloudflare Pages + D1 + Turnstile)
+# HoraFeng Diary Blog（Cloudflare Pages + D1 + Turnstile）
 
-本项目是在现有静态博客基础上的增量开发版本，保留首页、帖子、动画与管理能力，新增了可维护留言系统。
+本项目是一个轻量个人博客/日记站，前端为静态页面（HTML/CSS/JS），后端能力通过 Cloudflare Pages Functions 提供。
 
-技术栈：
-- Frontend: 现有 HTML / CSS / JS
-- Backend: Cloudflare Pages Functions
-- Database: Cloudflare D1
-- Human verification: Cloudflare Turnstile
+当前已实现：
+- 日记流首页、详情弹层、响应式布局
+- 留言板独立页面（`guestbook.html`）
+- 游客留言、管理员审核/删除/回复
+- D1 存储、Turnstile 校验
+- 头像后端生成与代理回源
+- 评论“回复邮件通知 + 单条评论退订”
 
-## 1. 当前留言系统架构
+---
 
-### 1.1 Public API
-- `GET /api/comments`  
-  按 `page_key` 获取公开留言，支持 `limit/offset`，返回父子回复结构。
-- `POST /api/comments`  
-  访客提交留言，要求昵称/联系方式/内容必填，并执行 Turnstile 校验。
-- `GET /api/config`  
-  返回前端公开配置（Turnstile Site Key、默认头像 URL 等）。
+## 1. 技术架构
 
-### 1.2 Admin API
-- `POST /api/admin/login` 登录并设置 session cookie
-- `POST /api/admin/logout` 退出
-- `GET /api/admin/comments` 查看全部留言（含状态与联系方式）
-- `PATCH /api/admin/comments` 修改状态（pending / approved / deleted / spam）
-- `DELETE /api/admin/comments` 删除（软删除）
-- `POST /api/admin/comments` 管理员回复
+- Frontend：原生 `HTML/CSS/JS`
+- Backend：Cloudflare Pages Functions（`functions/`）
+- Database：Cloudflare D1（绑定名：`COMMENTS_DB`）
+- Human Check：Cloudflare Turnstile
+- Mail（可选）：默认按 Resend 适配
 
-### 1.3 数据库脚本
-- `scripts/init-comments.sql`
-- `scripts/seed-comments.sql`（可选）
+---
 
-## 2. D1 表结构
+## 2. 目录说明（核心）
 
-### 2.1 `comments`
+- 页面
+  - `index.html`：首页
+  - `guestbook.html`：留言板
+  - `admin/comments/index.html`：后台评论管理
+- 前端脚本
+  - `assets/js/index.js`
+  - `assets/js/guestbook.js`
+  - `assets/js/admin-comments.js`
+  - `assets/js/common.js`
+- 后端接口
+  - `functions/api/comments.js`
+  - `functions/api/admin/comments.js`
+  - `functions/api/admin/login.js`
+  - `functions/api/admin/logout.js`
+  - `functions/api/avatar/[id].js`
+  - `functions/unsubscribe.js`
+- 后端公共模块
+  - `functions/_lib/comments-utils.js`
+  - `functions/_lib/comment-notify.js`
+  - `functions/_lib/mailer.js`
+  - `functions/_lib/admin-auth.js`
+- 数据脚本
+  - `scripts/init-comments.sql`
+  - `scripts/migrate-notify.sql`
+  - `scripts/seed-comments.sql`
+
+---
+
+## 3. 评论系统能力
+
+### 3.1 公共接口
+
+- `GET /api/comments?page_key=...`
+  - 获取公开评论（树结构）
+  - 不返回联系方式
+- `POST /api/comments`
+  - 提交评论/回复
+  - 必填：昵称、联系方式、内容、Turnstile token（按配置）
+  - 可选：`notify_enabled`（是否开启邮件提醒）
+
+### 3.2 管理接口
+
+- `POST /api/admin/login`：管理员登录
+- `POST /api/admin/logout`：退出登录
+- `GET /api/admin/comments`：获取后台评论列表（含联系方式）
+- `PATCH /api/admin/comments`：改状态（pending/approved/deleted/spam）
+- `DELETE /api/admin/comments`：删除（软删）
+- `POST /api/admin/comments`：管理员回复
+
+---
+
+## 4. 头像规则（前台不暴露联系方式）
+
+前端只显示后端返回的 `avatar_url`，不解析联系方式。
+
+公共评论列表中的 `avatar_url` 采用同站代理路径：
+- `/api/avatar/{commentId}`
+
+头像回源逻辑在后端执行：
+- QQ 号：先尝试转换为 `qq@qq.com` 走 Cravatar，再尝试 QQ 头像源，再回退默认头像
+- 邮箱：先 Cravatar，再 Gravatar(SHA256)，再回退默认头像
+- 博主/管理员：优先站内配置头像
+
+调试（临时）：
+- `GET /api/avatar/{id}?debug=1` 返回命中路径信息
+
+---
+
+## 5. 回复邮件通知（本次重点）
+
+### 5.1 触发条件
+
+仅在“回复评论”进入 `approved` 时触发通知：
+- 回复创建即 `approved`：触发
+- 回复从 `pending` 改为 `approved`：触发
+- `pending/deleted/spam`：不触发
+- 原评论关闭提醒：不触发
+- 同一条回复只触发一次（数据库去重）
+
+### 5.2 收件邮箱解析
+
+- 原评论联系方式是邮箱：直接发该邮箱
+- 原评论联系方式是 QQ 号：转换为 `${qq}@qq.com` 发送
+- 无法解析有效邮箱：跳过发送（不影响主流程）
+
+### 5.3 邮件内容
+
+主题：
+- `您在「页面标题」的评论有了新的回复`
+
+正文包含：
+- `您在「页面标题」的评论有了新的回复`
+- `@回复人昵称 回复了你：`
+- 回复内容
+- 前往查看链接
+- 退订该评论邮件提醒链接
+
+页面标题解析：
+- `guestbook` -> `留言板`
+- 其他 `page_key`：尝试匹配 `content/diaries.json` 标题
+- 匹配失败回退：`日记帖子`
+
+### 5.4 退订
+
+邮件中退订链接：
+- `/unsubscribe?token=...`
+
+行为：
+- 仅关闭该条“原评论”的提醒（`notify_enabled = 0`）
+- 不影响其他评论
+
+---
+
+## 6. 数据库结构（评论相关）
+
+`comments`（核心字段）：
 - `id`
 - `page_key`
 - `parent_id`
 - `nickname`
 - `contact`（仅后台可见）
 - `content`
-- `status` (`pending|approved|deleted|spam`)
+- `status`
 - `is_admin`
+- `notify_enabled`
+- `contact_email_resolved`
+- `unsubscribe_token`
+- `last_notified_at`
 - `ip_hash`
 - `user_agent`
 - `created_at`
 - `updated_at`
 
-### 2.2 `admin_sessions`
+`comment_reply_notifications`（防重复与发送记录）：
 - `id`
-- `token_hash`
-- `ip_hash`
-- `user_agent`
+- `reply_comment_id`
+- `parent_comment_id`
+- `parent_page_key`
+- `recipient_email`
+- `status`（pending/sent/failed）
+- `provider`
+- `provider_message_id`
+- `error_message`
+- `attempt_count`
 - `created_at`
-- `expires_at`
-
-### 2.3 `comment_rate_limits`
-- `limiter_key`
-- `window_start`
-- `request_count`
+- `sent_at`
 - `updated_at`
+- 唯一约束：`(reply_comment_id, parent_comment_id)`
 
-## 3. 头像方案（方案 A）
+---
 
-头像 URL 统一在后端生成，前端只消费 `avatar_url` 字段。
+## 7. 环境变量（`.env.example`）
 
-### 3.1 邮箱联系方式
-- 后端识别为邮箱后，生成 Gravatar URL。
-- 规则：`https://www.gravatar.com/avatar/<md5(email)>?s=<size>&d=404`
-- 如果 Gravatar 头像不存在或加载失败，前端自动回退默认头像。
-
-### 3.2 QQ 联系方式
-- 后端识别为 QQ 后，生成 QQ 头像 URL。
-- 默认规则：`https://q1.qlogo.cn/g?b=qq&nk=<qq>&s=<size>`
-- 若头像源不稳定或加载失败，前端自动回退默认头像。
-- QQ 头像源可通过环境变量替换（见 `QQ_AVATAR_BASE_URL`）。
-
-### 3.3 默认头像
-- 默认头像资源：`assets/images/avatar-default.svg`
-- API 默认返回：`/assets/images/avatar-default.svg`
-- 也可通过 `DEFAULT_AVATAR_URL` 覆盖。
-
-### 3.4 隐私保证
-- 公开接口 `GET /api/comments` 不返回 `contact`。
-- 前端页面不展示联系方式。
-- 仅管理员接口返回联系方式用于管理。
-
-## 4. 留言板页面模式（独立长页面）
-
-留言板页面是独立页面：`guestbook.html`。
-
-设计目标：
-- 从首页点击“留言板”后，进入完整页面（不是弹层）。
-- 页面加载时回到顶部（已在脚本中设置）。
-- 布局为：左侧资料栏 + 中间长内容栏（无右栏）。
-- 中栏结构：标题引言 -> 留言输入区 -> 留言列表。
-
-这与普通帖子详情不同：
-- 帖子详情仍是内容详情交互。
-- 留言板是稳定阅读/互动页面，更像博客中的一篇“功能型长文”。
-
-## 5. Cloudflare 面板配置步骤（建议顺序）
-
-1. 创建 D1 数据库（记下 `database_name` / `database_id`）。
-2. 在 Pages 项目绑定 D1：binding 名必须为 `COMMENTS_DB`。
-3. 创建 Turnstile，获得 Site Key 和 Secret Key。
-4. 在 Pages 环境变量配置下列变量。
-5. 执行 SQL 初始化。
-6. 部署并验证留言板与后台。
-
-## 6. 环境变量 / Secrets
-
-完整变量模板见 `.env.example`，关键项如下：
-
-必填：
+评论与安全：
 - `TURNSTILE_SITE_KEY`
 - `TURNSTILE_SECRET_KEY`
-- `ADMIN_PASSWORD`
-
-推荐填写：
-- `ADMIN_USERNAME`（默认 `admin`）
-- `ADMIN_DISPLAY_NAME`
+- `TURNSTILE_BYPASS`
+- `COMMENTS_AUTO_APPROVE`
+- `COMMENT_NOTIFY_DEFAULT`
+- `COMMENT_RATE_LIMIT_PER_MINUTE`
 - `IP_HASH_SALT`
 
-可选调优：
-- `COMMENTS_AUTO_APPROVE`（默认 `true`）
-- `COMMENT_RATE_LIMIT_PER_MINUTE`（默认 `6`）
-- `ADMIN_LOGIN_RATE_LIMIT_PER_MINUTE`（默认 `8`）
-- `ADMIN_SESSION_TTL_HOURS`（默认 `72`）
-- `DEFAULT_AVATAR_URL`（默认 `/assets/images/avatar-default.svg`）
-- `QQ_AVATAR_BASE_URL`（默认 `https://q1.qlogo.cn/g`）
-- `GRAVATAR_DEFAULT_MODE`（默认 `404`）
-- `PUBLIC_AVATAR_SIZE`（默认 `120`）
-- `TURNSTILE_BYPASS`（仅本地调试使用，生产不要开启）
+管理员：
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `ADMIN_DISPLAY_NAME`
+- `ADMIN_AVATAR_URL`
+- `ADMIN_SESSION_TTL_HOURS`
+- `ADMIN_LOGIN_RATE_LIMIT_PER_MINUTE`
 
-## 7. SQL 初始化
+头像：
+- `DEFAULT_AVATAR_URL`
+- `QQ_AVATAR_BASE_URL`
+- `EMAIL_AVATAR_BASE_URL`
+- `GRAVATAR_DEFAULT_MODE`
+- `PUBLIC_AVATAR_SIZE`
 
+邮件通知：
+- `SITE_BASE_URL`（建议必填）
+- `MAIL_PROVIDER`（默认 `resend`）
+- `MAIL_API_KEY`（启用邮件必填）
+- `MAIL_FROM`（启用邮件必填）
+- `MAIL_REPLY_TO`（可选）
+- `ADMIN_EMAIL_NAME`（可选）
+
+---
+
+## 8. D1 初始化与迁移
+
+新建数据库：
 ```bash
 wrangler d1 execute <your-db-name> --file scripts/init-comments.sql
 ```
 
-可选示例数据：
+已有旧库升级到“邮件通知版”：
+```bash
+wrangler d1 execute <your-db-name> --file scripts/migrate-notify.sql
+```
+> 说明：迁移脚本按“新增列 + 新建唯一索引”设计，适配 D1/SQLite 限制；请在同一数据库中执行一次即可。
 
+示例数据（可选）：
 ```bash
 wrangler d1 execute <your-db-name> --file scripts/seed-comments.sql
 ```
 
-## 8. 本地开发
+---
 
-静态页面预览：
+## 8.1 Cloudflare 外部配置顺序（推荐）
 
+1. 在 Cloudflare Turnstile 创建站点并拿到 `SITE_KEY` / `SECRET_KEY`
+2. 在 D1 创建数据库，并绑定到 Pages（绑定名 `COMMENTS_DB`）
+3. 执行 SQL：新库跑 `init-comments.sql`，旧库跑 `migrate-notify.sql`
+4. 在邮件服务商（如 Resend）完成发信域名验证并获取 `MAIL_API_KEY`
+5. 在 Pages 项目里配置环境变量（含 `SITE_BASE_URL`、`MAIL_FROM` 等）
+6. 重新部署站点，进入留言板与后台做一次“评论 -> 回复 -> 审核”联调
+
+---
+
+## 9. 本地开发
+
+静态预览：
 ```bash
 python -m http.server 5173
 ```
@@ -158,47 +254,30 @@ python -m http.server 5173
 - `http://localhost:5173/guestbook.html`
 - `http://localhost:5173/admin/comments/`
 
-说明：纯 `python` 静态服务不会运行 `/api/*`，联调 Functions + D1 需要 Wrangler 本地模式。
+说明：
+- 仅 `python` 静态服务不会运行 `functions`
+- 需要联调 API/D1/Turnstile 时，请使用 Wrangler 本地模式
 
-移动端预览：
-1. `F12`
-2. `Ctrl + Shift + M` 开启设备模拟
-3. 刷新页面查看移动端布局
+---
 
-## 9. 部署上线
+## 10. 部署建议
 
-推荐：GitHub + Cloudflare Pages（当前架构最匹配）。
+推荐：GitHub + Cloudflare Pages
 
 原因：
-- 现有项目已是静态站结构
-- Pages Functions 与 D1 原生集成
-- Turnstile 接入简单
-- 成本低、维护成本可控
+- 与当前静态站结构完全匹配
+- Functions + D1 + Turnstile 原生集成
+- 成本低、维护轻、扩展方便
 
-## 10. 页面与文件结构（与本次相关）
+---
 
-- 留言前台页面：`guestbook.html`
-- 留言前台脚本：`assets/js/guestbook.js`
-- 留言样式：`assets/css/diary.css`
-- 管理后台页面：`admin/comments/index.html`
-- 管理后台脚本：`assets/js/admin-comments.js`
-- 后端 API：`functions/api/*`
-- 后端公共逻辑：`functions/_lib/*`
-- 默认头像资源：`assets/images/avatar-default.svg`
+## 11. 兼容性与保留能力
 
-## 11. 当前已实现与后续扩展
-
-已实现：
-- 真实留言写入 D1
+本次改造为增量开发，保留并兼容：
+- 首页/帖子详情与动画逻辑
+- 留言板展示与提交流程
+- 管理后台审核/删除/回复
 - Turnstile 校验
-- 审核 / 删除 / 回复 / 状态管理
-- 单管理员会话登录
-- 公共端不暴露联系方式
-- 后端统一头像生成与前端失败回退
-- 留言板独立长页面模式
+- D1 存储结构（在原表上增量扩展）
 
-后续可扩展：
-- 敏感词库与自动审核策略
-- 邮件通知（新留言提醒）
-- 帖子评论直接复用同一 API（`page_key=post:<id>`）
-- 更细粒度风控与审计日志
+邮件发送失败不会阻断评论主流程（审核/回复依旧成功）。

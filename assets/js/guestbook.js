@@ -7,6 +7,7 @@ const state = {
   defaultAvatarUrl: "/assets/images/avatar-default.svg",
   adminAvatarUrl: "/assets/images/Profile.png",
   bloggerAvatarUrl: "/assets/images/Profile.png",
+  notifyDefault: true,
 };
 
 const DEFAULT_AVATAR_POOL = [
@@ -267,10 +268,12 @@ async function loadConfig() {
     state.turnstileSiteKey = config.turnstileSiteKey || "";
     state.defaultAvatarUrl = config.defaultAvatarUrl || "/assets/images/avatar-default.svg";
     state.adminAvatarUrl = config.adminAvatarUrl || "/assets/images/Profile.png";
+    state.notifyDefault = config.commentNotifyDefault !== false;
   } catch {
     state.turnstileSiteKey = "";
     state.defaultAvatarUrl = "/assets/images/avatar-default.svg";
     state.adminAvatarUrl = "/assets/images/Profile.png";
+    state.notifyDefault = true;
   }
 }
 
@@ -320,6 +323,11 @@ function renderProfile(config) {
   emailButton.href = `mailto:${profile.email || "horafeng@outlook.com"}`;
   emailButton.textContent = profile.emailLabel || "发送邮件";
 
+  const notifyToggle = document.getElementById("guestbook-notify");
+  if (notifyToggle) {
+    notifyToggle.checked = state.notifyDefault;
+  }
+
   bindAvatarFallbacks(document.getElementById("guestbook-profile-panel") || document);
 }
 
@@ -335,6 +343,7 @@ function bindForm() {
     const contact = document.getElementById("guestbook-contact").value.trim();
     const content = document.getElementById("guestbook-content").value.trim();
     const parentRaw = document.getElementById("guestbook-parent-id").value.trim();
+    const notifyEnabled = document.getElementById("guestbook-notify")?.checked !== false;
     const turnstileToken = collectTurnstileToken();
 
     if (!nickname) {
@@ -364,6 +373,7 @@ function bindForm() {
         nickname,
         contact,
         content,
+        notify_enabled: notifyEnabled,
         turnstileToken,
       };
 
@@ -374,6 +384,10 @@ function bindForm() {
 
       setFeedback(result.message || "留言成功，感谢来访。");
       form.reset();
+      const notifyToggle = document.getElementById("guestbook-notify");
+      if (notifyToggle) {
+        notifyToggle.checked = state.notifyDefault;
+      }
       setReplyTarget(null, "");
       resetTurnstileToken();
       await loadComments();

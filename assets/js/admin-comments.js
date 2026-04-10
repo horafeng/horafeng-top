@@ -68,6 +68,7 @@ function commentCard(comment) {
         <p class="subtle">${escapeHtml(comment.page_key)} · ${formatTime(comment.created_at)}</p>
       </header>
       <p class="admin-comment-contact subtle">联系方式（仅后台可见）：${escapeHtml(comment.contact || "-")}</p>
+      <p class="admin-comment-contact subtle">邮件提醒：${comment.notify_enabled ? "已开启" : "已关闭"}${comment.contact_email_resolved ? ` · 收件：${escapeHtml(comment.contact_email_resolved)}` : ""}</p>
       <p class="admin-comment-content">${contentToHtml(comment.content)}</p>
       <p class="subtle">
         状态：<span class="status-pill">${escapeHtml(comment.status)}</span>

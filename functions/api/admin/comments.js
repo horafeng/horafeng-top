@@ -1,4 +1,5 @@
 import { requireAdminSession } from "../../_lib/admin-auth.js";
+import { triggerReplyNotification } from "../../_lib/comment-notify.js";
 import {
   buildAvatarUrl,
   clampInt,
@@ -69,6 +70,9 @@ export async function onRequestGet(context) {
         c.content,
         c.status,
         c.is_admin,
+        c.notify_enabled,
+        c.contact_email_resolved,
+        c.last_notified_at,
         c.created_at,
         c.updated_at,
         p.nickname AS parent_nickname
@@ -94,6 +98,9 @@ export async function onRequestGet(context) {
         id: Number(row.id),
         parent_id: row.parent_id === null ? null : Number(row.parent_id),
         is_admin: Number(row.is_admin) === 1,
+        notify_enabled: Number(row.notify_enabled || 0) === 1,
+        contact_email_resolved: row.contact_email_resolved || "",
+        last_notified_at: row.last_notified_at || "",
         avatar_url:
           Number(row.is_admin) === 1
             ? context.env.ADMIN_AVATAR_URL || "/assets/images/Profile.png"
@@ -143,7 +150,7 @@ export async function onRequestPost(context) {
       return json({ ok: false, message: "Parent comment not found." }, 404);
     }
 
-    const pageKey = normalizePageKey(payload.page_key || parent.page_key || "guestbook");
+    const pageKey = normalizePageKey(parent.page_key || payload.page_key || "guestbook");
     const now = nowIso();
 
     const result = await db
@@ -157,21 +164,37 @@ export async function onRequestPost(context) {
             content,
             status,
             is_admin,
+            notify_enabled,
+            contact_email_resolved,
+            unsubscribe_token,
             ip_hash,
             user_agent,
             created_at,
             updated_at
           )
-          VALUES (?, ?, ?, 'admin', ?, 'approved', 1, NULL, ?, ?, ?)
+          VALUES (?, ?, ?, 'admin', ?, 'approved', 1, 0, NULL, NULL, NULL, ?, ?, ?)
         `,
       )
       .bind(pageKey, parentId, nickname, content, sanitizeSingleLine(request.headers.get("user-agent") || "", 280), now, now)
       .run();
 
+    const insertedId = Number(result.meta?.last_row_id || 0);
+    if (insertedId > 0) {
+      const notifyResult = await triggerReplyNotification({
+        db,
+        env,
+        request,
+        replyCommentId: insertedId,
+      });
+      if (!notifyResult.ok && notifyResult.skipped !== "already_triggered") {
+        console.error("reply notify failed after admin reply:", notifyResult);
+      }
+    }
+
     return json(
       {
         ok: true,
-        id: Number(result.meta?.last_row_id || 0),
+        id: insertedId,
         message: "Admin reply has been published.",
       },
       201,
@@ -183,7 +206,7 @@ export async function onRequestPost(context) {
 
 export async function onRequestPatch(context) {
   try {
-    const { request } = context;
+    const { request, env } = context;
     const { db, failedResponse } = await ensureAdmin(context);
     if (failedResponse) {
       return failedResponse;
@@ -202,6 +225,10 @@ export async function onRequestPatch(context) {
     if (!isValidStatus(status)) {
       return json({ ok: false, message: "Invalid status value." }, 400);
     }
+    const current = await db.prepare("SELECT id, status FROM comments WHERE id = ? LIMIT 1").bind(commentId).first();
+    if (!current) {
+      return json({ ok: false, message: "Comment not found." }, 404);
+    }
 
     const now = nowIso();
     const result = await db
@@ -211,6 +238,18 @@ export async function onRequestPatch(context) {
 
     if (!result.meta?.changes) {
       return json({ ok: false, message: "Comment not found or unchanged." }, 404);
+    }
+    const prevStatus = sanitizeSingleLine(current.status || "", 16).toLowerCase();
+    if (status === "approved" && prevStatus !== "approved") {
+      const notifyResult = await triggerReplyNotification({
+        db,
+        env,
+        request,
+        replyCommentId: commentId,
+      });
+      if (!notifyResult.ok && notifyResult.skipped !== "already_triggered") {
+        console.error("reply notify failed after status approve:", notifyResult);
+      }
     }
 
     return json({ ok: true, message: "Status updated." });

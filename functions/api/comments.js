@@ -15,6 +15,7 @@ import {
   validateContact,
   verifyTurnstile,
 } from "../_lib/comments-utils.js";
+import { buildNotifyPreference, triggerReplyNotification } from "../_lib/comment-notify.js";
 
 function queryInt(params, key, fallback, min, max) {
   return clampInt(params.get(key), min, max, fallback);
@@ -101,7 +102,6 @@ export async function onRequestPost(context) {
     const pageKey = normalizePageKey(payload.page_key || "guestbook");
     const parentIdRaw = payload.parent_id;
     const turnstileToken = sanitizeSingleLine(payload.turnstileToken || payload.turnstile_token, 2048);
-
     if (!nickname) {
       return json({ ok: false, message: "Nickname is required." }, 400);
     }
@@ -111,6 +111,10 @@ export async function onRequestPost(context) {
     if (!content) {
       return json({ ok: false, message: "Content is required." }, 400);
     }
+    const notifyPref = buildNotifyPreference({
+      contact: contactResult.value,
+      notifyEnabledInput: payload.notify_enabled,
+    });
 
     const parentId =
       parentIdRaw === null || parentIdRaw === undefined || parentIdRaw === ""
@@ -164,12 +168,15 @@ export async function onRequestPost(context) {
             content,
             status,
             is_admin,
+            notify_enabled,
+            contact_email_resolved,
+            unsubscribe_token,
             ip_hash,
             user_agent,
             created_at,
             updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
         `,
       )
       .bind(
@@ -179,6 +186,9 @@ export async function onRequestPost(context) {
         contactResult.value,
         content,
         status,
+        notifyPref.notifyEnabled,
+        notifyPref.resolvedEmail || null,
+        notifyPref.unsubscribeToken || null,
         ipHash,
         sanitizeSingleLine(request.headers.get("user-agent") || "", 280),
         now,
@@ -186,10 +196,23 @@ export async function onRequestPost(context) {
       )
       .run();
 
+    const insertedId = Number(result.meta?.last_row_id || 0);
+    if (status === "approved" && parentId && insertedId > 0) {
+      const notifyResult = await triggerReplyNotification({
+        db,
+        env,
+        request,
+        replyCommentId: insertedId,
+      });
+      if (!notifyResult.ok && notifyResult.skipped !== "already_triggered") {
+        console.error("reply notify failed after user post:", notifyResult);
+      }
+    }
+
     return json(
       {
         ok: true,
-        id: Number(result.meta?.last_row_id || 0),
+        id: insertedId,
         status,
         pending: status !== "approved",
         message: status === "approved" ? "Comment published." : "Comment submitted and waiting for moderation.",
