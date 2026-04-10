@@ -11,6 +11,9 @@ const state = {
   formExpanded: false,
   turnstileReady: false,
   turnstileLoading: false,
+  toastHideTimer: null,
+  toastEndTimer: null,
+  commentRevealBound: false,
 };
 
 const DEFAULT_AVATAR_POOL = [
@@ -60,6 +63,41 @@ function setToggleTip(message = "") {
   tip.textContent = message;
 }
 
+function showSubmitToast(message = "成功留言！审核通过后会展示在留言区") {
+  const toast = document.getElementById("guestbook-toast");
+  const text = document.getElementById("guestbook-toast-text");
+  if (!toast || !text) {
+    return;
+  }
+
+  text.textContent = message;
+  if (state.toastHideTimer) {
+    clearTimeout(state.toastHideTimer);
+  }
+  if (state.toastEndTimer) {
+    clearTimeout(state.toastEndTimer);
+  }
+
+  toast.hidden = false;
+  toast.classList.remove("show", "hide", "done");
+  void toast.offsetWidth;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.add("done");
+  }, 60);
+
+  state.toastHideTimer = setTimeout(() => {
+    toast.classList.add("hide");
+    toast.classList.remove("show");
+  }, 1500);
+
+  state.toastEndTimer = setTimeout(() => {
+    toast.hidden = true;
+    toast.classList.remove("hide", "done");
+  }, 2050);
+}
+
 function setFormExpanded(expanded, { focus = false, scroll = false } = {}) {
   const wrap = document.getElementById("guestbook-form-wrap");
   const toggle = document.getElementById("guestbook-form-toggle");
@@ -103,17 +141,11 @@ function bindFormToggle() {
       setFormExpanded(true, { focus: true, scroll: true });
       return;
     }
-
-    if (hasReplyTarget()) {
-      setToggleTip("正在回复中，请先取消回复后再收起。");
-      return;
-    }
-    if (isFormDirty()) {
-      setToggleTip("你已经输入了内容，为避免丢失，暂不自动收起。");
-      return;
-    }
-
+    const keepDraft = hasReplyTarget() || isFormDirty();
     setFormExpanded(false);
+    if (keepDraft) {
+      setToggleTip("已收起，草稿与回复状态已保留。");
+    }
   });
 }
 
@@ -257,17 +289,60 @@ function renderCommentNode(node, depth = 0) {
       <p class="guestbook-content">${contentToHtml(node.content)}</p>
       <div class="guestbook-meta">
         ${replyMeta}
-        <button
-          type="button"
-          class="link-like"
-          data-reply-id="${node.id}"
-          data-reply-nick="${escapeHtml(node.nickname)}"
-          data-reply-content="${escapeHtml(replyPreview)}"
-        >回复</button>
       </div>
+      <button
+        type="button"
+        class="link-like guestbook-reply-btn"
+        data-reply-id="${node.id}"
+        data-reply-nick="${escapeHtml(node.nickname)}"
+        data-reply-content="${escapeHtml(replyPreview)}"
+      >回复</button>
       ${children ? `<div class="guestbook-children">${children}</div>` : ""}
     </article>
   `;
+}
+
+function markCommentActive(targetItem) {
+  document.querySelectorAll(".guestbook-item.is-active").forEach((node) => {
+    if (node !== targetItem) {
+      node.classList.remove("is-active");
+    }
+  });
+  targetItem.classList.add("is-active");
+}
+
+function bindCommentRevealInteraction() {
+  if (state.commentRevealBound) {
+    return;
+  }
+  const list = document.getElementById("guestbook-list");
+  if (!list) {
+    return;
+  }
+
+  state.commentRevealBound = true;
+  list.addEventListener("pointerdown", (event) => {
+    const item = event.target?.closest?.(".guestbook-item");
+    if (!item) {
+      return;
+    }
+    markCommentActive(item);
+  });
+
+  list.addEventListener("focusin", (event) => {
+    const item = event.target?.closest?.(".guestbook-item");
+    if (!item) {
+      return;
+    }
+    markCommentActive(item);
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (list.contains(event.target)) {
+      return;
+    }
+    list.querySelectorAll(".guestbook-item.is-active").forEach((node) => node.classList.remove("is-active"));
+  });
 }
 
 function bindReplyButtons() {
@@ -512,6 +587,7 @@ function bindForm() {
       });
 
       setFeedback(result.message || "留言成功，感谢来访。");
+      showSubmitToast("成功留言！审核通过后会展示在留言区");
       form.reset();
       const notifyToggle = document.getElementById("guestbook-notify");
       if (notifyToggle) {
@@ -545,6 +621,7 @@ async function main() {
 
   renderProfile(siteConfig);
   bindFormToggle();
+  bindCommentRevealInteraction();
   setFormExpanded(false);
   bindForm();
   await loadComments();
