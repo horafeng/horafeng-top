@@ -490,7 +490,8 @@ p {
 }
 
 .mobile-right-stack {
-  margin-top: 10px;
+  margin-top: 2px;
+  margin-bottom: 12px;
   padding: 10px;
 }
 
@@ -623,7 +624,7 @@ p {
 .post-close-mobile {
   border: 0;
   background: transparent;
-  color: #fff;
+  color: #2f3e54;
   font-size: 1.5rem;
   line-height: 1;
   padding: 0 4px;
@@ -644,7 +645,7 @@ p {
 }
 
 .post-mobile-name {
-  color: #fff;
+  color: #2f3e54;
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -1031,9 +1032,10 @@ p {
     position: sticky;
     top: 0;
     z-index: 6;
-    background: rgba(17, 22, 34, 0.92);
+    background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(6px);
     padding: 10px 12px;
+    border-bottom: 1px solid rgba(87, 99, 120, 0.14);
   }
 
   .post-layout {
