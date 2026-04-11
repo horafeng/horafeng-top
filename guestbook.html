@@ -13,11 +13,36 @@
       <span class="splash-logo">HoraFeng</span>
     </div>
 
+    <header class="site-nav" data-site-nav data-search-target="#guestbook-content">
+      <div class="site-nav-inner">
+        <a class="site-nav-left" href="index.html">HoraFeng的博客</a>
+
+        <nav class="site-nav-center" aria-label="主导航">
+          <a class="site-nav-link" href="index.html">首页</a>
+          <div class="site-nav-dropdown" data-nav-dropdown>
+            <button class="site-nav-link site-nav-dropdown-toggle" type="button" data-nav-dropdown-toggle>
+              内容
+              <span class="site-nav-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="site-nav-dropdown-menu">
+              <a href="index.html?content=article">文章</a>
+              <a href="index.html?content=note">小记</a>
+              <a href="index.html?content=notice">公告</a>
+            </div>
+          </div>
+        </nav>
+
+        <button class="site-nav-search" type="button" aria-label="搜索" data-nav-search>⌕</button>
+        <button class="site-nav-brand-mini" type="button" data-nav-brand-center>HoraFeng</button>
+        <button class="site-nav-backtop" type="button" data-nav-backtop>返回顶部 ↑</button>
+      </div>
+    </header>
+
     <div class="app-shell guestbook-shell">
       <aside id="guestbook-profile-panel" class="panel profile-panel guestbook-profile-panel">
         <div class="profile-cover" id="guestbook-profile-cover"></div>
         <div class="profile-main">
-          <img id="guestbook-profile-avatar" class="profile-avatar" src="assets/images/avatar-default.svg" alt="博主头像" />
+          <img id="guestbook-profile-avatar" class="profile-avatar" src="assets/images/Profile.png" alt="博主头像" />
           <h1 id="guestbook-profile-name">HoraFeng</h1>
           <p id="guestbook-profile-handle" class="profile-handle">@horafeng</p>
           <p id="guestbook-profile-signature" class="subtle">把普通日子写成会发光的碎片。</p>
@@ -118,7 +143,7 @@
           <path d="M5 12.5L10 17L19 7.5"></path>
         </svg>
       </span>
-      <span id="guestbook-toast-text">成功留言！审核通过后会展示在留言区</span>
+      <span id="guestbook-toast-text">成功留言！审核通过后会展示在留言区。</span>
     </div>
 
     <script type="module" src="assets/js/guestbook.js"></script>

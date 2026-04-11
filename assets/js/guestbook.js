@@ -1,4 +1,4 @@
-import { escapeHtml, formatLastSeen, linkify, loadSiteConfig, setupPageTransition, setupSplash } from "./common.js";
+import { escapeHtml, formatLastSeen, linkify, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
 
 const state = {
   pageKey: "guestbook",
@@ -642,6 +642,10 @@ function bindForm() {
 async function main() {
   setupSplash();
   setupPageTransition();
+  setupSiteChrome({
+    scrollContainerSelector: ".flow-panel",
+    searchTargetSelector: "#guestbook-content",
+  });
 
   if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";

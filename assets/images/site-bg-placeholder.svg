@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1280" viewBox="0 0 1920 1280" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6f3ef" />
+      <stop offset="45%" stop-color="#edf4ff" />
+      <stop offset="100%" stop-color="#f4eefb" />
+    </linearGradient>
+    <radialGradient id="blobA" cx="0.2" cy="0.12" r="0.55">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.75" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="blobB" cx="0.85" cy="0.07" r="0.46">
+      <stop offset="0%" stop-color="#dce8fb" stop-opacity="0.72" />
+      <stop offset="100%" stop-color="#dce8fb" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="blobC" cx="0.8" cy="0.85" r="0.52">
+      <stop offset="0%" stop-color="#eadff8" stop-opacity="0.56" />
+      <stop offset="100%" stop-color="#eadff8" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1280" fill="url(#bg)" />
+  <rect width="1920" height="1280" fill="url(#blobA)" />
+  <rect width="1920" height="1280" fill="url(#blobB)" />
+  <rect width="1920" height="1280" fill="url(#blobC)" />
+
+  <g opacity="0.25" stroke="#9db4d7" stroke-width="1.2" fill="none">
+    <path d="M-80 190 C240 120 380 280 620 222 C920 154 1120 286 1450 190 C1640 136 1780 150 1990 236" />
+    <path d="M-60 350 C180 300 420 418 700 352 C1040 272 1220 430 1500 372 C1710 330 1840 340 1990 404" />
+    <path d="M-90 520 C230 430 420 590 690 528 C980 462 1250 602 1500 538 C1710 488 1840 500 2010 568" />
+  </g>
+
+  <g fill="#ffffff" opacity="0.26">
+    <circle cx="146" cy="120" r="58" />
+    <circle cx="258" cy="86" r="16" />
+    <circle cx="1710" cy="168" r="68" />
+    <circle cx="1780" cy="246" r="20" />
+    <circle cx="1644" cy="870" r="58" />
+    <circle cx="276" cy="980" r="32" />
+  </g>
+</svg>

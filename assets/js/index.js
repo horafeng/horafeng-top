@@ -7,6 +7,7 @@
   loadSiteConfig,
   renderMockComments,
   searchEntries,
+  setupSiteChrome,
   setupPageTransition,
   setupSplash,
 } from "./common.js";
@@ -1039,6 +1040,10 @@ function setupMobileDrawer() {
 async function main() {
   setupSplash();
   setupPageTransition();
+  setupSiteChrome({
+    scrollContainerSelector: ".flow-panel",
+    searchTargetSelector: "#search-input",
+  });
 
   const [entries, config] = await Promise.all([loadEntries(), loadSiteConfig()]);
   allEntries = entries;
