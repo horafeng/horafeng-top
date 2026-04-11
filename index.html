@@ -39,6 +39,16 @@
       </div>
     </header>
 
+    <div class="mobile-home-topbar" aria-label="手机端首页顶部导航">
+      <button id="mobile-home-profile" class="mobile-home-icon-btn" type="button" aria-label="打开个人页">☰</button>
+      <nav class="mobile-home-tabs" aria-label="手机端主导航">
+        <a class="active" href="index.html">日记流</a>
+        <a href="archive.html">归档</a>
+        <a href="guestbook.html">留言板</a>
+      </nav>
+      <button id="mobile-home-search" class="mobile-home-icon-btn" type="button" aria-label="聚焦搜索">⌕</button>
+    </div>
+
     <div class="app-shell home-shell">
       <button id="mobile-drawer-trigger" class="mobile-drawer-trigger" type="button">☰ 个人页</button>
 
@@ -141,6 +151,26 @@
         </div>
       </article>
     </div>
+
+    <nav class="mobile-home-bottom-bar" aria-label="手机端首页底部导航">
+      <a class="active" href="index.html">
+        <span class="mobile-home-bottom-icon">⌂</span>
+        <span>首页</span>
+      </a>
+      <a href="archive.html">
+        <span class="mobile-home-bottom-icon">◎</span>
+        <span>归档</span>
+      </a>
+      <button id="mobile-home-focus-search" class="mobile-home-bottom-center" type="button" aria-label="打开搜索">+</button>
+      <a href="guestbook.html">
+        <span class="mobile-home-bottom-icon">✉</span>
+        <span>留言</span>
+      </a>
+      <button id="mobile-home-me" class="mobile-home-bottom-action" type="button" aria-label="打开个人页">
+        <span class="mobile-home-bottom-icon">◌</span>
+        <span>我的</span>
+      </button>
+    </nav>
 
     <script type="module" src="assets/js/index.js"></script>
   </body>

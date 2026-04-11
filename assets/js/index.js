@@ -283,6 +283,19 @@ function setupDesktopSidebarLayout() {
   window.setTimeout(updateSidebarMode, 180);
 }
 
+function isMobileHomeViewport() {
+  return document.body.dataset.page === "home" && window.matchMedia("(max-width: 767px)").matches;
+}
+
+function syncMobileOverlayChrome(isOpen) {
+  if (!isMobileHomeViewport()) {
+    document.body.classList.remove("mobile-post-open");
+    return;
+  }
+
+  document.body.classList.toggle("mobile-post-open", Boolean(isOpen));
+}
+
 function showMediaUI() {
   const viewer = document.getElementById("media-viewer");
   if (!viewer || currentImages.length < 2) {
@@ -765,6 +778,7 @@ function hidePostOverlay() {
   overlay.hidden = true;
   overlay.classList.remove("open", "closing", "shared-transition", "mobile-lite", "mobile-ready");
   document.body.classList.remove("no-scroll");
+  syncMobileOverlayChrome(false);
   window.clearTimeout(mediaUiTimer);
   unbindMediaKeyboard();
 }
@@ -854,6 +868,7 @@ async function openPostById(id, pushState = true, origin = null) {
   overlay.classList.remove("closing", "mobile-ready", "mobile-lite", "shared-transition");
   overlay.classList.add("open");
   document.body.classList.add("no-scroll");
+  syncMobileOverlayChrome(true);
 
   renderPostModal(entry);
   await animateModalFromOrigin(lastOpenOrigin, false);
@@ -938,9 +953,12 @@ function setupOverlayControls() {
       id: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
+      deltaX: 0,
       deltaY: 0,
       engaged: false,
       closing: false,
+      mode: null,
+      allowEdgeSwipe: event.clientX <= 28 || Boolean(event.target instanceof HTMLElement && event.target.closest(".post-mobile-header")),
     };
 
     modal.setPointerCapture(event.pointerId);
@@ -955,18 +973,35 @@ function setupOverlayControls() {
 
     const deltaX = event.clientX - dismissDragState.startX;
     const deltaY = event.clientY - dismissDragState.startY;
+    dismissDragState.deltaX = deltaX;
 
     if (!dismissDragState.engaged) {
-      if (Math.abs(deltaY) < 8) {
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      if (absX < 8 && absY < 8) {
         return;
       }
 
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (dismissDragState.allowEdgeSwipe && deltaX > 0 && absX > absY) {
+        dismissDragState.engaged = true;
+        dismissDragState.mode = "edge";
+      } else if (absY > absX) {
+        dismissDragState.engaged = true;
+        dismissDragState.mode = "vertical";
+      } else {
         clearGesture();
         return;
       }
+    }
 
-      dismissDragState.engaged = true;
+    if (dismissDragState.mode === "edge") {
+      event.preventDefault();
+      const drift = Math.max(0, deltaX);
+      const scale = Math.max(0.96, 1 - drift / 1800);
+      const opacity = Math.max(0.54, 1 - drift / (window.innerWidth * 1.2));
+      modal.style.transform = `translate3d(${drift}px, 0, 0) scale(${scale})`;
+      modal.style.opacity = String(opacity);
+      return;
     }
 
     dismissDragState.deltaY = deltaY;
@@ -996,7 +1031,10 @@ function setupOverlayControls() {
       modal.releasePointerCapture(event.pointerId);
     }
 
-    const shouldClose = dismissDragState.deltaY < -120;
+    const shouldClose =
+      dismissDragState.mode === "edge"
+        ? dismissDragState.deltaX > Math.min(160, window.innerWidth * 0.28)
+        : dismissDragState.deltaY < -120;
     if (!shouldClose) {
       dismissDragState = null;
       restoreModal();
@@ -1005,7 +1043,8 @@ function setupOverlayControls() {
 
     dismissDragState.closing = true;
     modal.style.transition = "transform 180ms cubic-bezier(0.22, 0.82, 0.22, 1), opacity 150ms ease";
-    modal.style.transform = "translate3d(0, -42vh, 0) scale(0.9)";
+    modal.style.transform =
+      dismissDragState.mode === "edge" ? "translate3d(42vw, 0, 0) scale(0.94)" : "translate3d(0, -42vh, 0) scale(0.9)";
     modal.style.opacity = "0";
 
     window.setTimeout(() => {
@@ -1052,6 +1091,8 @@ function setupMobileDrawer() {
   const trigger = document.getElementById("mobile-drawer-trigger");
   const overlay = document.getElementById("mobile-drawer-overlay");
   const closeButton = document.getElementById("mobile-drawer-close");
+  const topProfileButton = document.getElementById("mobile-home-profile");
+  const bottomProfileButton = document.getElementById("mobile-home-me");
 
   const openDrawer = () => {
     overlay.hidden = false;
@@ -1068,12 +1109,34 @@ function setupMobileDrawer() {
   };
 
   trigger.addEventListener("click", openDrawer);
+  topProfileButton?.addEventListener("click", openDrawer);
+  bottomProfileButton?.addEventListener("click", openDrawer);
   closeButton.addEventListener("click", closeDrawer);
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) {
       closeDrawer();
     }
   });
+}
+
+function setupMobileHomeChrome() {
+  const searchButton = document.getElementById("mobile-home-search");
+  const centerSearchButton = document.getElementById("mobile-home-focus-search");
+  const searchInput = document.getElementById("search-input");
+
+  const focusSearch = () => {
+    if (!searchInput) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.setTimeout(() => {
+      searchInput.focus();
+    }, 180);
+  };
+
+  searchButton?.addEventListener("click", focusSearch);
+  centerSearchButton?.addEventListener("click", focusSearch);
 }
 
 async function main() {
@@ -1098,6 +1161,7 @@ async function main() {
   setupDesktopSidebarLayout();
   setupOverlayControls();
   setupMobileDrawer();
+  setupMobileHomeChrome();
   bindTimelineClicks();
 
   const params = new URLSearchParams(window.location.search);
