@@ -40,6 +40,7 @@
 当前仓库里可见的主要页面：
 
 - `index.html`：首页 / 日记流主页面
+- `archive.html`：正式归档页，使用单中轴时间线 + 左右交错卡片布局
 - `guestbook.html`：留言板独立页面
 - `entry.html`：单篇详情页，存在但当前更像备用 / 补充页
 - `tags.html`：标签与归档筛选页，存在但不属于主视觉主路径
@@ -51,6 +52,7 @@
 - 样式主入口：`assets/css/diary.css`
 - 前端脚本入口：
   - `assets/js/index.js`
+  - `assets/js/archive.js`
   - `assets/js/guestbook.js`
   - `assets/js/entry.js`
   - `assets/js/tags.js`
@@ -172,7 +174,43 @@
 - `GET /api/comments?page_key=guestbook`
 - `POST /api/comments`
 
-### 2.3 帖子 / 日记相关页
+### 2.3 归档页
+
+页面文件：
+
+- `archive.html`
+
+依赖脚本：
+
+- `assets/js/archive.js`
+- `assets/js/common.js`
+
+依赖样式：
+
+- `assets/css/diary.css`
+
+当前作用：
+
+- 基于 `content/diaries.json` 渲染正式归档页
+- 以单条竖直中轴线作为页面视觉骨架
+- 桌面端按当前结果左右交错排布卡片
+- 手机端退化为单列时间线，但仍保留时间线与节点
+- 支持标题 / 摘要 / 标签搜索
+- 支持标签筛选，且筛选后不退化为普通列表
+
+当前跳转关系：
+
+- 顶部导航可在 `index.html`、`archive.html`、`guestbook.html` 之间切换
+- 点击归档卡片后跳到 `index.html?post=...`，复用首页现有帖子详情弹层路线
+
+已实现交互：
+
+- 实时搜索
+- 标签筛选
+- 空状态提示
+- 背景图与封面图缺省回退
+
+### 2.4 帖子 / 日记相关页
 
 包括两个页面：
 
@@ -243,7 +281,7 @@
 - 首页走的是“弹层详情页”路线
 - 这是一个明显的双路线并存状态，后续改动很容易只改到其中一条
 
-### 2.4 后台评论管理页
+### 2.5 后台评论管理页
 
 页面文件：
 
@@ -348,6 +386,7 @@
 共享同一站点壳层逻辑的页面：
 
 - `index.html`
+- `archive.html`
 - `guestbook.html`
 
 共享单列简化布局的页面：
@@ -360,6 +399,7 @@
 
 独立长页面：
 
+- `archive.html`
 - `guestbook.html`
 - `entry.html`
 - `tags.html`
@@ -1163,6 +1203,8 @@ Resend 的角色是：
 
 - `index.html`
   - 首页 / 日记流 / 帖子弹层入口
+- `archive.html`
+  - 归档页入口，时间线骨架、搜索与标签筛选都从这里进
 - `guestbook.html`
   - 留言板真实前台入口
 - `entry.html`
@@ -1178,6 +1220,8 @@ Resend 的角色是：
   - 站点公共逻辑：内容加载、转义、搜索、开屏、页面转场、顶部导航、滚动行为
 - `assets/js/index.js`
   - 首页卡片流、弹层详情、多图查看、移动端手势、左侧资料抽屉
+- `assets/js/archive.js`
+  - 归档时间线渲染、搜索、标签筛选、卡片跳转到首页弹层
 - `assets/js/guestbook.js`
   - 留言板前端：加载配置、加载评论、表单提交、回复、Turnstile、toast、头像回退
 - `assets/js/entry.js`
@@ -1198,6 +1242,8 @@ Resend 的角色是：
   - 站点资料、首页 mock 评论、详情页 mock 评论
 - `content/diaries.json`
   - 日记内容主数据源
+- `assets/images/archive-bg.svg`
+  - 归档页背景图占位资源；后续如果要替换归档背景，优先改这里
 - `content/diary-entry.template.json`
   - 新日记模板
 

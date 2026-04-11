@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>归档时间轴 | HoraFeng</title>
+    <link rel="stylesheet" href="assets/css/diary.css" />
+  </head>
+  <body data-page="archive">
+    <div class="bg-layer"></div>
+
+    <div id="splash-screen" class="splash-screen" aria-hidden="true">
+      <span class="splash-logo">HoraFeng</span>
+    </div>
+
+    <header class="site-nav" data-site-nav>
+      <div class="site-nav-inner">
+        <a class="site-nav-left" href="index.html">HoraFeng的博客</a>
+
+        <nav class="site-nav-center" aria-label="主导航">
+          <a class="site-nav-link" href="index.html">首页</a>
+          <div class="site-nav-dropdown" data-nav-dropdown>
+            <button class="site-nav-link site-nav-dropdown-toggle" type="button" data-nav-dropdown-toggle>
+              内容
+              <span class="site-nav-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="site-nav-dropdown-menu">
+              <a href="index.html?content=article">文章</a>
+              <a href="index.html?content=note">小记</a>
+              <a href="index.html?content=notice">公告</a>
+            </div>
+          </div>
+          <a class="site-nav-link active" href="archive.html">归档</a>
+          <a class="site-nav-link" href="guestbook.html">留言板</a>
+        </nav>
+
+        <button class="site-nav-brand-mini" type="button" data-nav-brand-center>HoraFeng</button>
+        <button class="site-nav-backtop" type="button" data-nav-backtop>返回顶部 ↑</button>
+      </div>
+    </header>
+
+    <div class="app-shell archive-shell">
+      <main class="panel flow-panel archive-flow-panel">
+        <header class="archive-hero">
+          <p class="archive-kicker">Archive Timeline</p>
+          <div class="archive-hero-top">
+            <div class="archive-hero-copy">
+              <h1>归档 / 时间轴</h1>
+              <p class="archive-lead">把每一篇日记、每一条小记，沿着同一条时间线回望。这里保留时间的先后，也保留每段生活的颜色。</p>
+            </div>
+
+            <div class="archive-total-card" aria-label="归档统计">
+              <span class="archive-total-label">总文章数</span>
+              <strong id="archive-total-count">0</strong>
+              <p id="archive-visible-meta" class="subtle">正在整理归档内容...</p>
+            </div>
+          </div>
+
+          <div class="archive-toolbar">
+            <form id="archive-search-form" class="archive-search-form" role="search">
+              <label class="archive-search-label" for="archive-search-input">搜索归档</label>
+              <div class="archive-search-field">
+                <input id="archive-search-input" type="search" placeholder="搜索标题、摘要或标签..." aria-label="搜索归档内容" />
+              </div>
+            </form>
+
+            <section class="archive-filter-panel" aria-labelledby="archive-tag-title">
+              <div class="archive-filter-head">
+                <h2 id="archive-tag-title">标签筛选</h2>
+                <p class="subtle">点击标签后仍保持时间线排布，不退化为普通列表。</p>
+              </div>
+              <div id="archive-tag-filters" class="archive-tag-filters" role="list"></div>
+            </section>
+          </div>
+        </header>
+
+        <section id="archive-empty" class="archive-empty-state" hidden>
+          <p class="archive-empty-title">暂时没有匹配到归档内容</p>
+          <p id="archive-empty-copy" class="subtle">换个关键词，或者回到“全部档案”试试。</p>
+        </section>
+
+        <section id="archive-timeline" class="archive-timeline" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <script type="module" src="assets/js/archive.js"></script>
+  </body>
+</html>

@@ -193,6 +193,7 @@ function renderProfile(config) {
     </div>
     <nav class="soft-nav">
       <a class="active" href="index.html">日记流</a>
+      <a href="archive.html">归档</a>
       <a href="guestbook.html">留言板</a>
     </nav>
   `;

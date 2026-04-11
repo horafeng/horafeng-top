@@ -1,0 +1,56 @@
+<svg width="1600" height="1200" viewBox="0 0 1600 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="1200" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EFF6FF"/>
+      <stop offset="0.48" stop-color="#E4F0F6"/>
+      <stop offset="1" stop-color="#F4EEF8"/>
+    </linearGradient>
+    <linearGradient id="mist" x1="0" y1="0" x2="1600" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.74"/>
+      <stop offset="0.5" stop-color="#F9FDFF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.72"/>
+    </linearGradient>
+    <linearGradient id="ridge1" x1="240" y1="240" x2="1360" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C6D8E7"/>
+      <stop offset="1" stop-color="#9CB8D0"/>
+    </linearGradient>
+    <linearGradient id="ridge2" x1="80" y1="480" x2="1520" y2="860" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B8CFE0"/>
+      <stop offset="1" stop-color="#8EABC2"/>
+    </linearGradient>
+    <linearGradient id="lake" x1="800" y1="760" x2="800" y2="1120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D4EAF0"/>
+      <stop offset="1" stop-color="#A8C8D7"/>
+    </linearGradient>
+    <radialGradient id="orb1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(308 244) rotate(90) scale(180)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1308 286) rotate(90) scale(210)">
+      <stop stop-color="#E7F6FF" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#E7F6FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#sky)"/>
+  <rect width="1600" height="1200" fill="url(#orb1)"/>
+  <rect width="1600" height="1200" fill="url(#orb2)"/>
+
+  <ellipse cx="812" cy="942" rx="630" ry="210" fill="url(#lake)" opacity="0.9"/>
+  <path d="M0 706C114 644 226 612 326 596C458 574 530 624 640 604C784 578 850 486 998 470C1142 454 1278 524 1600 634V1200H0V706Z" fill="url(#ridge2)" opacity="0.72"/>
+  <path d="M0 620C102 566 240 428 394 396C564 360 676 474 826 446C968 420 1086 276 1242 288C1378 300 1492 408 1600 500V1200H0V620Z" fill="url(#ridge1)" opacity="0.84"/>
+  <path d="M0 820C144 792 314 772 484 788C676 806 824 874 1016 874C1204 874 1374 782 1600 760V1200H0V820Z" fill="#DCE9EF" opacity="0.78"/>
+
+  <g opacity="0.55">
+    <circle cx="248" cy="198" r="10" fill="#FFFFFF"/>
+    <circle cx="294" cy="254" r="7" fill="#FFFFFF"/>
+    <circle cx="1282" cy="216" r="9" fill="#FFFFFF"/>
+    <circle cx="1342" cy="266" r="6" fill="#FFFFFF"/>
+    <circle cx="1180" cy="342" r="5" fill="#F7FDFF"/>
+    <circle cx="426" cy="286" r="6" fill="#F7FDFF"/>
+  </g>
+
+  <rect y="822" width="1600" height="146" fill="url(#mist)"/>
+  <rect y="906" width="1600" height="86" fill="url(#mist)" opacity="0.68"/>
+  <rect y="986" width="1600" height="74" fill="url(#mist)" opacity="0.42"/>
+</svg>

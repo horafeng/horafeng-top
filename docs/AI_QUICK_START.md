@@ -14,6 +14,7 @@
 当前最重要的事实：
 
 - `index.html` 是首页日记流，帖子详情主要走弹层，不是传统详情页
+- `archive.html` 是正式归档页，走“单中轴时间线 + 左右交错卡片”布局，数据来自 `content/diaries.json`
 - `guestbook.html` 是独立留言板页面，且它接的是**真实评论系统**
 - `entry.html` 和首页帖子详情里的评论区目前仍主要是 mock / 预留，不要误判为全站评论都已接通
 
@@ -25,12 +26,16 @@
 
 - `index.html`
   - 首页结构
+- `archive.html`
+  - 归档页结构
 - `guestbook.html`
   - 留言板结构
 - `assets/js/common.js`
   - 顶栏、转场、滚动、站点共用逻辑
 - `assets/js/index.js`
   - 首页卡片流和帖子弹层
+- `assets/js/archive.js`
+  - 归档时间线、搜索、标签筛选
 - `assets/js/guestbook.js`
   - 留言板前端逻辑
 - `assets/css/diary.css`
@@ -89,16 +94,20 @@
 动布局前至少先读：
 
 - `index.html`
+- `archive.html`
 - `guestbook.html`
 - `assets/js/common.js`
 - `assets/js/index.js`
+- `assets/js/archive.js`
 - `assets/css/diary.css`
 
 要先知道的几个事实：
 
 - 首页和留言板共享同一套顶部导航和滚动逻辑
+- 归档页也接入了同一套顶部导航、转场和 `window` 滚动逻辑
 - `assets/js/common.js` 控制导航折叠、透明 / 毛玻璃切换、页面转场、主滚动行为和“返回顶部”按钮出现方式
 - `assets/css/diary.css` 同时影响首页、留言板、后台，不是单页面样式文件
+- 归档页背景图入口在 `assets/images/archive-bg.svg`，归档卡片封面优先取 `content/diaries.json` 的 `images[0]`，缺图时回退到 `assets/images/diary/cover-01.svg` ~ `cover-03.svg`
 - 首页桌面端当前是“三栏可见 + 左右栏 sticky + 中栏继续滚动”的结构
 - 首页桌面端还依赖“大首屏留白 + 中栏更透明、帖子卡片更显色”的组合效果
 - 首页右栏如果内容过长，会自动回退为普通流式展示，避免内容被截断

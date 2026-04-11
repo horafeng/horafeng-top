@@ -4,6 +4,7 @@
 
 当前已实现：
 - 日记流首页、详情弹层、响应式布局
+- 归档时间轴页面（`archive.html`）
 - 留言板独立页面（`guestbook.html`）
 - 游客留言、管理员审核/删除/回复
 - D1 存储、Turnstile 校验
@@ -26,10 +27,12 @@
 
 - 页面
   - `index.html`：首页
+  - `archive.html`：归档时间轴页
   - `guestbook.html`：留言板
   - `admin/comments/index.html`：后台评论管理
 - 前端脚本
   - `assets/js/index.js`
+  - `assets/js/archive.js`
   - `assets/js/guestbook.js`
   - `assets/js/admin-comments.js`
   - `assets/js/common.js`
@@ -251,6 +254,7 @@ python -m http.server 5173
 
 访问：
 - `http://localhost:5173/index.html`
+- `http://localhost:5173/archive.html`
 - `http://localhost:5173/guestbook.html`
 - `http://localhost:5173/admin/comments/`
 
