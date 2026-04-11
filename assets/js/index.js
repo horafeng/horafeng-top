@@ -1043,6 +1043,7 @@ async function main() {
   setupSiteChrome({
     scrollContainerSelector: ".flow-panel",
     searchTargetSelector: "#search-input",
+    useWindowScroll: true,
   });
 
   const [entries, config] = await Promise.all([loadEntries(), loadSiteConfig()]);

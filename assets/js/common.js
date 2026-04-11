@@ -174,14 +174,16 @@ export function setupSiteChrome(options = {}) {
   document.body.classList.add("with-site-nav");
   const scrollSelector = options.scrollContainerSelector || ".flow-panel";
   const scrollContainer = document.querySelector(scrollSelector);
+  const useWindowScroll = options.useWindowScroll === true;
   const preferWindowOnMobile = options.preferWindowOnMobile !== false;
-  const useWindow = (preferWindowOnMobile && window.matchMedia("(max-width: 1023px)").matches) || !scrollContainer;
+  const useWindow = useWindowScroll || (preferWindowOnMobile && window.matchMedia("(max-width: 1023px)").matches) || !scrollContainer;
   const scrollTarget = useWindow ? window : scrollContainer;
   const brandMini = nav.querySelector("[data-nav-brand-center]");
   const backTop = nav.querySelector("[data-nav-backtop]");
   const searchBtn = nav.querySelector("[data-nav-search]");
   const dropdown = nav.querySelector("[data-nav-dropdown]");
   const dropdownToggle = nav.querySelector("[data-nav-dropdown-toggle]");
+  const desktopHoverBacktop = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)").matches;
 
   const getScrollTop = () => {
     if (scrollTarget === window) {
@@ -253,8 +255,23 @@ export function setupSiteChrome(options = {}) {
         scrollToTop();
         return;
       }
+      if (desktopHoverBacktop) {
+        return;
+      }
       document.body.classList.toggle("site-nav-show-backtop");
     });
+
+    if (desktopHoverBacktop) {
+      brandMini.addEventListener("mouseenter", () => {
+        if (document.body.classList.contains("site-nav-condensed")) {
+          document.body.classList.add("site-nav-show-backtop");
+        }
+      });
+
+      nav.addEventListener("mouseleave", () => {
+        document.body.classList.remove("site-nav-show-backtop");
+      });
+    }
   }
 
   if (backTop) {

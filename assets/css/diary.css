@@ -1751,11 +1751,11 @@ p {
 /* ===== Site Frame Upgrade (Home + Guestbook) ===== */
 .bg-layer {
   background-image:
-    linear-gradient(to bottom, rgba(10, 17, 26, 0.2) 0, rgba(10, 17, 26, 0.06) 240px, rgba(10, 17, 26, 0) 320px),
-    radial-gradient(circle at 15% 18%, rgba(248, 245, 241, 0.7), transparent 42%),
-    radial-gradient(circle at 78% 10%, rgba(227, 238, 252, 0.5), transparent 40%),
-    linear-gradient(160deg, rgba(246, 245, 242, 0.72) 0%, rgba(237, 244, 255, 0.66) 56%, rgba(246, 240, 252, 0.64) 100%),
-    url("../images/site-bg-placeholder.svg");
+    linear-gradient(to bottom, rgba(9, 21, 31, 0.26) 0, rgba(9, 21, 31, 0.1) 220px, rgba(9, 21, 31, 0) 420px),
+    radial-gradient(circle at 16% 18%, rgba(248, 245, 240, 0.34), transparent 38%),
+    radial-gradient(circle at 82% 10%, rgba(224, 236, 250, 0.26), transparent 34%),
+    linear-gradient(160deg, rgba(245, 244, 240, 0.36) 0%, rgba(235, 242, 250, 0.26) 56%, rgba(245, 240, 248, 0.22) 100%),
+    url("https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=2200&q=80");
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   background-position:
     center top,
@@ -1764,7 +1764,7 @@ p {
     center top,
     center top;
   background-size:
-    100% 360px,
+    100% 420px,
     100% 100%,
     100% 100%,
     100% 100%,
@@ -1773,7 +1773,16 @@ p {
 
 body.with-site-nav {
   --site-nav-height: 58px;
-  --site-hero-gap: clamp(52px, 10vh, 94px);
+  --site-hero-gap: clamp(72px, 12vh, 110px);
+  --site-sticky-top: calc(var(--site-nav-height) + 14px);
+}
+
+body[data-page="home"].with-site-nav {
+  --site-hero-gap: clamp(190px, 28vh, 320px);
+}
+
+body[data-page="guestbook"].with-site-nav {
+  --site-hero-gap: clamp(112px, 18vh, 180px);
 }
 
 .site-nav {
@@ -1783,10 +1792,10 @@ body.with-site-nav {
   right: 0;
   z-index: 96;
   height: var(--site-nav-height);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.34);
-  background: rgba(255, 255, 255, 0.62);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .site-nav-inner {
@@ -1963,62 +1972,95 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
 
 @media (min-width: 1024px) {
   body.with-site-nav {
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   body.with-site-nav .app-shell {
-    position: fixed;
-    left: 50%;
-    top: calc(var(--site-nav-height) + var(--site-hero-gap));
-    bottom: 14px;
-    transform: translateX(-50%);
-    margin: 0;
-    width: min(1120px, calc(100vw - 28px));
-    height: auto;
+    position: relative;
+    margin: calc(var(--site-nav-height) + var(--site-hero-gap)) auto 32px;
+    width: min(1180px, calc(100vw - 34px));
   }
 
   body.with-site-nav .home-shell {
-    grid-template-columns: 220px minmax(0, 1fr);
-    gap: 10px;
-    align-items: stretch;
-    height: 100%;
+    grid-template-columns: 220px minmax(0, 1fr) 244px;
+    gap: 14px;
+    align-items: start;
   }
 
-  body.with-site-nav #desktop-side-panel {
-    display: none !important;
-  }
-
-  body.with-site-nav #desktop-profile-panel {
+  body.with-site-nav #desktop-profile-panel,
+  body.with-site-nav #desktop-side-panel,
+  body.with-site-nav .guestbook-profile-panel {
     display: grid !important;
-    position: relative;
-    top: 0;
-    align-self: stretch;
-    max-height: 100%;
+    position: sticky;
+    top: var(--site-sticky-top);
+    align-self: start;
+    max-height: calc(100vh - var(--site-sticky-top) - 16px);
     overflow: auto;
     scrollbar-width: thin;
   }
 
   body.with-site-nav .guestbook-shell {
     grid-template-columns: 220px minmax(0, 1fr);
-    gap: 10px;
-    align-items: stretch;
-    height: 100%;
-  }
-
-  body.with-site-nav .guestbook-profile-panel {
-    position: relative;
-    top: 0;
-    align-self: stretch;
-    max-height: 100%;
-    overflow: auto;
+    gap: 14px;
+    align-items: start;
   }
 
   body.with-site-nav .flow-panel {
-    height: 100%;
-    overflow: auto;
+    height: auto;
+    overflow: visible;
     border: 1px solid rgba(255, 255, 255, 0.64);
-    background: rgba(255, 255, 255, 0.74);
-    backdrop-filter: blur(11px);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(14px);
+  }
+
+  body[data-page="home"].with-site-nav .flow-panel {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0;
+  }
+
+  body[data-page="home"].with-site-nav .section-head {
+    margin-bottom: 14px;
+    padding: 16px 18px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.44);
+    border-radius: 24px;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.62), rgba(244, 249, 255, 0.36));
+    box-shadow: 0 18px 40px rgba(23, 40, 63, 0.12);
+    backdrop-filter: blur(18px);
+  }
+
+  body[data-page="home"].with-site-nav .search-bar {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.48);
+    box-shadow: 0 16px 34px rgba(23, 40, 63, 0.1);
+    backdrop-filter: blur(18px);
+  }
+
+  body[data-page="home"].with-site-nav .search-hint {
+    margin-bottom: 12px;
+    padding-left: 6px;
+    color: rgba(53, 67, 86, 0.82);
+  }
+
+  body[data-page="home"].with-site-nav #desktop-profile-panel,
+  body[data-page="home"].with-site-nav #desktop-side-panel {
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(18px);
+  }
+
+  body[data-page="home"].with-site-nav #desktop-profile-panel {
+    max-height: min(660px, calc(100vh - var(--site-sticky-top) - 16px));
+  }
+
+  body[data-page="home"].with-site-nav .entry-card {
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 18px 34px rgba(24, 37, 57, 0.12);
   }
 }
 

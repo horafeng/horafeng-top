@@ -645,6 +645,7 @@ async function main() {
   setupSiteChrome({
     scrollContainerSelector: ".flow-panel",
     searchTargetSelector: "#guestbook-content",
+    useWindowScroll: true,
   });
 
   if ("scrollRestoration" in history) {
