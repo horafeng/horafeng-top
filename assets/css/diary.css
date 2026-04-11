@@ -537,7 +537,7 @@ p {
 .mobile-drawer-overlay {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: 104;
   background: rgba(23, 33, 47, 0.22);
 }
 
@@ -2143,9 +2143,9 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     grid-template-columns: 42px minmax(0, 1fr) 42px;
     align-items: center;
     gap: 8px;
-    background: linear-gradient(180deg, rgba(21, 31, 48, 0.9), rgba(21, 31, 48, 0.66));
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     transition: opacity 180ms ease, transform 180ms ease;
   }
 
@@ -2155,8 +2155,12 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     display: grid;
     place-items: center;
     border-radius: 14px;
-    color: rgba(255, 255, 255, 0.92);
-    background: rgba(255, 255, 255, 0.08);
+    color: rgba(47, 67, 97, 0.94);
+    background: rgba(255, 255, 255, 0.44);
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    box-shadow: 0 10px 26px rgba(61, 83, 116, 0.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     font-size: 1.15rem;
   }
 
@@ -2167,7 +2171,11 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     gap: 6px;
     padding: 4px;
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    box-shadow: 0 14px 30px rgba(61, 83, 116, 0.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   body[data-page="home"] .mobile-home-tabs a {
@@ -2178,15 +2186,15 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     min-width: 0;
     height: 38px;
     text-decoration: none;
-    color: rgba(255, 255, 255, 0.66);
+    color: rgba(53, 72, 101, 0.84);
     font-size: 0.92rem;
     border-radius: 14px;
     transition: color 180ms ease, background 180ms ease;
   }
 
   body[data-page="home"] .mobile-home-tabs a.active {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.12);
+    color: #2e4561;
+    background: rgba(255, 255, 255, 0.52);
   }
 
   body[data-page="home"] .mobile-home-tabs a.active::after {
@@ -2202,6 +2210,7 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
   }
 
   body[data-page="home"].mobile-home-nav-hidden .mobile-home-topbar,
+  body[data-page="home"].mobile-home-drawer-open .mobile-home-topbar,
   body[data-page="home"].mobile-post-open .mobile-home-topbar {
     opacity: 0;
     pointer-events: none;

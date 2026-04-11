@@ -1094,11 +1094,13 @@ function setupMobileDrawer() {
   const topProfileButton = document.getElementById("mobile-home-profile");
 
   const openDrawer = () => {
+    document.body.classList.add("mobile-home-drawer-open");
     overlay.hidden = false;
     requestAnimationFrame(() => overlay.classList.add("open"));
   };
 
   const closeDrawer = () => {
+    document.body.classList.remove("mobile-home-drawer-open");
     overlay.classList.remove("open");
     window.setTimeout(() => {
       if (!overlay.classList.contains("open")) {
@@ -1122,6 +1124,7 @@ function setupMobileHomeChrome() {
   const searchInput = document.getElementById("search-input");
   let lastScrollY = window.scrollY;
   let ticking = false;
+  let lastTouchY = null;
 
   const focusSearch = () => {
     if (!searchInput) {
@@ -1134,23 +1137,38 @@ function setupMobileHomeChrome() {
       }, 180);
     };
 
+  const showTopbar = () => {
+    document.body.classList.remove("mobile-home-nav-hidden");
+  };
+
+  const hideTopbar = () => {
+    if (
+      document.body.classList.contains("mobile-post-open") ||
+      document.body.classList.contains("mobile-home-drawer-open")
+    ) {
+      return;
+    }
+    document.body.classList.add("mobile-home-nav-hidden");
+  };
+
   const syncMobileTopbar = () => {
     if (!isMobileHomeViewport()) {
-      document.body.classList.remove("mobile-home-nav-hidden");
-      lastScrollY = window.scrollY;
+      showTopbar();
+      lastScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      lastTouchY = null;
       ticking = false;
       return;
     }
 
-    const currentY = window.scrollY;
+    const currentY = window.scrollY || document.documentElement.scrollTop || 0;
     const delta = currentY - lastScrollY;
 
     if (currentY <= 18 || currentY < 0) {
-      document.body.classList.remove("mobile-home-nav-hidden");
-    } else if (!document.body.classList.contains("mobile-post-open") && delta > 10) {
-      document.body.classList.add("mobile-home-nav-hidden");
+      showTopbar();
+    } else if (delta > 8) {
+      hideTopbar();
     } else if (delta < -8) {
-      document.body.classList.remove("mobile-home-nav-hidden");
+      showTopbar();
     }
 
     lastScrollY = currentY;
@@ -1164,9 +1182,44 @@ function setupMobileHomeChrome() {
     }
   };
 
+  const onTouchStart = (event) => {
+    if (!isMobileHomeViewport() || event.touches.length !== 1) {
+      return;
+    }
+    lastTouchY = event.touches[0].clientY;
+  };
+
+  const onTouchMove = (event) => {
+    if (!isMobileHomeViewport() || event.touches.length !== 1 || lastTouchY == null) {
+      return;
+    }
+
+    const currentY = event.touches[0].clientY;
+    const deltaY = currentY - lastTouchY;
+    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+
+    if (scrollTop <= 18) {
+      showTopbar();
+    } else if (deltaY < -6) {
+      hideTopbar();
+    } else if (deltaY > 6) {
+      showTopbar();
+    }
+
+    lastTouchY = currentY;
+  };
+
+  const onTouchEnd = () => {
+    lastTouchY = null;
+    syncMobileTopbar();
+  };
+
   searchButton?.addEventListener("click", focusSearch);
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", syncMobileTopbar);
+  window.addEventListener("touchstart", onTouchStart, { passive: true });
+  window.addEventListener("touchmove", onTouchMove, { passive: true });
+  window.addEventListener("touchend", onTouchEnd, { passive: true });
   syncMobileTopbar();
 }
 
