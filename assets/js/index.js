@@ -25,8 +25,6 @@ let mediaKeydownHandler = null;
 let dragState = null;
 let dismissDragState = null;
 let lastOpenOrigin = null;
-let navSearchSyncing = false;
-let sidebarScrollFrame = null;
 
 const FALLBACK_COVERS = [
   "assets/images/diary/cover-01.svg",
@@ -224,8 +222,6 @@ function setupSearch() {
   const form = document.getElementById("search-form");
   const input = document.getElementById("search-input");
   const hint = document.getElementById("search-hint");
-  const navForm = document.getElementById("nav-search-form");
-  const navInput = document.getElementById("nav-search-input");
 
   const applyQuery = (rawQuery) => {
     const query = String(rawQuery || "");
@@ -236,97 +232,37 @@ function setupSearch() {
     return results;
   };
 
-  const syncInputValue = (source, value) => {
-    if (!source) {
-      return;
-    }
-    source.value = value;
-  };
-
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     applyQuery(input.value);
   });
 
   input.addEventListener("input", () => {
-    if (navSearchSyncing) {
-      return;
-    }
-    navSearchSyncing = true;
-    syncInputValue(navInput, input.value);
-    navSearchSyncing = false;
     applyQuery(input.value);
   });
-
-  if (navInput && navForm) {
-    navForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      navSearchSyncing = true;
-      syncInputValue(input, navInput.value);
-      navSearchSyncing = false;
-      applyQuery(navInput.value);
-    });
-
-    navInput.addEventListener("input", () => {
-      if (navSearchSyncing) {
-        return;
-      }
-      navSearchSyncing = true;
-      syncInputValue(input, navInput.value);
-      navSearchSyncing = false;
-      applyQuery(navInput.value);
-    });
-  }
 }
 
-function setupDesktopSidebarScrollSync() {
+function setupDesktopSidebarLayout() {
   const sidePanel = document.getElementById("desktop-side-panel");
-  const track = document.getElementById("desktop-side-panel-track");
-  if (!sidePanel || !track) {
+  if (!sidePanel) {
     return;
   }
 
   const desktopMedia = window.matchMedia("(min-width: 1024px)");
-  const getAbsoluteTop = (node) => {
-    let top = 0;
-    let current = node;
-    while (current) {
-      top += current.offsetTop || 0;
-      current = current.offsetParent;
-    }
-    return top;
-  };
-
-  const updateSidebarPosition = () => {
-    sidebarScrollFrame = null;
-
+  const updateSidebarMode = () => {
     if (!desktopMedia.matches) {
-      track.style.transform = "";
+      sidePanel.classList.remove("side-panel-overflowing");
       return;
     }
 
     const stickyTop = parseFloat(getComputedStyle(document.body).getPropertyValue("--site-sticky-top")) || 72;
-    const overflow = Math.max(0, track.scrollHeight - sidePanel.clientHeight);
-    if (overflow <= 0) {
-      track.style.transform = "";
-      return;
-    }
-
-    const startScroll = getAbsoluteTop(sidePanel) - stickyTop;
-    const translate = Math.max(0, Math.min(overflow, window.scrollY - startScroll));
-    track.style.transform = `translate3d(0, ${-translate}px, 0)`;
+    const availableHeight = Math.max(280, window.innerHeight - stickyTop - 16);
+    sidePanel.classList.toggle("side-panel-overflowing", sidePanel.scrollHeight > availableHeight + 8);
   };
 
-  const requestUpdate = () => {
-    if (sidebarScrollFrame !== null) {
-      return;
-    }
-    sidebarScrollFrame = window.requestAnimationFrame(updateSidebarPosition);
-  };
-
-  window.addEventListener("scroll", requestUpdate, { passive: true });
-  window.addEventListener("resize", requestUpdate);
-  requestUpdate();
+  window.addEventListener("resize", updateSidebarMode);
+  window.addEventListener("load", updateSidebarMode);
+  requestAnimationFrame(updateSidebarMode);
 }
 
 function showMediaUI() {
@@ -1141,7 +1077,7 @@ async function main() {
   renderSidebar(entries, config);
 
   setupSearch();
-  setupDesktopSidebarScrollSync();
+  setupDesktopSidebarLayout();
   setupOverlayControls();
   setupMobileDrawer();
   bindTimelineClicks();
