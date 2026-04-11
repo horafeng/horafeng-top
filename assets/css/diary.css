@@ -2178,6 +2178,9 @@ body[data-page="archive"] .bg-layer::after {
 
 .archive-flow-panel {
   position: relative;
+  isolation: isolate;
+  width: 100%;
+  margin: 0;
   padding: 18px;
   overflow: hidden;
   border-radius: 32px;
@@ -2185,6 +2188,14 @@ body[data-page="archive"] .bg-layer::after {
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
+}
+
+body[data-page="archive"] .archive-flow-panel {
+  border: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .archive-flow-panel::before,
