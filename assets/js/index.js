@@ -25,6 +25,8 @@ let mediaKeydownHandler = null;
 let dragState = null;
 let dismissDragState = null;
 let lastOpenOrigin = null;
+let navSearchSyncing = false;
+let sidebarScrollFrame = null;
 
 const FALLBACK_COVERS = [
   "assets/images/diary/cover-01.svg",
@@ -222,26 +224,109 @@ function setupSearch() {
   const form = document.getElementById("search-form");
   const input = document.getElementById("search-input");
   const hint = document.getElementById("search-hint");
+  const navForm = document.getElementById("nav-search-form");
+  const navInput = document.getElementById("nav-search-input");
+
+  const applyQuery = (rawQuery) => {
+    const query = String(rawQuery || "");
+    const results = searchEntries(visibleEntries, query);
+    renderTimeline(results);
+    bindTimelineClicks();
+    hint.textContent = query.trim() ? `关键词 “${query.trim()}” 命中 ${results.length} 条` : "";
+    return results;
+  };
+
+  const syncInputValue = (source, value) => {
+    if (!source) {
+      return;
+    }
+    source.value = value;
+  };
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-
-    const results = searchEntries(visibleEntries, input.value);
-    renderTimeline(results);
-    bindTimelineClicks();
-
-    hint.textContent = input.value.trim() ? `关键词 “${input.value.trim()}” 命中 ${results.length} 条` : "";
+    applyQuery(input.value);
   });
 
   input.addEventListener("input", () => {
-    if (input.value.trim()) {
+    if (navSearchSyncing) {
+      return;
+    }
+    navSearchSyncing = true;
+    syncInputValue(navInput, input.value);
+    navSearchSyncing = false;
+    applyQuery(input.value);
+  });
+
+  if (navInput && navForm) {
+    navForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      navSearchSyncing = true;
+      syncInputValue(input, navInput.value);
+      navSearchSyncing = false;
+      applyQuery(navInput.value);
+    });
+
+    navInput.addEventListener("input", () => {
+      if (navSearchSyncing) {
+        return;
+      }
+      navSearchSyncing = true;
+      syncInputValue(input, navInput.value);
+      navSearchSyncing = false;
+      applyQuery(navInput.value);
+    });
+  }
+}
+
+function setupDesktopSidebarScrollSync() {
+  const sidePanel = document.getElementById("desktop-side-panel");
+  const track = document.getElementById("desktop-side-panel-track");
+  if (!sidePanel || !track) {
+    return;
+  }
+
+  const desktopMedia = window.matchMedia("(min-width: 1024px)");
+  const getAbsoluteTop = (node) => {
+    let top = 0;
+    let current = node;
+    while (current) {
+      top += current.offsetTop || 0;
+      current = current.offsetParent;
+    }
+    return top;
+  };
+
+  const updateSidebarPosition = () => {
+    sidebarScrollFrame = null;
+
+    if (!desktopMedia.matches) {
+      track.style.transform = "";
       return;
     }
 
-    hint.textContent = "";
-    renderTimeline(visibleEntries);
-    bindTimelineClicks();
-  });
+    const stickyTop = parseFloat(getComputedStyle(document.body).getPropertyValue("--site-sticky-top")) || 72;
+    const overflow = Math.max(0, track.scrollHeight - sidePanel.clientHeight);
+    if (overflow <= 0) {
+      track.style.transform = "";
+      return;
+    }
+
+    const startScroll = getAbsoluteTop(sidePanel) - stickyTop;
+    const translate = Math.max(0, Math.min(overflow, window.scrollY - startScroll));
+    track.style.transform = `translate3d(0, ${-translate}px, 0)`;
+  };
+
+  const requestUpdate = () => {
+    if (sidebarScrollFrame !== null) {
+      return;
+    }
+    sidebarScrollFrame = window.requestAnimationFrame(updateSidebarPosition);
+  };
+
+  window.addEventListener("scroll", requestUpdate, { passive: true });
+  window.addEventListener("resize", requestUpdate);
+  requestUpdate();
 }
 
 function showMediaUI() {
@@ -1056,6 +1141,7 @@ async function main() {
   renderSidebar(entries, config);
 
   setupSearch();
+  setupDesktopSidebarScrollSync();
   setupOverlayControls();
   setupMobileDrawer();
   bindTimelineClicks();

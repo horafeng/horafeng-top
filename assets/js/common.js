@@ -181,9 +181,13 @@ export function setupSiteChrome(options = {}) {
   const brandMini = nav.querySelector("[data-nav-brand-center]");
   const backTop = nav.querySelector("[data-nav-backtop]");
   const searchBtn = nav.querySelector("[data-nav-search]");
+  const searchShell = nav.querySelector("[data-nav-search-shell]");
+  const searchPanel = nav.querySelector(".site-nav-search-panel");
+  const searchPanelInput = searchPanel?.querySelector('input[type="search"]');
   const dropdown = nav.querySelector("[data-nav-dropdown]");
   const dropdownToggle = nav.querySelector("[data-nav-dropdown-toggle]");
   const desktopHoverBacktop = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)").matches;
+  const desktopExpandableSearch = Boolean(searchPanel && searchPanelInput) && desktopHoverBacktop;
 
   const getScrollTop = () => {
     if (scrollTarget === window) {
@@ -206,6 +210,23 @@ export function setupSiteChrome(options = {}) {
     }
   };
 
+  const closeSearchPanel = () => {
+    if (!searchPanel || !searchShell) {
+      return;
+    }
+    searchShell.classList.remove("open");
+    searchPanel.hidden = true;
+  };
+
+  const openSearchPanel = () => {
+    if (!searchPanel || !searchShell) {
+      return;
+    }
+    searchPanel.hidden = false;
+    searchShell.classList.add("open");
+    window.setTimeout(() => searchPanelInput?.focus(), 30);
+  };
+
   let lastTop = getScrollTop();
   let condensed = false;
   const applyNavState = () => {
@@ -223,6 +244,7 @@ export function setupSiteChrome(options = {}) {
     }
 
     document.body.classList.toggle("site-nav-condensed", condensed);
+    document.body.classList.toggle("site-nav-frosted", top > 18);
     lastTop = top;
   };
 
@@ -240,11 +262,17 @@ export function setupSiteChrome(options = {}) {
       return;
     }
     closeDropdown();
+
+    if (searchShell && searchShell.contains(event.target)) {
+      return;
+    }
+    closeSearchPanel();
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeDropdown();
+      closeSearchPanel();
       document.body.classList.remove("site-nav-show-backtop");
     }
   });
@@ -283,6 +311,15 @@ export function setupSiteChrome(options = {}) {
 
   if (searchBtn) {
     searchBtn.addEventListener("click", () => {
+      if (desktopExpandableSearch) {
+        if (searchShell?.classList.contains("open")) {
+          closeSearchPanel();
+        } else {
+          openSearchPanel();
+        }
+        return;
+      }
+
       const targetSelector =
         nav.getAttribute("data-search-target") ||
         options.searchTargetSelector ||
@@ -294,6 +331,14 @@ export function setupSiteChrome(options = {}) {
 
       target.scrollIntoView({ behavior: "smooth", block: "center" });
       window.setTimeout(() => target.focus?.(), 180);
+    });
+  }
+
+  if (searchPanel) {
+    searchPanel.addEventListener("submit", (event) => {
+      if (desktopExpandableSearch) {
+        event.preventDefault();
+      }
     });
   }
 }
