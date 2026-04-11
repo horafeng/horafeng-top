@@ -1092,7 +1092,6 @@ function setupMobileDrawer() {
   const overlay = document.getElementById("mobile-drawer-overlay");
   const closeButton = document.getElementById("mobile-drawer-close");
   const topProfileButton = document.getElementById("mobile-home-profile");
-  const bottomProfileButton = document.getElementById("mobile-home-me");
 
   const openDrawer = () => {
     overlay.hidden = false;
@@ -1110,7 +1109,6 @@ function setupMobileDrawer() {
 
   trigger.addEventListener("click", openDrawer);
   topProfileButton?.addEventListener("click", openDrawer);
-  bottomProfileButton?.addEventListener("click", openDrawer);
   closeButton.addEventListener("click", closeDrawer);
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) {
@@ -1121,8 +1119,9 @@ function setupMobileDrawer() {
 
 function setupMobileHomeChrome() {
   const searchButton = document.getElementById("mobile-home-search");
-  const centerSearchButton = document.getElementById("mobile-home-focus-search");
   const searchInput = document.getElementById("search-input");
+  let lastScrollY = window.scrollY;
+  let ticking = false;
 
   const focusSearch = () => {
     if (!searchInput) {
@@ -1130,13 +1129,45 @@ function setupMobileHomeChrome() {
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-    window.setTimeout(() => {
-      searchInput.focus();
-    }, 180);
+      window.setTimeout(() => {
+        searchInput.focus();
+      }, 180);
+    };
+
+  const syncMobileTopbar = () => {
+    if (!isMobileHomeViewport()) {
+      document.body.classList.remove("mobile-home-nav-hidden");
+      lastScrollY = window.scrollY;
+      ticking = false;
+      return;
+    }
+
+    const currentY = window.scrollY;
+    const delta = currentY - lastScrollY;
+
+    if (currentY <= 18 || currentY < 0) {
+      document.body.classList.remove("mobile-home-nav-hidden");
+    } else if (!document.body.classList.contains("mobile-post-open") && delta > 10) {
+      document.body.classList.add("mobile-home-nav-hidden");
+    } else if (delta < -8) {
+      document.body.classList.remove("mobile-home-nav-hidden");
+    }
+
+    lastScrollY = currentY;
+    ticking = false;
+  };
+
+  const onScroll = () => {
+    if (!ticking) {
+      ticking = true;
+      window.requestAnimationFrame(syncMobileTopbar);
+    }
   };
 
   searchButton?.addEventListener("click", focusSearch);
-  centerSearchButton?.addEventListener("click", focusSearch);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", syncMobileTopbar);
+  syncMobileTopbar();
 }
 
 async function main() {
