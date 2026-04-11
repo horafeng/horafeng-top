@@ -107,7 +107,9 @@
 - 归档页也接入了同一套顶部导航、转场和 `window` 滚动逻辑
 - `assets/js/common.js` 控制导航折叠、透明 / 毛玻璃切换、页面转场、主滚动行为和“返回顶部”按钮出现方式
 - `assets/css/diary.css` 同时影响首页、留言板、后台，不是单页面样式文件
-- 归档页背景图入口在 `assets/images/archive-bg.svg`，归档卡片封面优先取 `content/diaries.json` 的 `images[0]`，缺图时回退到 `assets/images/diary/cover-01.svg` ~ `cover-03.svg`
+- 归档页背景照片当前直接写在 `assets/css/diary.css` 的 `body[data-page="archive"] .bg-layer` 里；如果以后要换整体背景，优先改这里的背景 `url(...)`
+- 归档页卡片点击后现在是在当前页直接弹出详情层，不再跳回首页
+- 归档卡片封面优先取 `content/diaries.json` 的 `images[0]`，缺图时回退到 `assets/images/diary/cover-01.svg` ~ `cover-03.svg`
 - 首页桌面端当前是“三栏可见 + 左右栏 sticky + 中栏继续滚动”的结构
 - 首页桌面端还依赖“大首屏留白 + 中栏更透明、帖子卡片更显色”的组合效果
 - 首页右栏如果内容过长，会自动回退为普通流式展示，避免内容被截断

@@ -201,7 +201,7 @@
 当前跳转关系：
 
 - 顶部导航可在 `index.html`、`archive.html`、`guestbook.html` 之间切换
-- 点击归档卡片后跳到 `index.html?post=...`，复用首页现有帖子详情弹层路线
+- 点击归档卡片后会在 `archive.html` 当前页直接打开帖子详情弹层，不再先跳回首页
 
 已实现交互：
 
@@ -209,6 +209,7 @@
 - 标签筛选
 - 空状态提示
 - 背景图与封面图缺省回退
+- 当前页内直接弹层打开帖子详情
 
 ### 2.4 帖子 / 日记相关页
 
@@ -1243,7 +1244,9 @@ Resend 的角色是：
 - `content/diaries.json`
   - 日记内容主数据源
 - `assets/images/archive-bg.svg`
-  - 归档页背景图占位资源；后续如果要替换归档背景，优先改这里
+  - 旧的归档背景占位资源，当前已不是主入口
+- `assets/css/diary.css`
+  - 归档页背景照片当前直接配置在这里的 `body[data-page="archive"] .bg-layer`
 - `content/diary-entry.template.json`
   - 新日记模板
 

@@ -83,6 +83,33 @@
       </main>
     </div>
 
+    <div id="post-overlay" class="post-overlay" hidden>
+      <div class="post-backdrop" data-close-overlay="1"></div>
+      <article id="post-modal" class="post-modal" role="dialog" aria-modal="true" aria-label="帖子详情">
+        <button id="post-close" class="post-close" type="button">×</button>
+        <header id="post-mobile-header" class="post-mobile-header">
+          <button id="post-close-mobile" class="post-close-mobile" type="button" aria-label="返回">‹</button>
+          <div class="post-mobile-author">
+            <img id="post-mobile-avatar" class="post-mobile-avatar" src="assets/images/Profile.png" alt="作者头像" />
+            <p id="post-mobile-name">HoraFeng</p>
+          </div>
+        </header>
+        <div class="post-layout" id="post-layout">
+          <section class="post-media" id="post-media"></section>
+          <section class="post-content">
+            <h3 id="post-title">标题</h3>
+            <p id="post-meta" class="entry-meta"></p>
+            <div id="post-tags" class="chips compact"></div>
+            <div id="post-body" class="entry-detail"></div>
+            <section class="post-comments">
+              <h4>评论区（预留）</h4>
+              <ul id="post-comments-list" class="comment-list compact"></ul>
+            </section>
+          </section>
+        </div>
+      </article>
+    </div>
+
     <script type="module" src="assets/js/archive.js"></script>
   </body>
 </html>
