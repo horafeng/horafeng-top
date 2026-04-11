@@ -2137,14 +2137,14 @@ body[data-page="archive"].with-site-nav {
 
 body[data-page="archive"] .bg-layer {
   background-image:
-    linear-gradient(to bottom, rgba(13, 24, 34, 0.24) 0, rgba(13, 24, 34, 0.1) 220px, rgba(13, 24, 34, 0) 520px),
+    linear-gradient(180deg, rgba(13, 24, 34, 0.18) 0%, rgba(13, 24, 34, 0.08) 18%, rgba(13, 24, 34, 0.02) 42%, rgba(13, 24, 34, 0) 100%),
     radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.34), transparent 28%),
     radial-gradient(circle at 82% 12%, rgba(233, 245, 255, 0.24), transparent 30%),
     linear-gradient(180deg, rgba(247, 250, 253, 0.34), rgba(246, 241, 249, 0.18)),
     url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2200&q=80");
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   background-position: center top, center top, center top, center top, center top;
-  background-size: 100% 420px, 100% 100%, 100% 100%, 100% 100%, cover;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
 }
 
 body[data-page="archive"] .bg-layer::before,
@@ -2396,7 +2396,7 @@ body[data-page="archive"] .archive-flow-panel {
   transform: translateX(-50%);
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(125, 150, 186, 0.2), rgba(109, 131, 165, 0.9), rgba(125, 150, 186, 0.2));
-  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.18);
+  box-shadow: none;
 }
 
 .archive-item {
