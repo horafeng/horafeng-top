@@ -249,20 +249,37 @@ function setupDesktopSidebarLayout() {
   }
 
   const desktopMedia = window.matchMedia("(min-width: 1024px)");
+  let resizeObserver = null;
+
   const updateSidebarMode = () => {
     if (!desktopMedia.matches) {
-      sidePanel.classList.remove("side-panel-overflowing");
+      sidePanel.style.position = "";
+      sidePanel.style.top = "";
+      sidePanel.style.maxHeight = "";
+      sidePanel.style.overflow = "";
       return;
     }
 
     const stickyTop = parseFloat(getComputedStyle(document.body).getPropertyValue("--site-sticky-top")) || 72;
     const availableHeight = Math.max(280, window.innerHeight - stickyTop - 16);
-    sidePanel.classList.toggle("side-panel-overflowing", sidePanel.scrollHeight > availableHeight + 8);
+    const naturalHeight = sidePanel.scrollHeight;
+    const shouldFlow = naturalHeight > availableHeight + 8;
+
+    sidePanel.style.position = shouldFlow ? "relative" : "sticky";
+    sidePanel.style.top = shouldFlow ? "0px" : "var(--site-sticky-top)";
+    sidePanel.style.maxHeight = shouldFlow ? "none" : "calc(100vh - var(--site-sticky-top) - 16px)";
+    sidePanel.style.overflow = "visible";
   };
 
   window.addEventListener("resize", updateSidebarMode);
   window.addEventListener("load", updateSidebarMode);
+  if ("ResizeObserver" in window) {
+    resizeObserver = new ResizeObserver(() => updateSidebarMode());
+    resizeObserver.observe(sidePanel);
+  }
+  void resizeObserver;
   requestAnimationFrame(updateSidebarMode);
+  window.setTimeout(updateSidebarMode, 180);
 }
 
 function showMediaUI() {

@@ -2057,12 +2057,6 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     overflow: visible;
     max-height: calc(100vh - var(--site-sticky-top) - 16px);
   }
-
-  body[data-page="home"].with-site-nav #desktop-side-panel.side-panel-overflowing {
-    position: relative;
-    top: 0;
-    max-height: none;
-  }
 }
 
 @media (max-width: 1023px) {
