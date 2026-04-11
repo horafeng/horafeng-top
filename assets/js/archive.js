@@ -73,10 +73,6 @@ function getSummary(entry) {
   return compact.length > 92 ? `${compact.slice(0, 92)}...` : compact;
 }
 
-function getCover(entry) {
-  return entry.images?.[0] || getFallbackCover(entry.id);
-}
-
 function formatDate(dateString) {
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) {
@@ -202,16 +198,20 @@ function renderTimeline(entries) {
   timeline.innerHTML = entries
     .map((entry, index) => {
       const sideClass = index % 2 === 0 ? "is-left" : "is-right";
-      const cover = getCover(entry);
+      const cover = entry.images?.[0] || "";
+      const hasImage = Boolean(cover);
       const fallback = getFallbackCover(entry.id);
       const tagsHtml = (entry.tags || [])
         .map((tag) => `<span class="archive-card-tag">#${escapeHtml(tag)}</span>`)
         .join("");
 
       return `
-        <article class="archive-item ${sideClass}">
+        <article class="archive-item ${sideClass}${hasImage ? "" : " no-cover"}">
           <span class="archive-item-node" aria-hidden="true"></span>
-          <button class="archive-card" type="button" data-entry-id="${escapeAttr(entry.id)}" aria-label="查看 ${escapeAttr(entry.title)}">
+          <button class="archive-card${hasImage ? "" : " no-cover"}" type="button" data-entry-id="${escapeAttr(entry.id)}" aria-label="查看 ${escapeAttr(entry.title)}">
+            ${
+              hasImage
+                ? `
             <div class="archive-card-cover-wrap">
               <img
                 class="archive-card-cover"
@@ -221,7 +221,9 @@ function renderTimeline(entries) {
                 loading="lazy"
                 referrerpolicy="no-referrer"
               />
-            </div>
+            </div>`
+                : ""
+            }
             <div class="archive-card-body">
               <p class="archive-card-time">
                 <span>${escapeHtml(formatDate(entry.date))}</span>
