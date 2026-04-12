@@ -50,6 +50,8 @@
 
 - 前端：原生 `HTML + CSS + JS`
 - 样式主入口：`assets/css/diary.css`
+- Notion 内容模型规划文档：`docs/NOTION_CONTENT_MODEL.md`
+- Notion 同步骨架目录：`scripts/notion-sync/`
 - 前端脚本入口：
   - `assets/js/index.js`
   - `assets/js/archive.js`
@@ -1294,6 +1296,10 @@ Resend 的角色是：
   - 示例评论数据
 - `scripts/add-diary.ps1`
   - 追加日记内容到 `content/diaries.json`
+- `scripts/notion-sync/content-model.js`
+  - Notion 新内容模型常量与 note 展示推导骨架
+- `scripts/notion-sync/notion-transform.js`
+  - Notion block 递归扫描、媒体提取、统一内容记录转换骨架
 
 ### 10.8 环境与部署说明
 
@@ -1303,6 +1309,8 @@ Resend 的角色是：
   - D1 绑定和 Pages 输出目录示例
 - `README.md`
   - 当前项目说明，内容和本文件有较高重叠
+- `docs/NOTION_CONTENT_MODEL.md`
+  - Notion 新内容数据库字段规范、自动识图规则、article 接入规划
 
 ---
 

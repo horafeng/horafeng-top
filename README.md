@@ -52,6 +52,11 @@
   - `scripts/init-comments.sql`
   - `scripts/migrate-notify.sql`
   - `scripts/seed-comments.sql`
+  - `scripts/add-diary.ps1`
+- Notion 内容规划与同步骨架
+  - `docs/NOTION_CONTENT_MODEL.md`
+  - `scripts/notion-sync/content-model.js`
+  - `scripts/notion-sync/notion-transform.js`
 
 ---
 

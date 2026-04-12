@@ -17,6 +17,7 @@
 - `archive.html` 是正式归档页，走“单中轴时间线 + 左右交错卡片”布局，数据来自 `content/diaries.json`
 - `guestbook.html` 是独立留言板页面，且它接的是**真实评论系统**
 - `entry.html` 和首页帖子详情里的评论区目前仍主要是 mock / 预留，不要误判为全站评论都已接通
+- Notion 新内容模型（`note`/`article`）规划见 `docs/NOTION_CONTENT_MODEL.md`，后续接 Notion 前先读它
 
 ---
 
@@ -40,6 +41,12 @@
   - 留言板前端逻辑
 - `assets/css/diary.css`
   - 全站核心样式
+- `docs/NOTION_CONTENT_MODEL.md`
+  - Notion 内容字段规范、自动识图规则、article 接入路线
+- `scripts/notion-sync/content-model.js`
+  - 内容类型/字段常量与基础推导函数骨架
+- `scripts/notion-sync/notion-transform.js`
+  - Notion block 递归扫描、媒体提取、内容记录转换骨架
 - `functions/api/comments.js`
   - 前台评论读取与提交
 - `functions/api/admin/comments.js`
