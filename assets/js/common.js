@@ -1,14 +1,91 @@
-﻿export async function loadEntries() {
-  const response = await fetch("content/diaries.json");
-  if (!response.ok) {
-    throw new Error("Failed to load local diary content.");
+function normalizeEntry(entry, source = "local") {
+  const content = Array.isArray(entry?.content)
+    ? entry.content
+        .map((line) => String(line ?? "").trim())
+        .filter(Boolean)
+    : [];
+
+  return {
+    id: String(entry?.id ?? "").trim(),
+    date: String(entry?.date ?? "").trim(),
+    mood: String(entry?.mood ?? "").trim(),
+    title: String(entry?.title ?? "").trim() || "\u672a\u547d\u540d\u968f\u7b14",
+    tags: Array.isArray(entry?.tags)
+      ? entry.tags
+          .map((tag) => String(tag ?? "").trim())
+          .filter(Boolean)
+      : [],
+    images: Array.isArray(entry?.images)
+      ? entry.images
+          .map((image) => String(image ?? "").trim())
+          .filter(Boolean)
+      : [],
+    content,
+    author: entry?.author ? String(entry.author).trim() : "",
+    likes: Number.isFinite(entry?.likes) ? entry.likes : undefined,
+    source,
+  };
+}
+
+function getEntryDedupKey(entry) {
+  if (entry.id) {
+    return `id:${entry.id}`;
   }
 
-  const data = await response.json();
-  return data.entries
-    .slice()
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .map((entry) => ({ ...entry, images: Array.isArray(entry.images) ? entry.images : [] }));
+  return `fallback:${entry.date}|${entry.title}|${entry.content[0] || ""}`;
+}
+
+function mergeEntries(localEntries, notionEntries) {
+  const merged = [];
+  const seen = new Set();
+
+  [...localEntries, ...notionEntries].forEach((entry) => {
+    const normalized = normalizeEntry(entry, entry?.source || "local");
+    const dedupKey = getEntryDedupKey(normalized);
+    if (seen.has(dedupKey)) {
+      return;
+    }
+
+    seen.add(dedupKey);
+    merged.push(normalized);
+  });
+
+  return merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+async function fetchJson(url, errorMessage) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
+async function fetchOptionalEntries(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data?.entries) ? data.entries : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+export async function loadEntries() {
+  const [localData, notionEntries] = await Promise.all([
+    fetchJson("content/diaries.json", "Failed to load local diary content."),
+    fetchOptionalEntries("content/generated/notion-diaries-compat.json"),
+  ]);
+
+  const localEntries = Array.isArray(localData?.entries) ? localData.entries : [];
+  const notionCompatEntries = notionEntries.map((entry) => ({ ...entry, source: "notion" }));
+
+  return mergeEntries(localEntries, notionCompatEntries);
 }
 
 export async function loadSiteConfig() {
@@ -55,17 +132,17 @@ export function getStats(entries) {
 
 export function formatLastSeen(isoString) {
   if (!isoString) {
-    return "博主最近来过";
+    return "\u535a\u4e3b\u6700\u8fd1\u6765\u8fc7";
   }
 
   const now = Date.now();
   const date = new Date(isoString).getTime();
   if (Number.isNaN(date)) {
-    return "博主最近来过";
+    return "\u535a\u4e3b\u6700\u8fd1\u6765\u8fc7";
   }
 
   const diffHours = Math.max(1, Math.floor((now - date) / (1000 * 60 * 60)));
-  return `博主在 ${diffHours} 小时前来过`;
+  return `\u535a\u4e3b\u5728 ${diffHours} \u5c0f\u65f6\u524d\u6765\u8fc7`;
 }
 
 export function normalizeText(entry) {
@@ -289,11 +366,11 @@ export function renderMockComments(listEl, comments, limit = 10) {
 
   const rows = (comments || []).slice(0, limit);
   if (!rows.length) {
-    listEl.innerHTML = '<li class="subtle">评论区暂未开放。</li>';
+    listEl.innerHTML = '<li class="subtle">\u8bc4\u8bba\u533a\u6682\u672a\u5f00\u653e\u3002</li>';
     return;
   }
 
   listEl.innerHTML = rows
-    .map((item) => `<li><p class="comment-author">${escapeHtml(item.nick || "访客")}</p><p class="comment-text">${escapeHtml(item.content || "")}</p></li>`)
+    .map((item) => `<li><p class="comment-author">${escapeHtml(item.nick || "\u8bbf\u5ba2")}</p><p class="comment-text">${escapeHtml(item.content || "")}</p></li>`)
     .join("");
 }
