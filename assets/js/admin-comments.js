@@ -1,18 +1,71 @@
 import { escapeHtml, linkify } from "./common.js";
 
+const TEXT = {
+  loginSuccess: "\u767b\u5f55\u6210\u529f\u3002",
+  logoutSuccess: "\u5df2\u9000\u51fa\u767b\u5f55\u3002",
+  fillLogin: "\u8bf7\u586b\u5199\u8d26\u53f7\u548c\u5bc6\u7801\u3002",
+  loadingComments: "\u6b63\u5728\u52a0\u8f7d\u7559\u8a00\u2026",
+  noComments: "\u5f53\u524d\u7b5b\u9009\u6761\u4ef6\u4e0b\u6ca1\u6709\u7559\u8a00\u3002",
+  emptyReply: "\u56de\u590d\u5185\u5bb9\u4e0d\u80fd\u4e3a\u7a7a\u3002",
+  replySent: "\u56de\u590d\u5df2\u53d1\u9001\u3002",
+  commentDeleted: "\u7559\u8a00\u5df2\u5220\u9664\u3002",
+  sessionExpired: "\u767b\u5f55\u5df2\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55\u3002",
+  dashboardUnavailable: "\u540e\u53f0\u6682\u4e0d\u53ef\u7528\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
+  loadingSync: "\u6b63\u5728\u52a0\u8f7d Notion \u540c\u6b65\u72b6\u6001\u2026",
+  syncIdle: "\u7a7a\u95f2",
+  syncRunning: "\u540c\u6b65\u4e2d",
+  syncTriggered: "\u5df2\u89e6\u53d1",
+  syncSuccess: "\u6210\u529f",
+  syncFailed: "\u5931\u8d25",
+  syncNever: "\u6682\u65e0",
+  syncRequested: "Notion \u540c\u6b65\u5df2\u89e6\u53d1\uff0c\u6b63\u5728\u7b49\u5f85\u7ed3\u679c\u56de\u62a5\u3002",
+  syncConflict: "\u5f53\u524d\u5df2\u6709\u4e00\u6b21 Notion \u540c\u6b65\u5728\u8fdb\u884c\u4e2d\u3002",
+  syncButtonIdle: "\u7acb\u5373\u540c\u6b65 Notion",
+  syncButtonBusy: "\u6b63\u5728\u89e6\u53d1\u2026",
+  bloggerBadge: "\u535a\u4e3b",
+  contactLabel: "\u8054\u7cfb\u65b9\u5f0f\uff08\u4ec5\u540e\u53f0\u53ef\u89c1\uff09\uff1a",
+  notifyEnabled: "\u90ae\u4ef6\u63d0\u9192\uff1a\u5df2\u5f00\u542f",
+  notifyDisabled: "\u90ae\u4ef6\u63d0\u9192\uff1a\u5df2\u5173\u95ed",
+  recipientLabel: "\u6536\u4ef6\uff1a",
+  statusLabel: "\u72b6\u6001\uff1a",
+  replyToLabel: "\u56de\u590d",
+  approve: "\u901a\u8fc7",
+  pending: "\u5f85\u5ba1",
+  spam: "\u6807\u8bb0\u5783\u573e",
+  remove: "\u5220\u9664",
+  reply: "\u56de\u590d",
+  replyPlaceholder: "\u8f93\u5165\u56de\u590d\u5185\u5bb9",
+  sendReply: "\u53d1\u9001\u56de\u590d",
+  totalLoaded: (count, total) => `\u5df2\u52a0\u8f7d ${count} \u6761\u7559\u8a00\uff08\u603b\u8ba1 ${total} \u6761\uff09\u3002`,
+  totalEmpty: "\u5171 0 \u6761\u7559\u8a00\u3002",
+  statusUpdated: (status) => `\u5df2\u66f4\u65b0\u72b6\u6001\u4e3a ${status}\u3002`,
+};
+
 const state = {
   loggedIn: false,
   loading: false,
+  syncLoading: false,
+  syncPollingTimer: null,
+  syncStatus: null,
 };
 
 function setLoginFeedback(message, isError = false) {
   const el = document.getElementById("admin-login-feedback");
+  if (!el) return;
   el.textContent = message || "";
   el.classList.toggle("feedback-error", Boolean(isError));
 }
 
 function setAdminFeedback(message, isError = false) {
   const el = document.getElementById("admin-feedback");
+  if (!el) return;
+  el.textContent = message || "";
+  el.classList.toggle("feedback-error", Boolean(isError));
+}
+
+function setSyncFeedback(message, isError = false) {
+  const el = document.getElementById("admin-sync-message");
+  if (!el) return;
   el.textContent = message || "";
   el.classList.toggle("feedback-error", Boolean(isError));
 }
@@ -31,6 +84,7 @@ async function apiJson(url, options = {}) {
   if (!response.ok) {
     const error = new Error(payload.message || "Request failed.");
     error.status = response.status;
+    error.payload = payload;
     throw error;
   }
 
@@ -40,7 +94,7 @@ async function apiJson(url, options = {}) {
 function formatTime(isoString) {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) {
-    return isoString || "";
+    return isoString || TEXT.syncNever;
   }
   return date.toLocaleString("zh-CN", { hour12: false });
 }
@@ -54,36 +108,100 @@ function contentToHtml(text) {
 
 function togglePanels(loggedIn) {
   state.loggedIn = loggedIn;
-  document.getElementById("admin-login-panel").hidden = loggedIn;
-  document.getElementById("admin-dashboard").hidden = !loggedIn;
+  const loginPanel = document.getElementById("admin-login-panel");
+  const dashboard = document.getElementById("admin-dashboard");
+  if (loginPanel) loginPanel.hidden = loggedIn;
+  if (dashboard) dashboard.hidden = !loggedIn;
+}
+
+function getSyncStatusLabel(item) {
+  if (!item) return TEXT.syncNever;
+  if (item.status === "syncing") return TEXT.syncRunning;
+  return TEXT.syncIdle;
+}
+
+function getSyncResultLabel(item) {
+  if (!item) return TEXT.syncNever;
+  if (item.last_result === "triggered") return TEXT.syncTriggered;
+  if (item.last_result === "success") return TEXT.syncSuccess;
+  if (item.last_result === "failed") return TEXT.syncFailed;
+  return TEXT.syncNever;
+}
+
+function updateSyncButton() {
+  const button = document.getElementById("admin-sync-trigger");
+  if (!button) return;
+
+  const busy = state.syncLoading || state.syncStatus?.status === "syncing";
+  button.disabled = busy;
+  button.textContent = state.syncLoading ? TEXT.syncButtonBusy : TEXT.syncButtonIdle;
+}
+
+function renderSyncStatus(item) {
+  state.syncStatus = item || null;
+
+  const statusEl = document.getElementById("admin-sync-status");
+  const resultEl = document.getElementById("admin-sync-result");
+  const startedAtEl = document.getElementById("admin-sync-started-at");
+  const finishedAtEl = document.getElementById("admin-sync-finished-at");
+
+  if (statusEl) statusEl.textContent = getSyncStatusLabel(item);
+  if (resultEl) resultEl.textContent = getSyncResultLabel(item);
+  if (startedAtEl) startedAtEl.textContent = item?.last_started_at ? formatTime(item.last_started_at) : TEXT.syncNever;
+  if (finishedAtEl) finishedAtEl.textContent = item?.last_finished_at ? formatTime(item.last_finished_at) : TEXT.syncNever;
+
+  const detailMessage = item?.last_message || "";
+  setSyncFeedback(detailMessage || "", item?.last_result === "failed");
+  updateSyncButton();
+  syncPollingControl();
+}
+
+function syncPollingControl() {
+  const shouldPoll = state.loggedIn && state.syncStatus?.status === "syncing";
+  if (shouldPoll && !state.syncPollingTimer) {
+    state.syncPollingTimer = window.setInterval(() => {
+      loadSyncStatus({ silent: true }).catch(() => {});
+    }, 5000);
+    return;
+  }
+
+  if (!shouldPoll && state.syncPollingTimer) {
+    window.clearInterval(state.syncPollingTimer);
+    state.syncPollingTimer = null;
+  }
 }
 
 function commentCard(comment) {
-  const adminBadge = comment.is_admin ? '<span class="admin-badge">博主</span>' : "";
+  const adminBadge = comment.is_admin ? `<span class="admin-badge">${TEXT.bloggerBadge}</span>` : "";
+  const notifyText = comment.notify_enabled ? TEXT.notifyEnabled : TEXT.notifyDisabled;
+  const recipient = comment.contact_email_resolved ? ` / ${TEXT.recipientLabel}${escapeHtml(comment.contact_email_resolved)}` : "";
+  const replyTo =
+    comment.parent_id !== null
+      ? ` / ${TEXT.replyToLabel} #${comment.parent_id}${comment.parent_nickname ? ` (${escapeHtml(comment.parent_nickname)})` : ""}`
+      : "";
 
   return `
     <article class="admin-comment-card status-${escapeHtml(comment.status)}" data-comment-id="${comment.id}">
       <header class="admin-comment-head">
         <p><strong>${escapeHtml(comment.nickname)}</strong>${adminBadge}</p>
-        <p class="subtle">${escapeHtml(comment.page_key)} · ${formatTime(comment.created_at)}</p>
+        <p class="subtle">${escapeHtml(comment.page_key)} / ${formatTime(comment.created_at)}</p>
       </header>
-      <p class="admin-comment-contact subtle">联系方式（仅后台可见）：${escapeHtml(comment.contact || "-")}</p>
-      <p class="admin-comment-contact subtle">邮件提醒：${comment.notify_enabled ? "已开启" : "已关闭"}${comment.contact_email_resolved ? ` · 收件：${escapeHtml(comment.contact_email_resolved)}` : ""}</p>
+      <p class="admin-comment-contact subtle">${TEXT.contactLabel}${escapeHtml(comment.contact || "-")}</p>
+      <p class="admin-comment-contact subtle">${notifyText}${recipient}</p>
       <p class="admin-comment-content">${contentToHtml(comment.content)}</p>
       <p class="subtle">
-        状态：<span class="status-pill">${escapeHtml(comment.status)}</span>
-        ${comment.parent_id ? ` · 回复 #${comment.parent_id}${comment.parent_nickname ? ` (${escapeHtml(comment.parent_nickname)})` : ""}` : ""}
+        ${TEXT.statusLabel}<span class="status-pill">${escapeHtml(comment.status)}</span>${replyTo}
       </p>
       <div class="admin-comment-actions">
-        <button type="button" data-action="status" data-status="approved">通过</button>
-        <button type="button" data-action="status" data-status="pending">待审</button>
-        <button type="button" data-action="status" data-status="spam">标记垃圾</button>
-        <button type="button" data-action="delete" class="warn">删除</button>
-        <button type="button" data-action="toggle-reply">回复</button>
+        <button type="button" data-action="status" data-status="approved">${TEXT.approve}</button>
+        <button type="button" data-action="status" data-status="pending">${TEXT.pending}</button>
+        <button type="button" data-action="status" data-status="spam">${TEXT.spam}</button>
+        <button type="button" data-action="delete" class="warn">${TEXT.remove}</button>
+        <button type="button" data-action="toggle-reply">${TEXT.reply}</button>
       </div>
       <div class="admin-reply-box" hidden>
-        <textarea rows="3" placeholder="输入回复内容"></textarea>
-        <button type="button" data-action="send-reply">发送回复</button>
+        <textarea rows="3" placeholder="${TEXT.replyPlaceholder}"></textarea>
+        <button type="button" data-action="send-reply">${TEXT.sendReply}</button>
       </div>
     </article>
   `;
@@ -96,43 +214,98 @@ async function loadComments() {
   state.loading = true;
 
   const list = document.getElementById("admin-comments-list");
-  list.innerHTML = '<p class="subtle">正在加载留言…</p>';
+  if (list) {
+    list.innerHTML = `<p class="subtle">${TEXT.loadingComments}</p>`;
+  }
 
   try {
     const pageKey = document.getElementById("admin-filter-page-key").value.trim();
     const status = document.getElementById("admin-filter-status").value;
     const params = new URLSearchParams();
-    if (pageKey) {
-      params.set("page_key", pageKey);
-    }
-    if (status) {
-      params.set("status", status);
-    }
+    if (pageKey) params.set("page_key", pageKey);
+    if (status) params.set("status", status);
     params.set("limit", "200");
 
     const result = await apiJson(`/api/admin/comments?${params.toString()}`, { method: "GET", headers: {} });
     const items = result.items || [];
 
     if (!items.length) {
-      list.innerHTML = '<p class="subtle">当前筛选条件下没有留言。</p>';
-      setAdminFeedback("共 0 条留言。");
+      if (list) {
+        list.innerHTML = `<p class="subtle">${TEXT.noComments}</p>`;
+      }
+      setAdminFeedback(TEXT.totalEmpty);
       return;
     }
 
-    list.innerHTML = items.map((item) => commentCard(item)).join("");
-    setAdminFeedback(`已加载 ${items.length} 条留言（总计 ${result.total || items.length} 条）。`);
+    if (list) {
+      list.innerHTML = items.map((item) => commentCard(item)).join("");
+    }
+    setAdminFeedback(TEXT.totalLoaded(items.length, result.total || items.length));
   } catch (error) {
     if (error.status === 401) {
       togglePanels(false);
-      setLoginFeedback("登录已失效，请重新登录。", true);
-      list.innerHTML = "";
+      setLoginFeedback(TEXT.sessionExpired, true);
+      if (list) list.innerHTML = "";
       throw error;
     }
-    list.innerHTML = "";
-    setAdminFeedback(error.message || "加载失败。", true);
+    if (list) list.innerHTML = "";
+    setAdminFeedback(error.message || "Load failed.", true);
     throw error;
   } finally {
     state.loading = false;
+  }
+}
+
+async function loadSyncStatus({ silent = false } = {}) {
+  if (state.syncLoading && silent) {
+    return;
+  }
+
+  if (!silent) {
+    setSyncFeedback(TEXT.loadingSync, false);
+  }
+
+  try {
+    const result = await apiJson("/api/admin/notion-sync", { method: "GET", headers: {} });
+    renderSyncStatus(result.item || null);
+  } catch (error) {
+    if (error.status === 401) {
+      togglePanels(false);
+      setLoginFeedback(TEXT.sessionExpired, true);
+      return;
+    }
+    if (!silent) {
+      setSyncFeedback(error.message || "Failed to load notion sync status.", true);
+    }
+  }
+}
+
+async function triggerNotionSync() {
+  if (state.syncLoading || state.syncStatus?.status === "syncing") {
+    setSyncFeedback(TEXT.syncConflict, true);
+    return;
+  }
+
+  state.syncLoading = true;
+  updateSyncButton();
+  setSyncFeedback(TEXT.loadingSync, false);
+
+  try {
+    const result = await apiJson("/api/admin/notion-sync", {
+      method: "POST",
+      body: "{}",
+    });
+    renderSyncStatus(result.item || null);
+    setSyncFeedback(result.message || TEXT.syncRequested, false);
+  } catch (error) {
+    const item = error.payload?.item || null;
+    if (item) {
+      renderSyncStatus(item);
+    }
+    setSyncFeedback(error.message || "Failed to trigger notion sync.", true);
+  } finally {
+    state.syncLoading = false;
+    updateSyncButton();
   }
 }
 
@@ -143,7 +316,7 @@ async function doLogin(event) {
   const username = document.getElementById("admin-username").value.trim();
   const password = document.getElementById("admin-password").value.trim();
   if (!username || !password) {
-    setLoginFeedback("请填写账号和密码。", true);
+    setLoginFeedback(TEXT.fillLogin, true);
     return;
   }
 
@@ -152,11 +325,11 @@ async function doLogin(event) {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
-    setLoginFeedback(result.message || "登录成功。");
+    setLoginFeedback(result.message || TEXT.loginSuccess);
     togglePanels(true);
-    await loadComments();
+    await Promise.all([loadComments(), loadSyncStatus()]);
   } catch (error) {
-    setLoginFeedback(error.message || "登录失败。", true);
+    setLoginFeedback(error.message || "Login failed.", true);
   }
 }
 
@@ -168,7 +341,10 @@ async function doLogout() {
   } finally {
     togglePanels(false);
     setAdminFeedback("");
-    setLoginFeedback("已退出登录。");
+    setSyncFeedback("");
+    setLoginFeedback(TEXT.logoutSuccess);
+    state.syncStatus = null;
+    syncPollingControl();
   }
 }
 
@@ -211,6 +387,10 @@ function bindDashboardEvents() {
     doLogout();
   });
 
+  document.getElementById("admin-sync-trigger").addEventListener("click", () => {
+    triggerNotionSync().catch(() => {});
+  });
+
   const list = document.getElementById("admin-comments-list");
   list.addEventListener("click", async (event) => {
     const target = event.target;
@@ -243,18 +423,18 @@ function bindDashboardEvents() {
         const textarea = card.querySelector(".admin-reply-box textarea");
         const content = textarea?.value.trim() || "";
         if (!content) {
-          setAdminFeedback("回复内容不能为空。", true);
+          setAdminFeedback(TEXT.emptyReply, true);
           return;
         }
         await sendReply(commentId, content);
-        setAdminFeedback("回复已发送。");
+        setAdminFeedback(TEXT.replySent);
         await loadComments();
         return;
       }
 
       if (action === "delete") {
         await deleteComment(commentId);
-        setAdminFeedback("留言已删除。");
+        setAdminFeedback(TEXT.commentDeleted);
         await loadComments();
         return;
       }
@@ -262,7 +442,7 @@ function bindDashboardEvents() {
       if (action === "status") {
         const status = target.dataset.status;
         await updateStatus(commentId, status);
-        setAdminFeedback(`已更新状态为 ${status}。`);
+        setAdminFeedback(TEXT.statusUpdated(status));
         await loadComments();
       }
     } catch (error) {
@@ -274,16 +454,17 @@ function bindDashboardEvents() {
 async function bootstrap() {
   document.getElementById("admin-login-form").addEventListener("submit", doLogin);
   bindDashboardEvents();
+  updateSyncButton();
 
   try {
-    await loadComments();
+    await Promise.all([loadComments(), loadSyncStatus()]);
     togglePanels(true);
   } catch (error) {
     if (error.status === 401) {
       togglePanels(false);
       return;
     }
-    setLoginFeedback("后台暂不可用，请稍后重试。", true);
+    setLoginFeedback(TEXT.dashboardUnavailable, true);
   }
 }
 

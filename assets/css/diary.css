@@ -2251,6 +2251,53 @@ p {
   gap: 10px;
 }
 
+.admin-sync-card {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(101, 125, 159, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 24px rgba(24, 36, 56, 0.06);
+}
+
+.admin-sync-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-sync-head h3 {
+  margin-bottom: 4px;
+}
+
+.admin-sync-head button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-sync-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.admin-sync-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(101, 125, 159, 0.12);
+  background: rgba(255, 255, 255, 0.6);
+  display: grid;
+  gap: 5px;
+}
+
+.admin-sync-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .admin-comment-card {
   border: 1px solid var(--line);
   border-radius: 12px;

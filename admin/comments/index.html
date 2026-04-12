@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>留言管理 | HoraFeng</title>
+    <title>&#30041;&#35328;&#31649;&#29702; | HoraFeng</title>
     <link rel="stylesheet" href="../../assets/css/diary.css" />
   </head>
   <body data-page="admin-comments">
@@ -13,20 +13,26 @@
       <main class="panel flow-panel">
         <header class="section-head">
           <nav class="breadcrumb">
-            <a href="../../index.html">日记流</a>
+            <a href="../../index.html">&#26085;&#35760;&#27969;</a>
             <span>/</span>
-            <span>留言管理</span>
+            <span>&#30041;&#35328;&#31649;&#29702;</span>
           </nav>
-          <h2>留言管理后台</h2>
-          <p class="subtle">单管理员模式：审核、删除、回复留言。</p>
+          <h2>&#30041;&#35328;&#31649;&#29702;&#21518;&#21488;</h2>
+          <p class="subtle">&#21333;&#31649;&#29702;&#21592;&#27169;&#24335;&#65306;&#23457;&#26680;&#12289;&#21024;&#38500;&#12289;&#22238;&#22797;&#30041;&#35328;&#12290;</p>
         </header>
 
         <section id="admin-login-panel" class="admin-panel">
-          <h3>管理员登录</h3>
+          <h3>&#31649;&#29702;&#21592;&#30331;&#24405;</h3>
           <form id="admin-login-form" class="admin-login-form" novalidate>
-            <input id="admin-username" type="text" autocomplete="username" placeholder="账号（默认 admin）" required />
-            <input id="admin-password" type="password" autocomplete="current-password" placeholder="密码" required />
-            <button type="submit">登录</button>
+            <input
+              id="admin-username"
+              type="text"
+              autocomplete="username"
+              placeholder="&#36134;&#21495;&#65288;&#40664;&#35748; admin&#65289;"
+              required
+            />
+            <input id="admin-password" type="password" autocomplete="current-password" placeholder="&#23494;&#30721;" required />
+            <button type="submit">&#30331;&#24405;</button>
           </form>
           <p id="admin-login-feedback" class="subtle"></p>
         </section>
@@ -34,18 +40,54 @@
         <section id="admin-dashboard" class="admin-panel" hidden>
           <div class="admin-toolbar">
             <div class="admin-filters">
-              <input id="admin-filter-page-key" type="text" value="guestbook" placeholder="page_key（留空查看全部）" />
+              <input
+                id="admin-filter-page-key"
+                type="text"
+                value="guestbook"
+                placeholder="page_key&#65288;&#30041;&#31354;&#26597;&#30475;&#20840;&#37096;&#65289;"
+              />
               <select id="admin-filter-status">
-                <option value="all">全部状态</option>
-                <option value="pending">待审核</option>
-                <option value="approved">已通过</option>
-                <option value="deleted">已删除</option>
-                <option value="spam">垃圾</option>
+                <option value="all">&#20840;&#37096;&#29366;&#24577;</option>
+                <option value="pending">&#24453;&#23457;&#26680;</option>
+                <option value="approved">&#24050;&#36890;&#36807;</option>
+                <option value="deleted">&#24050;&#21024;&#38500;</option>
+                <option value="spam">&#22403;&#22334;</option>
               </select>
-              <button id="admin-refresh" type="button">刷新</button>
+              <button id="admin-refresh" type="button">&#21047;&#26032;</button>
             </div>
-            <button id="admin-logout" class="ghost-btn" type="button">退出登录</button>
+            <button id="admin-logout" class="ghost-btn" type="button">&#36864;&#20986;&#30331;&#24405;</button>
           </div>
+
+          <section class="admin-sync-card" aria-labelledby="admin-sync-title">
+            <div class="admin-sync-head">
+              <div>
+                <h3 id="admin-sync-title">&#78;&#111;&#116;&#105;&#111;&#110; &#20869;&#23481;&#21516;&#27493;</h3>
+                <p class="subtle">&#24320;&#21457;&#38454;&#27573;&#21487;&#25163;&#21160;&#35270;&#21457;&#65307;&#21518;&#32493;&#33258;&#21160;&#27169;&#24335;&#20250;&#22797;&#29992;&#21516;&#19968;&#22871;&#21518;&#31471;&#25509;&#21475;&#12290;</p>
+              </div>
+              <button id="admin-sync-trigger" type="button">&#31435;&#21363;&#21516;&#27493; &#78;&#111;&#116;&#105;&#111;&#110;</button>
+            </div>
+
+            <div class="admin-sync-grid">
+              <div class="admin-sync-item">
+                <span class="admin-sync-label">&#24403;&#21069;&#29366;&#24577;</span>
+                <strong id="admin-sync-status">&#26410;&#21152;&#36733;</strong>
+              </div>
+              <div class="admin-sync-item">
+                <span class="admin-sync-label">&#26368;&#36817;&#19968;&#27425;&#32467;&#26524;</span>
+                <strong id="admin-sync-result">-</strong>
+              </div>
+              <div class="admin-sync-item">
+                <span class="admin-sync-label">&#26368;&#36817;&#21551;&#21160;&#26102;&#38388;</span>
+                <strong id="admin-sync-started-at">-</strong>
+              </div>
+              <div class="admin-sync-item">
+                <span class="admin-sync-label">&#26368;&#36817;&#23436;&#25104;&#26102;&#38388;</span>
+                <strong id="admin-sync-finished-at">-</strong>
+              </div>
+            </div>
+
+            <p id="admin-sync-message" class="subtle"></p>
+          </section>
 
           <p id="admin-feedback" class="subtle"></p>
           <div id="admin-comments-list" class="admin-comments-list"></div>
