@@ -15,7 +15,7 @@ export const NOTION_DATABASE_FIELDS = Object.freeze({
   title: { notionType: "title", required: true },
   slug: { notionType: "rich_text", required: true },
   type: { notionType: "select", required: true },
-  status: { notionType: "status", required: true },
+  status: { notionType: "select", required: true },
   summary: { notionType: "rich_text", required: false },
   tags: { notionType: "multi_select", required: false },
   category: { notionType: "select", required: false },
@@ -28,8 +28,14 @@ export const NOTION_DATABASE_FIELDS = Object.freeze({
 export const NOTE_IMAGE_BLOCK_TYPES = Object.freeze(["image"]);
 export const NOTE_MEDIA_BLOCK_TYPES = Object.freeze(["image", "video", "file", "pdf", "embed", "bookmark"]);
 
+export function normalizeContentType(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
 export function isContentType(value) {
-  return Object.values(CONTENT_TYPES).includes(value);
+  return Object.values(CONTENT_TYPES).includes(normalizeContentType(value));
 }
 
 export function isPublishedStatus(value) {
@@ -68,4 +74,3 @@ export function deriveNoteDisplay(record = {}) {
     cover: record.cover || images[0] || "",
   };
 }
-

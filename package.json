@@ -1,0 +1,11 @@
+{
+  "name": "horafeng-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "notion:sync": "node scripts/notion-sync/sync-notion.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

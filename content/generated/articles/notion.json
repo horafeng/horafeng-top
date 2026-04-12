@@ -1,0 +1,1046 @@
+{
+  "generated_at": "2026-04-12T03:13:28.178Z",
+  "item": {
+    "id": "17aacf27-2303-8113-af1f-ce097a70fcb7",
+    "notion_page_id": "17aacf27-2303-8113-af1f-ce097a70fcb7",
+    "slug": "Notion",
+    "title": "NotionNext：基于Notion、GitHub、Vercel的博客创建记录",
+    "type": "article",
+    "status": "published",
+    "summary": "本文记录了作者第一次创建博客的经历与思考，以及对未来博客的一些畅想",
+    "tags": [
+      "网页创建"
+    ],
+    "category": "技术",
+    "cover": "",
+    "published_at": "2025-01-14",
+    "featured": false,
+    "pin": false,
+    "has_media": false,
+    "images": [],
+    "media": [],
+    "source_updated_at": "2026-04-12T01:46:00.000Z",
+    "blocks": [
+      {
+        "id": "17aacf27-2303-81c1-bbaa-d246c662d617",
+        "type": "heading_1",
+        "has_children": false,
+        "children": [],
+        "text": "Blogger概况",
+        "rich_text": [
+          {
+            "plain_text": "Blogger概况",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17aacf27-2303-818c-a61e-db3447dd6c2c",
+        "type": "heading_2",
+        "has_children": false,
+        "children": [],
+        "text": "总结",
+        "rich_text": [
+          {
+            "plain_text": "总结",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8077-9e55-de5f2a59741a",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "Blog总体采用以Notion作为数据库，以GitHub作为代码源头，以Vercel作为云服务器的方法来搭建，整体技术框架成熟，且有搭建步骤作为参考，对于新手来说较为不错，并且网站后续的维护不用操心，目前感觉较为不错。至于网址安全性等问题还未考证，暂且按下不表。",
+        "rich_text": [
+          {
+            "plain_text": "          Blog总体采用以Notion作为数据库，以GitHub作为代码源头，以Vercel作为云服务器的方法来搭建，整体技术框架成熟，且有搭建步骤作为参考，对于新手来说较为不错，并且网站后续的维护不用操心，目前感觉较为不错。至于网址安全性等问题还未考证，暂且按下不表。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80c7-8e0e-e053ce53c565",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "目前看来，因云服务器为国外平台，网站存在墙内用户无法访问的通病，之后会尝试在阿里云平台搭建，但这也是后话，在此也按下不表。",
+        "rich_text": [
+          {
+            "plain_text": "          目前看来，因云服务器为国外平台，网站存在墙内用户无法访问的通病，之后会尝试在阿里云平台搭建，但这也是后话，在此也按下不表。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80fb-a884-ea57d8a259c8",
+        "type": "heading_2",
+        "has_children": false,
+        "children": [],
+        "text": "Blog搭建步骤",
+        "rich_text": [
+          {
+            "plain_text": "Blog搭建步骤",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8062-8fbe-fcfda5e7fcea",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "整体步骤《NotionNext帮助手册》已有详细阐述，如有需要请移步以下链接",
+        "rich_text": [
+          {
+            "plain_text": "整体步骤《NotionNext帮助手册》已有详细阐述，如有需要请移步以下链接",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80cc-818c-ccb6d443b557",
+        "type": "bookmark",
+        "has_children": false,
+        "children": [],
+        "url": "https://docs.tangly1024.com/article/vercel-deploy-notion-next",
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-808e-94a4-fc7856eac850",
+        "type": "numbered_list_item",
+        "has_children": true,
+        "children": [
+          {
+            "id": "17bacf27-2303-80b3-8c91-c13f7d3859a3",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "注册并不难点，照着做就好。",
+            "rich_text": [
+              {
+                "plain_text": "注册并不难点，照着做就好。",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-8060-aad6-fe1be141965d",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "难点为页面ID的找取，非plus用户无法从share to web边框栏中找到页面ID（或者说页面ID呈现灰色，复制不了），需要用户自己进入创建的网站后，通过观察浏览器上方页面链接，自行把其中的页面ID拷贝下来。",
+            "rich_text": [
+              {
+                "plain_text": "难点为页面ID的找取，非plus用户无法从share to web边框栏中找到页面ID（或者说页面ID呈现灰色，复制不了），需要用户自己进入创建的网站后，通过观察浏览器上方页面链接，自行把其中的页面ID拷贝下来。",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-80c5-8ed5-e053056cc1f1",
+            "type": "callout",
+            "has_children": true,
+            "children": [
+              {
+                "id": "17bacf27-2303-8059-94f1-d7252e18849b",
+                "type": "paragraph",
+                "has_children": false,
+                "children": [],
+                "text": "新版的notion中，页面ID的格式可能会有一点不同，例如会把页面的标题也带上：\nhttps://www.notion.so/tanghh/Today-261c36d269a74acd97682af86d7bc9a0?pvs=4 \n但不变的是，页面url中的那串连续32为的字符串就是id。",
+                "rich_text": [
+                  {
+                    "plain_text": "新版的notion中，页面ID的格式可能会有一点不同，例如会把页面的标题也带上：\nhttps://www.notion.so/tanghh/Today-",
+                    "href": null,
+                    "annotations": {
+                      "bold": false,
+                      "italic": false,
+                      "strikethrough": false,
+                      "underline": false,
+                      "code": false,
+                      "color": "default"
+                    }
+                  },
+                  {
+                    "plain_text": "261c36d269a74acd97682af86d7bc9a0",
+                    "href": null,
+                    "annotations": {
+                      "bold": false,
+                      "italic": false,
+                      "strikethrough": false,
+                      "underline": false,
+                      "code": true,
+                      "color": "default"
+                    }
+                  },
+                  {
+                    "plain_text": "?pvs=4 \n但不变的是，页面url中的那串连续32为的字符串就是id。",
+                    "href": null,
+                    "annotations": {
+                      "bold": false,
+                      "italic": false,
+                      "strikethrough": false,
+                      "underline": false,
+                      "code": false,
+                      "color": "default"
+                    }
+                  }
+                ],
+                "language": "",
+                "checked": null,
+                "caption": ""
+              }
+            ],
+            "text": "⚠️",
+            "rich_text": [
+              {
+                "plain_text": "⚠️",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-8064-b370-f7eb3d06d83c",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "上面这句话很重要，理解下来就会了。",
+            "rich_text": [
+              {
+                "plain_text": "上面这句话很重要，理解下来就会了。",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          }
+        ],
+        "text": "注册Notion账号",
+        "rich_text": [
+          {
+            "plain_text": "注册Notion账号",
+            "href": null,
+            "annotations": {
+              "bold": true,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80bf-8012-f10b4854df2f",
+        "type": "numbered_list_item",
+        "has_children": true,
+        "children": [
+          {
+            "id": "17bacf27-2303-8033-8404-e68ec7f842f6",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "说实话，我接触GitHub也不多，但跟着帮助手册做也无难点。",
+            "rich_text": [
+              {
+                "plain_text": "说实话，我接触GitHub也不多，但跟着帮助手册做也无难点。",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-80f3-a05f-ff671d9abaa1",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "GitHub源代码如下，将其fork后之后一些操作需要直接从源代码处修改（例如进入网页后的默认主题需要修改源代码THEME: process.env.NEXT_PUBLIC_THEME || 'hexo'）",
+            "rich_text": [
+              {
+                "plain_text": "GitHub源代码如下，将其fork后之后一些操作需要直接从源代码处修改（例如进入网页后的默认主题需要修改源代码",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              },
+              {
+                "plain_text": "THEME: process.env.NEXT_PUBLIC_THEME || 'hexo'",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "gray_background"
+                }
+              },
+              {
+                "plain_text": "）",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-8076-a316-ee501cdc726d",
+            "type": "bookmark",
+            "has_children": false,
+            "children": [],
+            "url": "https://github.com/tangly1024/NotionNext/fork",
+            "caption": ""
+          }
+        ],
+        "text": "在GitHub上复制源代码",
+        "rich_text": [
+          {
+            "plain_text": "在GitHub上复制源代码",
+            "href": null,
+            "annotations": {
+              "bold": true,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8087-90bb-d79a3f730707",
+        "type": "numbered_list_item",
+        "has_children": true,
+        "children": [
+          {
+            "id": "17bacf27-2303-806f-af3f-f49002633248",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "利用GitHub注册Vercel账户出现了报错Your account requires further verification.",
+            "rich_text": [
+              {
+                "plain_text": "利用GitHub注册Vercel账户出现了报错",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              },
+              {
+                "plain_text": "Your account requires further verification.",
+                "href": null,
+                "annotations": {
+                  "bold": true,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "gray_background"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-8050-a1c8-fb10dcc98c59",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "在网上寻找后解决方法如下：",
+            "rich_text": [
+              {
+                "plain_text": "在网上寻找后解决方法如下：",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-8063-88df-c81d9c5bcc4b",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "@解决 Vercel 注册时提示 Your account requires further verification. - 秋风于渭水",
+            "rich_text": [
+              {
+                "plain_text": "@",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "red_background"
+                }
+              },
+              {
+                "plain_text": "解决 Vercel 注册时提示 Your account requires further verification. - 秋风于渭水",
+                "href": "https://www.tjsky.net/tutorial/971",
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "red_background"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          }
+        ],
+        "text": "Vercel部署",
+        "rich_text": [
+          {
+            "plain_text": "Vercel部署",
+            "href": null,
+            "annotations": {
+              "bold": true,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8036-bfc1-f95c52736674",
+        "type": "numbered_list_item",
+        "has_children": true,
+        "children": [
+          {
+            "id": "17bacf27-2303-809b-b9ce-d0a0998e8a7b",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "网站搭建完成后可能无法出现我Blog一样开启图片的效果，这方面问题跟博客主题代码选择有关，详情移步图片/封面管理 | NotionNext帮助手册",
+            "rich_text": [
+              {
+                "plain_text": "网站搭建完成后可能无法出现我Blog一样开启图片的效果，这方面问题跟博客主题代码选择有关，详情移步",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              },
+              {
+                "plain_text": "图片/封面管理 | NotionNext帮助手册",
+                "href": "https://docs.tangly1024.com/article/notion-next-image-cover",
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "red_background"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          },
+          {
+            "id": "17bacf27-2303-8073-95ee-e1378398c74a",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "PS：NotionNext真的很有用，很多问题都能在里面解决，非常好。",
+            "rich_text": [
+              {
+                "plain_text": "PS：NotionNext真的很有用，很多问题都能在里面解决，非常好。",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          }
+        ],
+        "text": "后续完善",
+        "rich_text": [
+          {
+            "plain_text": "后续完善",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8095-86b4-d41f9c28867c",
+        "type": "heading_2",
+        "has_children": false,
+        "children": [],
+        "text": "闲谈",
+        "rich_text": [
+          {
+            "plain_text": "闲谈",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80f1-a825-e99071a6651a",
+        "type": "paragraph",
+        "has_children": true,
+        "children": [
+          {
+            "id": "17bacf27-2303-808d-a014-ca6ae26b33f2",
+            "type": "paragraph",
+            "has_children": false,
+            "children": [],
+            "text": "对Steven Lynn的引路感激不尽。",
+            "rich_text": [
+              {
+                "plain_text": "对",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              },
+              {
+                "plain_text": "Steven Lynn",
+                "href": null,
+                "annotations": {
+                  "bold": true,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              },
+              {
+                "plain_text": "的引路感激不尽。",
+                "href": null,
+                "annotations": {
+                  "bold": false,
+                  "italic": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "code": false,
+                  "color": "default"
+                }
+              }
+            ],
+            "language": "",
+            "checked": null,
+            "caption": ""
+          }
+        ],
+        "text": "搭建Blog的想法是24年11月份出现的，在网上寻找ChatGPT话术时偶然点开了Steven Lynn大佬的Blog，从此便萌生了搭建Blog的想法，忙忙碌碌一直到寒假后才付诸实践，原本想自己一行一行代码将Blog敲出来，但发现工作量太大随之放弃，又是看到Steven Lynn有关NotionNext：基于Notion和NextJS的开源博客 | Steven Lynn’s Blog的帖子后决定复现大佬的Blog。",
+        "rich_text": [
+          {
+            "plain_text": "         搭建Blog的想法是24年11月份出现的，在网上寻找ChatGPT话术时偶然点开了",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "Steven Lynn",
+            "href": null,
+            "annotations": {
+              "bold": true,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "大佬的Blog，从此便萌生了搭建Blog的想法，忙忙碌碌一直到寒假后才付诸实践，原本想自己一行一行代码将Blog敲出来，但发现工作量太大随之放弃，又是看到",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "Steven Lynn",
+            "href": null,
+            "annotations": {
+              "bold": true,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "有关",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "NotionNext：基于Notion和NextJS的开源博客 | Steven Lynn’s Blog",
+            "href": "https://blog.stv.pm/article/notionnext",
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "的帖子后决定复现大佬的Blog。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80ab-8873-c81e0c103a8d",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "",
+        "rich_text": [],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-801a-8bc6-c9bf30cfb936",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "虽然尝试自己写网站没能走下去，但中途还是学到了很多有关网站搭建的知识，康文昌UP的视频对我启发很大，帮助我整体把握网站框架，推荐大家去看一看。",
+        "rich_text": [
+          {
+            "plain_text": "        虽然尝试自己写网站没能走下去，但中途还是学到了很多有关网站搭建的知识，",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "康文昌",
+            "href": null,
+            "annotations": {
+              "bold": true,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          },
+          {
+            "plain_text": "UP的视频对我启发很大，帮助我整体把握网站框架，推荐大家去看一看。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80c1-aa76-cea10af2b15a",
+        "type": "embed",
+        "has_children": false,
+        "children": [],
+        "url": "http://player.bilibili.com/player.html?isOutside=true&aid=810873980&bvid=BV1k34y1Y7xk&cid=577698188&p=1",
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8039-a821-e984fbf5a228",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "在尝试写html代码过程中，才发现自己一直下载的是Visual Studio而不是Visual Studio Code🤣，也算是一种收获吧。",
+        "rich_text": [
+          {
+            "plain_text": "        在尝试写html代码过程中，才发现自己一直下载的是Visual Studio而不是Visual Studio Code🤣，也算是一种收获吧。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8018-8fa2-c65e1fa9f2a0",
+        "type": "heading_1",
+        "has_children": false,
+        "children": [],
+        "text": "Blogger后续发展设想",
+        "rich_text": [
+          {
+            "plain_text": "Blogger后续发展设想",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8010-b17c-ea7947790110",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "目前Blog处于开发初期，而且我不喜欢定什么宏大目标，Blog目前朝着类似“微信朋友圈”的方向发展，发表一些自己生活中的见解/趣事。",
+        "rich_text": [
+          {
+            "plain_text": "         目前Blog处于开发初期，而且我不喜欢定什么宏大目标，Blog目前朝着类似“微信朋友圈”的方向发展，发表一些自己生活中的见解/趣事。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-8008-a1d1-c8a0c9029612",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "考虑到一些日本朋友或许会访问Blog，我会用AI将每一篇文章的日语翻译放入另一个分区，如果有翻译错误请及时告诉我，表达不恰当不是我的本意。",
+        "rich_text": [
+          {
+            "plain_text": "         考虑到一些日本朋友或许会访问Blog，我会用AI将每一篇文章的日语翻译放入另一个分区，如果有翻译错误请及时告诉我，表达不恰当不是我的本意。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-803e-9b2e-c3f512558fd9",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "有任何问题可以通过Outlook邮箱联系我，只要不是太忙，一周之内我都会回复。",
+        "rich_text": [
+          {
+            "plain_text": "         有任何问题可以通过Outlook邮箱联系我，只要不是太忙，一周之内我都会回复。",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "17bacf27-2303-80fa-9f0f-f269882f62b3",
+        "type": "divider",
+        "has_children": false,
+        "children": []
+      },
+      {
+        "id": "17bacf27-2303-8017-b508-d6dd17de56a6",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "PS：截稿日期2025.01.14",
+        "rich_text": [
+          {
+            "plain_text": "PS：截稿日期2025.01.14",
+            "href": null,
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            }
+          }
+        ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      }
+    ],
+    "renderer_version": 1
+  }
+}

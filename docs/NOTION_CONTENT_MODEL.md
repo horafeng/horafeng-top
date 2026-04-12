@@ -41,7 +41,7 @@
 | `title` | `Title` | 是 | 标题 |
 | `slug` | `Rich text` | 是（发布内容） | 稳定 URL 标识 |
 | `type` | `Select` | 是 | `note` / `article` / `notice` |
-| `status` | `Status` | 是 | `draft` / `review` / `published` / `archived` |
+| `status` | `Select` | 是 | `draft` / `review` / `published` / `archived` |
 | `summary` | `Rich text` | `article` 建议必填 | 摘要，列表页与搜索使用 |
 | `tags` | `Multi-select` | 否 | 标签列表 |
 | `category` | `Select` | 否 | 主分类 |
@@ -205,7 +205,7 @@
 
 ## 9. 这轮已做的代码准备（非破坏性）
 
-已预留骨架目录：`scripts/notion-sync/`
+当前已落地第一版同步器目录：`scripts/notion-sync/`
 
 - [content-model.js](/D:/Horafeng.top/scripts/notion-sync/content-model.js)
   - 内容类型常量
@@ -217,8 +217,18 @@
   - 媒体提取
   - note 媒体字段推导
   - 内容索引记录组装骨架
+- [env.js](/D:/Horafeng.top/scripts/notion-sync/env.js)
+  - 本地环境变量加载与数据库 ID 解析
+- [notion-client.js](/D:/Horafeng.top/scripts/notion-sync/notion-client.js)
+  - Notion API 请求封装与分页读取
+- [fetch-database.js](/D:/Horafeng.top/scripts/notion-sync/fetch-database.js)
+  - 数据库属性提取与标准化
+- [fetch-page-blocks.js](/D:/Horafeng.top/scripts/notion-sync/fetch-page-blocks.js)
+  - block 递归抓取、标准化与正文文本提取
+- [sync-notion.js](/D:/Horafeng.top/scripts/notion-sync/sync-notion.js)
+  - 第一版可运行同步入口，负责输出 `content/generated/*.json`
 
-这些文件目前不接入现有运行链路，不影响线上行为。
+这些文件目前仍不接入现有前端运行链路，不影响首页、归档、留言板与评论系统现有行为。
 
 ---
 
@@ -236,4 +246,3 @@
 
 如果你要发布一条随笔：填 `type=note`，图片直接放正文 `image` block；同步器自动识别有图/无图。  
 如果你要发布一篇文章：填 `type=article`，写完整正文结构；后续走独立 article 列表与详情页。
-

@@ -57,6 +57,10 @@
   - `docs/NOTION_CONTENT_MODEL.md`
   - `scripts/notion-sync/content-model.js`
   - `scripts/notion-sync/notion-transform.js`
+  - `scripts/notion-sync/sync-notion.js`
+  - `scripts/notion-sync/notion-client.js`
+  - `scripts/notion-sync/fetch-database.js`
+  - `scripts/notion-sync/fetch-page-blocks.js`
 
 ---
 
@@ -266,6 +270,94 @@ python -m http.server 5173
 说明：
 - 仅 `python` 静态服务不会运行 `functions`
 - 需要联调 API/D1/Turnstile 时，请使用 Wrangler 本地模式
+
+---
+
+## 9.1 Notion 同步器（第一版）
+
+当前已实现一个“最小可用”的 Notion 同步器，目标是：
+
+- 从 Notion 数据库读取已发布内容
+- 区分 `note` / `article` / `notice`
+- 读取正文 block
+- 自动识别 `note` 是否含图片
+- 输出为当前项目可继续消费的结构化 JSON
+
+运行前需要本地提供：
+
+- `NOTION_TOKEN`
+- `NOTION_DATABASE_ID`
+
+也支持：
+
+- `NOTION_DATABASE_URL`
+
+环境变量读取顺序：
+
+- 进程环境变量
+- 项目根目录 `.env`
+- 项目根目录 `.env.local`
+- 项目根目录 `.env.notion`
+
+运行方式：
+
+```bash
+npm run notion:sync
+```
+
+或者：
+
+```bash
+node scripts/notion-sync/sync-notion.js
+```
+
+输出文件位置：
+
+- `content/generated/notion-index.json`
+- `content/generated/notion-notes.json`
+- `content/generated/notion-articles.json`
+- `content/generated/notion-notices.json`
+- `content/generated/notion-diaries-compat.json`
+- `content/generated/articles/{slug}.json`
+
+当前已支持字段：
+
+- `title`
+- `slug`
+- `type`
+- `status`
+- `summary`
+- `tags`
+- `category`
+- `cover`
+- `published_at`
+- `featured`
+- `pin`
+
+`note` 有图/无图识别方式：
+
+- 同步器递归扫描正文 block
+- 命中 Notion 原生 `image` block 时，自动生成：
+  - `has_media`
+  - `media`
+  - `images`
+- `images.length > 0` 即可视为“有图 note”
+
+`article` 当前同步程度：
+
+- 已同步基础字段
+- 已同步正文 block
+- 已输出为独立详情 JSON
+- 这一轮还没有接入现有前端文章页
+
+下一阶段如果要接前端，最建议先看：
+
+- `content/generated/notion-index.json`
+- `content/generated/notion-notes.json`
+- `content/generated/notion-diaries-compat.json`
+- `content/generated/articles/{slug}.json`
+- `assets/js/index.js`
+- `assets/js/archive.js`
 
 ---
 

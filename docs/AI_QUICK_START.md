@@ -47,6 +47,14 @@
   - 内容类型/字段常量与基础推导函数骨架
 - `scripts/notion-sync/notion-transform.js`
   - Notion block 递归扫描、媒体提取、内容记录转换骨架
+- `scripts/notion-sync/sync-notion.js`
+  - 第一版 Notion 同步入口，负责拉数据库、抓正文、写生成文件
+- `scripts/notion-sync/notion-client.js`
+  - Notion API 请求封装
+- `scripts/notion-sync/fetch-database.js`
+  - 数据库属性提取与字段标准化
+- `scripts/notion-sync/fetch-page-blocks.js`
+  - block 递归获取、标准化、正文文本提取
 - `functions/api/comments.js`
   - 前台评论读取与提交
 - `functions/api/admin/comments.js`

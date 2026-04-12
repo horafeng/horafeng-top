@@ -1300,6 +1300,16 @@ Resend 的角色是：
   - Notion 新内容模型常量与 note 展示推导骨架
 - `scripts/notion-sync/notion-transform.js`
   - Notion block 递归扫描、媒体提取、统一内容记录转换骨架
+- `scripts/notion-sync/env.js`
+  - 读取本地环境变量，并解析 `NOTION_DATABASE_ID` / `NOTION_DATABASE_URL`
+- `scripts/notion-sync/notion-client.js`
+  - Notion API 请求封装与分页读取
+- `scripts/notion-sync/fetch-database.js`
+  - 数据库字段提取与标准化
+- `scripts/notion-sync/fetch-page-blocks.js`
+  - 正文 block 递归抓取、标准化、正文文本提取
+- `scripts/notion-sync/sync-notion.js`
+  - 第一版最小可用同步器入口，输出 `content/generated/*.json`
 
 ### 10.8 环境与部署说明
 

@@ -1,4 +1,4 @@
-import { CONTENT_TYPES, NOTE_IMAGE_BLOCK_TYPES, NOTE_MEDIA_BLOCK_TYPES, createEmptyContentRecord, deriveNoteDisplay, isContentType } from "./content-model.js";
+import { CONTENT_TYPES, NOTE_IMAGE_BLOCK_TYPES, NOTE_MEDIA_BLOCK_TYPES, createEmptyContentRecord, deriveNoteDisplay, isContentType, normalizeContentType } from "./content-model.js";
 
 function blockPayload(block) {
   if (!block || !block.type) {
@@ -82,7 +82,8 @@ export function deriveNoteMediaFields(blocks = [], propertyCover = "") {
 
 export function buildContentIndexRecord({ pageId = "", properties = {}, blocks = [], lastEditedTime = "" } = {}) {
   const record = createEmptyContentRecord();
-  const type = isContentType(properties.type) ? properties.type : CONTENT_TYPES.NOTE;
+  const normalizedType = normalizeContentType(properties.type);
+  const type = isContentType(normalizedType) ? normalizedType : CONTENT_TYPES.NOTE;
 
   const noteMedia =
     type === CONTENT_TYPES.NOTE
@@ -127,4 +128,3 @@ export function buildArticleDetailRecord({ indexRecord = null, blocks = [] } = {
     renderer_version: 1,
   };
 }
-
