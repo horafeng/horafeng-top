@@ -17,11 +17,18 @@ const TEXT = {
   syncTriggered: "\u5df2\u89e6\u53d1",
   syncSuccess: "\u6210\u529f",
   syncFailed: "\u5931\u8d25",
+  syncSkipped: "\u65e0\u53d8\u66f4",
   syncNever: "\u6682\u65e0",
   syncRequested: "Notion \u540c\u6b65\u5df2\u89e6\u53d1\uff0c\u6b63\u5728\u7b49\u5f85\u7ed3\u679c\u56de\u62a5\u3002",
   syncConflict: "\u5f53\u524d\u5df2\u6709\u4e00\u6b21 Notion \u540c\u6b65\u5728\u8fdb\u884c\u4e2d\u3002",
   syncButtonIdle: "\u7acb\u5373\u540c\u6b65 Notion",
   syncButtonBusy: "\u6b63\u5728\u89e6\u53d1\u2026",
+  autoOn: "\u5df2\u5f00\u542f",
+  autoOff: "\u5df2\u5173\u95ed",
+  autoEnableButton: "\u5f00\u542f\u81ea\u52a8\u540c\u6b65",
+  autoDisableButton: "\u5173\u95ed\u81ea\u52a8\u540c\u6b65",
+  autoUpdating: "\u6b63\u5728\u66f4\u65b0\u81ea\u52a8\u540c\u6b65\u2026",
+  autoUpdated: (enabled) => `\u81ea\u52a8\u540c\u6b65\u5df2${enabled ? "\u5f00\u542f" : "\u5173\u95ed"}\u3002`,
   bloggerBadge: "\u535a\u4e3b",
   contactLabel: "\u8054\u7cfb\u65b9\u5f0f\uff08\u4ec5\u540e\u53f0\u53ef\u89c1\uff09\uff1a",
   notifyEnabled: "\u90ae\u4ef6\u63d0\u9192\uff1a\u5df2\u5f00\u542f",
@@ -47,6 +54,7 @@ const state = {
   syncLoading: false,
   syncPollingTimer: null,
   syncStatus: null,
+  autoToggleLoading: false,
 };
 
 function setLoginFeedback(message, isError = false) {
@@ -125,6 +133,7 @@ function getSyncResultLabel(item) {
   if (item.last_result === "triggered") return TEXT.syncTriggered;
   if (item.last_result === "success") return TEXT.syncSuccess;
   if (item.last_result === "failed") return TEXT.syncFailed;
+  if (item.last_result === "skipped") return TEXT.syncSkipped;
   return TEXT.syncNever;
 }
 
@@ -135,6 +144,15 @@ function updateSyncButton() {
   const busy = state.syncLoading || state.syncStatus?.status === "syncing";
   button.disabled = busy;
   button.textContent = state.syncLoading ? TEXT.syncButtonBusy : TEXT.syncButtonIdle;
+
+  const autoButton = document.getElementById("admin-sync-toggle-auto");
+  if (!autoButton) return;
+  autoButton.disabled = state.autoToggleLoading;
+  autoButton.textContent = state.autoToggleLoading
+    ? TEXT.autoUpdating
+    : state.syncStatus?.auto_enabled
+      ? TEXT.autoDisableButton
+      : TEXT.autoEnableButton;
 }
 
 function renderSyncStatus(item) {
@@ -144,11 +162,15 @@ function renderSyncStatus(item) {
   const resultEl = document.getElementById("admin-sync-result");
   const startedAtEl = document.getElementById("admin-sync-started-at");
   const finishedAtEl = document.getElementById("admin-sync-finished-at");
+  const autoStatusEl = document.getElementById("admin-sync-auto-status");
+  const checkedAtEl = document.getElementById("admin-sync-checked-at");
 
   if (statusEl) statusEl.textContent = getSyncStatusLabel(item);
   if (resultEl) resultEl.textContent = getSyncResultLabel(item);
   if (startedAtEl) startedAtEl.textContent = item?.last_started_at ? formatTime(item.last_started_at) : TEXT.syncNever;
   if (finishedAtEl) finishedAtEl.textContent = item?.last_finished_at ? formatTime(item.last_finished_at) : TEXT.syncNever;
+  if (autoStatusEl) autoStatusEl.textContent = item?.auto_enabled ? TEXT.autoOn : TEXT.autoOff;
+  if (checkedAtEl) checkedAtEl.textContent = item?.last_checked_at ? formatTime(item.last_checked_at) : TEXT.syncNever;
 
   const detailMessage = item?.last_message || "";
   setSyncFeedback(detailMessage || "", item?.last_result === "failed");
@@ -309,6 +331,31 @@ async function triggerNotionSync() {
   }
 }
 
+async function toggleAutoSync() {
+  if (state.autoToggleLoading || !state.syncStatus) {
+    return;
+  }
+
+  state.autoToggleLoading = true;
+  updateSyncButton();
+
+  try {
+    const result = await apiJson("/api/admin/notion-sync", {
+      method: "PATCH",
+      body: JSON.stringify({
+        auto_enabled: !state.syncStatus.auto_enabled,
+      }),
+    });
+    renderSyncStatus(result.item || null);
+    setSyncFeedback(result.message || TEXT.autoUpdated(Boolean(result.item?.auto_enabled)), false);
+  } catch (error) {
+    setSyncFeedback(error.message || "Failed to update auto sync.", true);
+  } finally {
+    state.autoToggleLoading = false;
+    updateSyncButton();
+  }
+}
+
 async function doLogin(event) {
   event.preventDefault();
   setLoginFeedback("");
@@ -389,6 +436,10 @@ function bindDashboardEvents() {
 
   document.getElementById("admin-sync-trigger").addEventListener("click", () => {
     triggerNotionSync().catch(() => {});
+  });
+
+  document.getElementById("admin-sync-toggle-auto").addEventListener("click", () => {
+    toggleAutoSync().catch(() => {});
   });
 
   const list = document.getElementById("admin-comments-list");

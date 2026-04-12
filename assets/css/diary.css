@@ -2268,6 +2268,13 @@ p {
   flex-wrap: wrap;
 }
 
+.admin-sync-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .admin-sync-head h3 {
   margin-bottom: 4px;
 }

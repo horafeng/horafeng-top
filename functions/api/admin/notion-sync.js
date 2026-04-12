@@ -3,9 +3,11 @@ import { getDb, json, parseJson } from "../../_lib/comments-utils.js";
 import {
   buildNotionSyncStatePayload,
   dispatchNotionSync,
+  getNotionFingerprint,
   getNotionSyncState,
   markNotionSyncFinished,
   markNotionSyncTriggered,
+  reconcileNotionSyncState,
   setNotionAutoSyncEnabled,
   tryStartNotionSync,
 } from "../../_lib/notion-sync.js";
@@ -16,7 +18,7 @@ async function ensureAdmin(context) {
   if (!auth.ok) {
     return { db, failedResponse: auth.response };
   }
-  return { db, failedResponse: null, session: auth.session };
+  return { db, failedResponse: null };
 }
 
 export async function onRequestGet(context) {
@@ -26,7 +28,7 @@ export async function onRequestGet(context) {
       return failedResponse;
     }
 
-    const state = await getNotionSyncState(db);
+    const state = await reconcileNotionSyncState(db, context.env);
     return json(buildNotionSyncStatePayload(state, context.env));
   } catch (error) {
     return json({ ok: false, message: error.message || "Failed to load notion sync status." }, 500);
@@ -41,6 +43,8 @@ export async function onRequestPost(context) {
       return failedResponse;
     }
 
+    await reconcileNotionSyncState(db, env);
+
     const started = await tryStartNotionSync(db, {
       source: "manual",
       triggeredBy: "admin",
@@ -51,13 +55,21 @@ export async function onRequestPost(context) {
         {
           ok: false,
           message: "A notion sync is already in progress.",
-          item: started.state,
+          item: buildNotionSyncStatePayload(started.state, env).item,
         },
         409,
       );
     }
 
     try {
+      let pendingFingerprint = "";
+      try {
+        const fingerprint = await getNotionFingerprint(env);
+        pendingFingerprint = fingerprint.fingerprint;
+      } catch {
+        pendingFingerprint = "";
+      }
+
       const trigger = await dispatchNotionSync(env, {
         source: "manual",
         runId: started.runId,
@@ -67,9 +79,12 @@ export async function onRequestPost(context) {
 
       const state = await markNotionSyncTriggered(db, {
         runId: started.runId,
-        message: "Sync trigger accepted. Waiting for completion report.",
+        message: "Manual sync triggered. Waiting for Cloudflare Pages deployment result.",
         responseText: trigger.responseText,
         deploymentUrl: trigger.deploymentUrl,
+        deploymentId: trigger.deploymentId,
+        deploymentStatus: trigger.deploymentStatus,
+        pendingFingerprint,
       });
 
       return json({
@@ -111,15 +126,14 @@ export async function onRequestPatch(context) {
       return json({ ok: false, message: "Invalid JSON body." }, 400);
     }
 
-    const autoEnabled = payload.auto_enabled;
-    if (typeof autoEnabled !== "boolean") {
+    if (typeof payload.auto_enabled !== "boolean") {
       return json({ ok: false, message: "auto_enabled must be a boolean." }, 400);
     }
 
-    const state = await setNotionAutoSyncEnabled(db, autoEnabled);
+    const state = await setNotionAutoSyncEnabled(db, payload.auto_enabled);
     return json({
       ok: true,
-      message: `Auto sync ${autoEnabled ? "enabled" : "disabled"}.`,
+      message: `Auto sync ${payload.auto_enabled ? "enabled" : "disabled"}.`,
       item: buildNotionSyncStatePayload(state, env).item,
     });
   } catch (error) {

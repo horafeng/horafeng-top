@@ -64,7 +64,10 @@
                 <h3 id="admin-sync-title">&#78;&#111;&#116;&#105;&#111;&#110; &#20869;&#23481;&#21516;&#27493;</h3>
                 <p class="subtle">&#24320;&#21457;&#38454;&#27573;&#21487;&#25163;&#21160;&#35270;&#21457;&#65307;&#21518;&#32493;&#33258;&#21160;&#27169;&#24335;&#20250;&#22797;&#29992;&#21516;&#19968;&#22871;&#21518;&#31471;&#25509;&#21475;&#12290;</p>
               </div>
-              <button id="admin-sync-trigger" type="button">&#31435;&#21363;&#21516;&#27493; &#78;&#111;&#116;&#105;&#111;&#110;</button>
+              <div class="admin-sync-actions">
+                <button id="admin-sync-toggle-auto" class="ghost-btn" type="button">&#21551;&#29992;&#33258;&#21160;&#21516;&#27493;</button>
+                <button id="admin-sync-trigger" type="button">&#31435;&#21363;&#21516;&#27493; &#78;&#111;&#116;&#105;&#111;&#110;</button>
+              </div>
             </div>
 
             <div class="admin-sync-grid">
@@ -83,6 +86,14 @@
               <div class="admin-sync-item">
                 <span class="admin-sync-label">&#26368;&#36817;&#23436;&#25104;&#26102;&#38388;</span>
                 <strong id="admin-sync-finished-at">-</strong>
+              </div>
+              <div class="admin-sync-item">
+                <span class="admin-sync-label">&#33258;&#21160;&#21516;&#27493;</span>
+                <strong id="admin-sync-auto-status">-</strong>
+              </div>
+              <div class="admin-sync-item">
+                <span class="admin-sync-label">&#26368;&#36817;&#26816;&#26597;&#26102;&#38388;</span>
+                <strong id="admin-sync-checked-at">-</strong>
               </div>
             </div>
 

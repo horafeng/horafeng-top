@@ -26,6 +26,8 @@ export async function onRequestPost(context) {
       finishedAt: sanitizeSingleLine(payload.finished_at, 80),
       checkedAt: sanitizeSingleLine(payload.checked_at, 80),
       deploymentUrl: sanitizeSingleLine(payload.deployment_url, 500),
+      deploymentId: sanitizeSingleLine(payload.deployment_id, 160),
+      deploymentStatus: sanitizeSingleLine(payload.deployment_status, 40),
       responseText: sanitizeSingleLine(payload.response_text, 1000),
     });
 
