@@ -9,6 +9,7 @@ import { NotionClient, queryDatabasePages } from "./notion-client.js";
 
 const GENERATED_DIR = path.join(PROJECT_ROOT, "content", "generated");
 const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
+const MEDIA_DIR = path.join(GENERATED_DIR, "media", "notion");
 
 function log(message) {
   console.log(`[notion-sync] ${message}`);
@@ -27,6 +28,122 @@ function safeSlug(value, fallback) {
     .replace(/^-|-$/g, "");
 
   return normalized || fallback;
+}
+
+function sanitizeSegment(value, fallback = "asset") {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return normalized || fallback;
+}
+
+function isCacheableNotionAsset(url) {
+  const value = String(url || "").trim();
+  if (!value) {
+    return false;
+  }
+
+  return /prod-files-secure\.s3\.[^/]+\.amazonaws\.com/i.test(value) || /secure\.notion-static\.com/i.test(value);
+}
+
+function getFileExtension(url, contentType = "") {
+  try {
+    const pathname = new URL(url).pathname;
+    const ext = path.extname(pathname);
+    if (ext) {
+      return ext.toLowerCase();
+    }
+  } catch {
+    // ignore
+  }
+
+  if (/image\/png/i.test(contentType)) return ".png";
+  if (/image\/jpe?g/i.test(contentType)) return ".jpg";
+  if (/image\/webp/i.test(contentType)) return ".webp";
+  if (/image\/gif/i.test(contentType)) return ".gif";
+  if (/video\/mp4/i.test(contentType)) return ".mp4";
+  if (/application\/pdf/i.test(contentType)) return ".pdf";
+  return ".bin";
+}
+
+function cloneBlocksWithLocalizedUrls(blocks = [], assetMap = new Map()) {
+  return blocks.map((block) => {
+    const next = {
+      ...block,
+      children: cloneBlocksWithLocalizedUrls(block.children || [], assetMap),
+    };
+
+    if (typeof next.url === "string" && assetMap.has(next.url)) {
+      next.url = assetMap.get(next.url);
+    }
+
+    return next;
+  });
+}
+
+function cloneRecordWithLocalizedUrls(record, assetMap = new Map()) {
+  return {
+    ...record,
+    cover: assetMap.get(record.cover) || record.cover,
+    images: Array.isArray(record.images) ? record.images.map((url) => assetMap.get(url) || url) : [],
+    media: Array.isArray(record.media)
+      ? record.media.map((item) => ({
+          ...item,
+          url: assetMap.get(item.url) || item.url,
+        }))
+      : [],
+  };
+}
+
+async function cachePageAssets(client, record, blocks = []) {
+  const urls = new Set();
+  const assetMap = new Map();
+  const pageSlug = sanitizeSegment(record.slug || record.id || record.notion_page_id || "page", "page");
+
+  const collect = (url) => {
+    if (isCacheableNotionAsset(url)) {
+      urls.add(url);
+    }
+  };
+
+  collect(record.cover);
+  (record.images || []).forEach(collect);
+  (record.media || []).forEach((item) => collect(item?.url));
+
+  const walk = (items) => {
+    items.forEach((block) => {
+      collect(block?.url);
+      if (Array.isArray(block?.children) && block.children.length) {
+        walk(block.children);
+      }
+    });
+  };
+  walk(blocks);
+
+  let assetIndex = 0;
+  for (const url of urls) {
+    assetIndex += 1;
+    try {
+      const downloaded = await client.downloadFile(url);
+      const extension = getFileExtension(url, downloaded.contentType);
+      const fileName = `${String(assetIndex).padStart(2, "0")}${extension}`;
+      const pageDir = path.join(MEDIA_DIR, pageSlug);
+      const filePath = path.join(pageDir, fileName);
+      const publicPath = `content/generated/media/notion/${pageSlug}/${fileName}`;
+
+      await mkdir(pageDir, { recursive: true });
+      await writeFile(filePath, downloaded.buffer);
+      assetMap.set(url, publicPath);
+    } catch (error) {
+      log(`跳过资源缓存：${record.title || record.id} -> ${url} (${error.message})`);
+    }
+  }
+
+  return assetMap;
 }
 
 function buildCompatNoteEntry(record, normalizedBlocks, mood = "") {
@@ -107,26 +224,29 @@ async function main() {
 
     const rawBlocks = await fetchPageBlocksRecursively(client, page.id);
     const normalizedBlocks = normalizeBlocks(rawBlocks);
-    const indexRecord = buildContentIndexRecord({
+    const builtRecord = buildContentIndexRecord({
       pageId: pageData.pageId,
       properties: pageData.properties,
       blocks: rawBlocks,
       lastEditedTime: pageData.lastEditedTime,
     });
+    const assetMap = await cachePageAssets(client, builtRecord, normalizedBlocks);
+    const indexRecord = cloneRecordWithLocalizedUrls(builtRecord, assetMap);
+    const localizedBlocks = cloneBlocksWithLocalizedUrls(normalizedBlocks, assetMap);
 
     indexItems.push(indexRecord);
 
     if (normalizeContentType(indexRecord.type) === CONTENT_TYPES.NOTE) {
-      const noteRecord = buildNoteOutput(indexRecord, normalizedBlocks, pageData.properties.mood);
+      const noteRecord = buildNoteOutput(indexRecord, localizedBlocks, pageData.properties.mood);
       noteItems.push(noteRecord);
-      compatNotes.push(buildCompatNoteEntry(indexRecord, normalizedBlocks, pageData.properties.mood));
+      compatNotes.push(buildCompatNoteEntry(indexRecord, localizedBlocks, pageData.properties.mood));
       continue;
     }
 
     if (normalizeContentType(indexRecord.type) === CONTENT_TYPES.ARTICLE) {
       const detail = buildArticleDetailRecord({
         indexRecord,
-        blocks: normalizedBlocks,
+        blocks: localizedBlocks,
       });
       const detailFileName = `${safeSlug(indexRecord.slug, indexRecord.id)}.json`;
       const detailPath = path.join(ARTICLE_DETAILS_DIR, detailFileName);
@@ -146,7 +266,7 @@ async function main() {
 
     noticeItems.push({
       ...indexRecord,
-      blocks: normalizedBlocks,
+      blocks: localizedBlocks,
     });
   }
 

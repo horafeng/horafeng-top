@@ -1162,6 +1162,20 @@ p {
     gap: 12px;
     font-size: 0.98rem;
   }
+
+  .article-bookmark {
+    grid-template-columns: 60px minmax(0, 1fr);
+  }
+
+  .article-bookmark-arrow {
+    display: none;
+  }
+
+  .article-bookmark-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+  }
 }
 
 .single-column {
@@ -1221,32 +1235,35 @@ p {
 
 .article-body {
   display: grid;
-  gap: 14px;
+  gap: 18px;
   font-size: 1rem;
-  line-height: 1.84;
+  line-height: 1.9;
+  color: rgba(48, 64, 87, 0.94);
 }
 
 .article-body h2,
 .article-body h3,
 .article-body h4 {
-  margin-top: 10px;
+  margin: 16px 0 0;
   color: #2f4560;
+  line-height: 1.34;
 }
 
 .article-body h2 {
-  font-size: 1.5rem;
+  font-size: 1.62rem;
 }
 
 .article-body h3 {
-  font-size: 1.24rem;
+  font-size: 1.3rem;
 }
 
 .article-body h4 {
-  font-size: 1.08rem;
+  font-size: 1.12rem;
 }
 
 .article-body p {
-  line-height: 1.84;
+  line-height: 1.9;
+  margin: 0;
 }
 
 .article-body a {
@@ -1254,47 +1271,64 @@ p {
   text-underline-offset: 0.16em;
 }
 
-.article-body ul,
-.article-body ol {
+.article-list {
   margin: 0;
-  padding-left: 1.4rem;
+  padding-left: 1.55rem;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
-.article-body li > p:first-child {
-  margin-top: 0;
+.article-list li {
+  padding-left: 0.18rem;
+}
+
+.article-list-copy {
+  line-height: 1.82;
 }
 
 .article-body blockquote {
   margin: 0;
-  padding: 12px 14px;
-  border-left: 4px solid rgba(101, 125, 159, 0.4);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.46);
+  padding: 16px 18px;
+  border-left: 4px solid rgba(101, 125, 159, 0.42);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(244, 248, 255, 0.52));
   color: #4a5c75;
+  box-shadow: inset 0 0 0 1px rgba(101, 125, 159, 0.1);
 }
 
+.article-body blockquote p + p {
+  margin-top: 10px;
+}
+
+.article-divider,
 .article-body hr {
   width: 100%;
   border: 0;
-  border-top: 1px dashed rgba(101, 125, 159, 0.28);
-  margin: 6px 0;
+  border-top: 1px dashed rgba(101, 125, 159, 0.3);
+  margin: 4px 0;
 }
 
 .article-callout {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.58);
+  gap: 12px;
+  padding: 15px 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(245, 249, 255, 0.58));
   border: 1px solid rgba(101, 125, 159, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.46);
 }
 
 .article-callout-icon {
-  font-size: 1.1rem;
-  line-height: 1.2;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(111, 137, 173, 0.12);
+  color: #516a8d;
+  font-size: 1.05rem;
+  line-height: 1;
 }
 
 .article-callout-copy {
@@ -1303,56 +1337,180 @@ p {
   min-width: 0;
 }
 
-.article-bookmark,
+.article-bookmark {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(101, 125, 159, 0.18);
+  background: rgba(255, 255, 255, 0.68);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 12px 26px rgba(31, 44, 66, 0.08);
+}
+
+.article-bookmark-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(232, 240, 250, 0.96), rgba(214, 226, 242, 0.88));
+  color: #587194;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.article-bookmark-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.article-bookmark-label,
+.article-embed-label,
+.article-embed-meta span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.article-bookmark-title,
+.article-embed-title {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #31465f;
+}
+
+.article-bookmark-host {
+  color: #5d7190;
+  font-size: 0.88rem;
+}
+
+.article-bookmark-url,
+.article-embed-url,
+.article-embed-meta a {
+  min-width: 0;
+  color: #7a8596;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.article-bookmark-arrow {
+  color: #7084a2;
+  font-size: 1.1rem;
+}
+
+.article-embed {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(101, 125, 159, 0.18);
+  background: rgba(255, 255, 255, 0.64);
+  box-shadow: 0 12px 26px rgba(31, 44, 66, 0.08);
+}
+
+.article-embed-frame {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(211, 221, 236, 0.76);
+}
+
+.article-embed-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.article-embed-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .article-embed-link {
   display: grid;
   gap: 6px;
-  padding: 12px 14px;
-  border-radius: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
   border: 1px solid rgba(101, 125, 159, 0.18);
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.64);
   text-decoration: none;
   color: inherit;
-}
-
-.article-bookmark span,
-.article-embed-link span {
-  color: var(--muted);
-  font-size: 0.82rem;
+  box-shadow: 0 12px 26px rgba(31, 44, 66, 0.08);
 }
 
 .article-image {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
+}
+
+.article-image-frame {
+  overflow: hidden;
+  border-radius: 22px;
+  background: rgba(232, 239, 248, 0.68);
+  box-shadow: 0 16px 32px rgba(24, 36, 56, 0.1);
 }
 
 .article-image img {
   width: 100%;
-  max-height: 520px;
-  object-fit: cover;
+  max-height: 560px;
+  object-fit: contain;
   display: block;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.52);
 }
 
 .article-image figcaption {
   color: var(--muted);
   font-size: 0.86rem;
+  text-align: center;
+}
+
+.article-code-wrap {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.article-code-label {
+  width: fit-content;
+  margin: 0 0 -1px 14px;
+  padding: 5px 10px 6px;
+  border-radius: 12px 12px 0 0;
+  background: rgba(24, 33, 46, 0.96);
+  color: rgba(236, 243, 252, 0.74);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .article-code {
   margin: 0;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-radius: 16px;
-  background: #1e2734;
+  background: #1b2432;
   color: #edf2fb;
   overflow: auto;
+  box-shadow: 0 18px 34px rgba(18, 25, 36, 0.24);
 }
 
 .article-code code {
   font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   font-size: 0.9rem;
   line-height: 1.7;
+  white-space: pre;
 }
 
 .article-inline-code {
@@ -1360,6 +1518,91 @@ p {
   border-radius: 8px;
   background: rgba(99, 122, 158, 0.12);
   font-size: 0.92em;
+}
+
+.article-rt-gray {
+  color: #6e7786;
+}
+
+.article-rt-brown {
+  color: #8d6546;
+}
+
+.article-rt-orange {
+  color: #b56b2d;
+}
+
+.article-rt-yellow {
+  color: #a27a07;
+}
+
+.article-rt-green {
+  color: #2b8754;
+}
+
+.article-rt-blue {
+  color: #2f6eb7;
+}
+
+.article-rt-purple {
+  color: #7b60b5;
+}
+
+.article-rt-pink {
+  color: #c06292;
+}
+
+.article-rt-red {
+  color: #c35162;
+}
+
+.article-rt-gray-background,
+.article-rt-brown-background,
+.article-rt-orange-background,
+.article-rt-yellow-background,
+.article-rt-green-background,
+.article-rt-blue-background,
+.article-rt-purple-background,
+.article-rt-pink-background,
+.article-rt-red-background {
+  padding: 0.05em 0.25em;
+  border-radius: 6px;
+}
+
+.article-rt-gray-background {
+  background: rgba(113, 123, 137, 0.15);
+}
+
+.article-rt-brown-background {
+  background: rgba(150, 114, 83, 0.16);
+}
+
+.article-rt-orange-background {
+  background: rgba(225, 146, 77, 0.16);
+}
+
+.article-rt-yellow-background {
+  background: rgba(226, 193, 85, 0.2);
+}
+
+.article-rt-green-background {
+  background: rgba(97, 175, 126, 0.18);
+}
+
+.article-rt-blue-background {
+  background: rgba(107, 160, 224, 0.2);
+}
+
+.article-rt-purple-background {
+  background: rgba(159, 126, 211, 0.2);
+}
+
+.article-rt-pink-background {
+  background: rgba(222, 136, 174, 0.2);
+}
+
+.article-rt-red-background {
+  background: rgba(223, 112, 125, 0.2);
 }
 
 .article-empty {

@@ -401,3 +401,11 @@ node scripts/notion-sync/sync-notion.js
   - first minimal frontend path for Notion `article`
   - detail data comes from `content/generated/articles/{slug}.json`
   - current renderer supports headings, paragraph, bulleted/numbered list, quote, callout, divider, image, bookmark, embed, code
+
+## 13. Notion Media Cache (Incremental)
+
+- The syncer now also writes local cached copies of Notion-hosted signed files/images into:
+  - `content/generated/media/notion/...`
+- This avoids homepage note covers and article body images breaking after Notion temporary signed URLs expire.
+- If newly synced Notion images are still missing on the site, rerun:
+  - `npm run notion:sync`

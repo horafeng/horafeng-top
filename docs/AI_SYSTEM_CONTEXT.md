@@ -1370,3 +1370,9 @@ Resend 的角色是：
   - code
 - homepage no-image note cards no longer use fixed height
 - homepage image cards still keep the older fixed visual structure
+## Incremental Update: Notion Media Cache
+
+- Notion-hosted signed image/file URLs expire quickly and should not be consumed directly by homepage note cards or article detail pages.
+- The syncer now caches these assets into:
+  - `content/generated/media/notion/`
+- Homepage note cards and article detail JSON should consume the generated local paths after each sync run.

@@ -14,8 +14,23 @@ export class NotionClient {
     this.token = token;
   }
 
+  async requestRaw(url, { method = "GET", headers = {}, body } = {}) {
+    const response = await fetch(url, {
+      method,
+      headers,
+      body,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`HTTP request failed (${response.status}): ${text || "Unknown error"}`);
+    }
+
+    return response;
+  }
+
   async request(endpoint, { method = "GET", body } = {}) {
-    const response = await fetch(`${NOTION_API_BASE}${endpoint}`, {
+    const response = await this.requestRaw(`${NOTION_API_BASE}${endpoint}`, {
       method,
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -54,6 +69,16 @@ export class NotionClient {
 
     const suffix = search.size ? `?${search.toString()}` : "";
     return this.request(`/blocks/${blockId}/children${suffix}`);
+  }
+
+  async downloadFile(url) {
+    const response = await this.requestRaw(url);
+    const contentType = response.headers.get("content-type") || "";
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return {
+      buffer,
+      contentType,
+    };
   }
 }
 

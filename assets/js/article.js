@@ -4,6 +4,27 @@ function escapeAttr(text) {
   return String(text).replaceAll('"', "&quot;");
 }
 
+function getPlainText(richText = []) {
+  return (Array.isArray(richText) ? richText : []).map((segment) => segment?.plain_text || "").join("");
+}
+
+function colorClassName(color) {
+  const token = String(color || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z_]+/g, "");
+
+  if (!token || token === "default") {
+    return "";
+  }
+
+  return `article-rt-${token.replaceAll("_", "-")}`;
+}
+
+function wrapWithTag(html, condition, startTag, endTag) {
+  return condition ? `${startTag}${html}${endTag}` : html;
+}
+
 function renderRichText(richText = []) {
   if (!Array.isArray(richText) || !richText.length) {
     return "";
@@ -14,21 +35,17 @@ function renderRichText(richText = []) {
       let html = escapeHtml(segment?.plain_text || "").replaceAll("\n", "<br>");
       const annotations = segment?.annotations || {};
 
-      if (annotations.code) {
-        html = `<code class="article-inline-code">${html}</code>`;
+      html = wrapWithTag(html, annotations.code, '<code class="article-inline-code">', "</code>");
+      html = wrapWithTag(html, annotations.bold, "<strong>", "</strong>");
+      html = wrapWithTag(html, annotations.italic, "<em>", "</em>");
+      html = wrapWithTag(html, annotations.strikethrough, "<s>", "</s>");
+      html = wrapWithTag(html, annotations.underline, "<u>", "</u>");
+
+      const colorClass = colorClassName(annotations.color);
+      if (colorClass) {
+        html = `<span class="${colorClass}">${html}</span>`;
       }
-      if (annotations.bold) {
-        html = `<strong>${html}</strong>`;
-      }
-      if (annotations.italic) {
-        html = `<em>${html}</em>`;
-      }
-      if (annotations.strikethrough) {
-        html = `<s>${html}</s>`;
-      }
-      if (annotations.underline) {
-        html = `<u>${html}</u>`;
-      }
+
       if (segment?.href) {
         html = `<a href="${escapeAttr(segment.href)}" target="_blank" rel="noopener noreferrer">${html}</a>`;
       }
@@ -50,20 +67,134 @@ function getBlockHtmlText(block) {
   return "";
 }
 
+function getBlockPlainText(block) {
+  if (Array.isArray(block?.rich_text) && block.rich_text.length) {
+    return escapeHtml(getPlainText(block.rich_text));
+  }
+
+  if (typeof block?.text === "string" && block.text.trim()) {
+    return escapeHtml(block.text);
+  }
+
+  return "";
+}
+
+function getUrlMeta(url) {
+  try {
+    const parsed = new URL(url);
+    return {
+      hostname: parsed.hostname.replace(/^www\./i, ""),
+      displayUrl: `${parsed.hostname.replace(/^www\./i, "")}${parsed.pathname === "/" ? "" : parsed.pathname}`,
+      href: parsed.toString(),
+    };
+  } catch {
+    return {
+      hostname: "",
+      displayUrl: url || "",
+      href: url || "#",
+    };
+  }
+}
+
+function getBookmarkTitle(block) {
+  const caption = String(block?.caption || "").trim();
+  if (caption) {
+    return caption;
+  }
+
+  const { hostname } = getUrlMeta(block?.url || "");
+  return hostname || "\u5916\u90e8\u94fe\u63a5";
+}
+
+function getEmbedFrame(url) {
+  if (!url) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace(/^www\./i, "");
+
+    if (hostname.includes("youtube.com")) {
+      const id = parsed.searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : "";
+    }
+
+    if (hostname === "youtu.be") {
+      const id = parsed.pathname.replace(/^\/+/, "");
+      return id ? `https://www.youtube.com/embed/${id}` : "";
+    }
+
+    if (hostname.includes("vimeo.com")) {
+      const id = parsed.pathname.split("/").filter(Boolean).pop();
+      return id ? `https://player.vimeo.com/video/${id}` : "";
+    }
+
+    if (hostname.includes("bilibili.com")) {
+      if (parsed.pathname.includes("/player.html")) {
+        parsed.protocol = "https:";
+        return parsed.toString();
+      }
+      const bvid = parsed.searchParams.get("bvid");
+      if (bvid) {
+        return `https://player.bilibili.com/player.html?isOutside=true&bvid=${encodeURIComponent(bvid)}&p=1`;
+      }
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
 function renderBookmarkBlock(block) {
+  const meta = getUrlMeta(block.url || "");
+  const title = getBookmarkTitle(block);
+
   return `
-    <a class="article-bookmark" href="${escapeAttr(block.url || "#")}" target="_blank" rel="noopener noreferrer">
-      <span>\u4e66\u7b7e\u94fe\u63a5</span>
-      <strong>${escapeHtml(block.url || "")}</strong>
+    <a class="article-bookmark" href="${escapeAttr(meta.href)}" target="_blank" rel="noopener noreferrer">
+      <div class="article-bookmark-preview is-placeholder" aria-hidden="true">${escapeHtml((meta.hostname || title).slice(0, 1).toUpperCase())}</div>
+      <div class="article-bookmark-copy">
+        <span class="article-bookmark-label">\u4e66\u7b7e</span>
+        <strong class="article-bookmark-title">${escapeHtml(title)}</strong>
+        ${meta.hostname ? `<span class="article-bookmark-host">${escapeHtml(meta.hostname)}</span>` : ""}
+        <span class="article-bookmark-url">${escapeHtml(meta.displayUrl)}</span>
+      </div>
+      <span class="article-bookmark-arrow" aria-hidden="true">\u2197</span>
     </a>
   `;
 }
 
 function renderEmbedBlock(block) {
+  const meta = getUrlMeta(block.url || "");
+  const embedFrame = getEmbedFrame(meta.href);
+
+  if (embedFrame) {
+    return `
+      <figure class="article-embed">
+        <div class="article-embed-frame">
+          <iframe
+            src="${escapeAttr(embedFrame)}"
+            title="${escapeAttr(meta.hostname || "\u5d4c\u5165\u5185\u5bb9")}"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+          ></iframe>
+        </div>
+        <figcaption class="article-embed-meta">
+          <span>\u5d4c\u5165\u5185\u5bb9</span>
+          <a href="${escapeAttr(meta.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(meta.displayUrl)}</a>
+        </figcaption>
+      </figure>
+    `;
+  }
+
   return `
-    <a class="article-embed-link" href="${escapeAttr(block.url || "#")}" target="_blank" rel="noopener noreferrer">
-      <span>\u5d4c\u5165\u5185\u5bb9</span>
-      <strong>${escapeHtml(block.url || "")}</strong>
+    <a class="article-embed-link" href="${escapeAttr(meta.href)}" target="_blank" rel="noopener noreferrer">
+      <span class="article-embed-label">\u5d4c\u5165\u5185\u5bb9</span>
+      <strong class="article-embed-title">${escapeHtml(meta.hostname || "\u6253\u5f00\u5916\u90e8\u5185\u5bb9")}</strong>
+      <span class="article-embed-url">${escapeHtml(meta.displayUrl)}</span>
     </a>
   `;
 }
@@ -75,19 +206,26 @@ function renderImageBlock(block) {
 
   return `
     <figure class="article-image">
-      <img src="${escapeAttr(block.url)}" alt="${escapeAttr(block.caption || block.text || "\u6587\u7ae0\u914d\u56fe")}" loading="lazy" />
+      <div class="article-image-frame">
+        <img src="${escapeAttr(block.url)}" alt="${escapeAttr(block.caption || block.text || "\u6587\u7ae0\u914d\u56fe")}" loading="lazy" />
+      </div>
       ${block.caption ? `<figcaption>${escapeHtml(block.caption)}</figcaption>` : ""}
     </figure>
   `;
 }
 
 function renderCodeBlock(block) {
-  const text = getBlockHtmlText(block);
+  const text = getBlockPlainText(block);
   if (!text) {
     return "";
   }
 
-  return `<pre class="article-code"><code data-language="${escapeAttr(block.language || "")}">${text}</code></pre>`;
+  return `
+    <figure class="article-code-wrap">
+      <figcaption class="article-code-label">${escapeHtml(block.language || "code")}</figcaption>
+      <pre class="article-code"><code>${text}</code></pre>
+    </figure>
+  `;
 }
 
 function renderList(blocks = [], startIndex = 0, type = "bulleted_list_item") {
@@ -99,14 +237,25 @@ function renderList(blocks = [], startIndex = 0, type = "bulleted_list_item") {
     const block = blocks[index];
     const text = getBlockHtmlText(block);
     const children = renderBlocks(block.children || []);
-    items.push(`<li>${text ? `<p>${text}</p>` : ""}${children}</li>`);
+    items.push(`<li>${text ? `<div class="article-list-copy">${text}</div>` : ""}${children}</li>`);
     index += 1;
   }
 
   return {
-    html: `<${tagName}>${items.join("")}</${tagName}>`,
+    html: `<${tagName} class="article-list article-list-${tagName}">${items.join("")}</${tagName}>`,
     nextIndex: index,
   };
+}
+
+function renderCallout(block) {
+  const text = getBlockHtmlText(block);
+  const children = renderBlocks(block.children || []);
+  return `
+    <div class="article-callout">
+      <div class="article-callout-icon">${escapeHtml(block.text || "\u2726")}</div>
+      <div class="article-callout-copy">${text ? `<p>${text}</p>` : ""}${children}</div>
+    </div>
+  `;
 }
 
 function renderBlock(block) {
@@ -122,14 +271,9 @@ function renderBlock(block) {
     case "paragraph":
       return text ? `<p>${text}</p>${renderBlocks(block.children || [])}` : renderBlocks(block.children || []);
     case "quote":
-      return `<blockquote>${text || ""}${renderBlocks(block.children || [])}</blockquote>`;
+      return `<blockquote>${text ? `<p>${text}</p>` : ""}${renderBlocks(block.children || [])}</blockquote>`;
     case "callout":
-      return `
-        <div class="article-callout">
-          <div class="article-callout-icon">${escapeHtml(block.text || "\u2726")}</div>
-          <div class="article-callout-copy">${renderBlocks(block.children || []) || (text ? `<p>${text}</p>` : "")}</div>
-        </div>
-      `;
+      return renderCallout(block);
     case "bookmark":
       return renderBookmarkBlock(block);
     case "embed":
@@ -139,7 +283,7 @@ function renderBlock(block) {
     case "code":
       return renderCodeBlock(block);
     case "divider":
-      return "<hr />";
+      return '<hr class="article-divider" />';
     case "table_of_contents":
       return "";
     default:

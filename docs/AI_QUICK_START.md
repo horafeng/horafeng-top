@@ -200,3 +200,8 @@
   - `content/generated/notion-articles.json`
   - `content/generated/articles/{slug}.json`
 - do not send article into the existing note modal
+## Notion Media Note
+
+- Generated Notion note/article media should now prefer local cached files under:
+  - `content/generated/media/notion/`
+- If homepage Notion note covers or article images suddenly fall back/break again, check whether the latest sync was rerun after changing Notion content.
