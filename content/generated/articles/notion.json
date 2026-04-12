@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-12T03:13:28.178Z",
+  "generated_at": "2026-04-12T08:23:29.350Z",
   "item": {
     "id": "17aacf27-2303-8113-af1f-ce097a70fcb7",
     "notion_page_id": "17aacf27-2303-8113-af1f-ce097a70fcb7",
@@ -19,7 +19,7 @@
     "has_media": false,
     "images": [],
     "media": [],
-    "source_updated_at": "2026-04-12T01:46:00.000Z",
+    "source_updated_at": "2026-04-12T04:45:00.000Z",
     "blocks": [
       {
         "id": "17aacf27-2303-81c1-bbaa-d246c662d617",
@@ -1036,6 +1036,17 @@
             }
           }
         ],
+        "language": "",
+        "checked": null,
+        "caption": ""
+      },
+      {
+        "id": "340acf27-2303-80d4-862a-ea4a346ee5fc",
+        "type": "paragraph",
+        "has_children": false,
+        "children": [],
+        "text": "",
+        "rich_text": [],
         "language": "",
         "checked": null,
         "caption": ""

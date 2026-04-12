@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-12T03:13:28.481Z",
+  "generated_at": "2026-04-12T08:23:29.658Z",
   "source": {
     "database_id": "33facf27-2303-8020-a884-e373afea4e1d"
   },
@@ -24,7 +24,7 @@
       "has_media": false,
       "images": [],
       "media": [],
-      "source_updated_at": "2026-04-12T01:46:00.000Z",
+      "source_updated_at": "2026-04-12T04:45:00.000Z",
       "detail_path": "content/generated/articles/notion.json"
     }
   ]
