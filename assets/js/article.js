@@ -117,27 +117,38 @@ function getEmbedFrame(url) {
 
     if (hostname.includes("youtube.com")) {
       const id = parsed.searchParams.get("v");
-      return id ? `https://www.youtube.com/embed/${id}` : "";
+      return id ? `https://www.youtube.com/embed/${id}?autoplay=0&mute=0&rel=0` : "";
     }
 
     if (hostname === "youtu.be") {
       const id = parsed.pathname.replace(/^\/+/, "");
-      return id ? `https://www.youtube.com/embed/${id}` : "";
+      return id ? `https://www.youtube.com/embed/${id}?autoplay=0&mute=0&rel=0` : "";
     }
 
     if (hostname.includes("vimeo.com")) {
       const id = parsed.pathname.split("/").filter(Boolean).pop();
-      return id ? `https://player.vimeo.com/video/${id}` : "";
+      return id ? `https://player.vimeo.com/video/${id}?autoplay=0` : "";
     }
 
     if (hostname.includes("bilibili.com")) {
       if (parsed.pathname.includes("/player.html")) {
         parsed.protocol = "https:";
+        parsed.searchParams.set("autoplay", "0");
         return parsed.toString();
       }
       const bvid = parsed.searchParams.get("bvid");
       if (bvid) {
-        return `https://player.bilibili.com/player.html?isOutside=true&bvid=${encodeURIComponent(bvid)}&p=1`;
+        return `https://player.bilibili.com/player.html?isOutside=true&bvid=${encodeURIComponent(bvid)}&p=1&autoplay=0`;
+      }
+    }
+
+    if (hostname.includes("douyin.com")) {
+      const itemId = parsed.pathname
+        .split("/")
+        .filter(Boolean)
+        .find((segment, index, parts) => parts[index - 1] === "video");
+      if (itemId) {
+        return `https://www.douyin.com/video/${encodeURIComponent(itemId)}`;
       }
     }
   } catch {
