@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文章详情 | HoraFeng</title>
+    <link rel="stylesheet" href="assets/css/diary.css" />
+  </head>
+  <body data-page="article">
+    <div class="bg-layer"></div>
+
+    <div id="splash-screen" class="splash-screen" aria-hidden="true">
+      <span class="splash-logo">HoraFeng</span>
+    </div>
+
+    <header class="site-nav" data-site-nav>
+      <div class="site-nav-inner">
+        <a class="site-nav-left" href="index.html">HoraFeng的博客</a>
+
+        <nav class="site-nav-center" aria-label="主导航">
+          <a class="site-nav-link" href="index.html">首页</a>
+          <a class="site-nav-link active" href="index.html?content=article">文章</a>
+          <a class="site-nav-link" href="archive.html">归档</a>
+          <a class="site-nav-link" href="guestbook.html">留言板</a>
+        </nav>
+
+        <button class="site-nav-brand-mini" type="button" data-nav-brand-center>HoraFeng</button>
+        <button class="site-nav-backtop" type="button" data-nav-backtop>返回顶部 ↑</button>
+      </div>
+    </header>
+
+    <div class="app-shell single-column article-shell">
+      <main class="panel flow-panel article-flow-panel">
+        <nav class="breadcrumb">
+          <a href="index.html">首页</a>
+          <span>/</span>
+          <a href="index.html?content=article">文章</a>
+          <span>/</span>
+          <span id="article-breadcrumb-current">加载中...</span>
+        </nav>
+
+        <article id="article-detail" class="article-detail-page">
+          <header id="article-hero" class="article-hero"></header>
+          <section id="article-body" class="article-body"></section>
+        </article>
+      </main>
+    </div>
+
+    <script type="module" src="assets/js/article.js"></script>
+  </body>
+</html>

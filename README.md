@@ -382,3 +382,22 @@ node scripts/notion-sync/sync-notion.js
 - D1 存储结构（在原表上增量扩展）
 
 邮件发送失败不会阻断评论主流程（审核/回复依旧成功）。
+
+---
+
+## 12. Homepage Feed + Article Entry (Incremental)
+
+- `assets/js/common.js`
+  - `loadEntries()` still returns note/diary entries only
+  - `loadHomeFeed()` now merges:
+    - `content/diaries.json`
+    - `content/generated/notion-diaries-compat.json`
+    - `content/generated/notion-articles.json`
+- `assets/js/index.js`
+  - homepage timeline can render both note cards and article teaser cards
+  - note cards still open the existing modal
+  - article cards now jump to `article.html?slug=...`
+- `article.html` + `assets/js/article.js`
+  - first minimal frontend path for Notion `article`
+  - detail data comes from `content/generated/articles/{slug}.json`
+  - current renderer supports headings, paragraph, bulleted/numbered list, quote, callout, divider, image, bookmark, embed, code

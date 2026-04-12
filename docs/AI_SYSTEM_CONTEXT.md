@@ -1336,3 +1336,37 @@ Resend 的角色是：
 - [ ] 如果涉及审核状态，确认是否会连带影响邮件提醒
 - [ ] 如果涉及头像，确认前端回退和后端代理两层都没有被破坏
 - [ ] 修改完成后至少手动检查：首页弹层、留言加载、留言提交、后台登录、后台审核 / 回复
+---
+
+## 12. 2026-04 Homepage Feed + Article Path
+
+- homepage now has two data loaders in `assets/js/common.js`
+- `loadEntries()`:
+  - notes/diaries only
+- `loadHomeFeed()`:
+  - homepage mixed feed
+  - merges `content/diaries.json`
+  - merges `content/generated/notion-diaries-compat.json`
+  - merges `content/generated/notion-articles.json`
+- homepage routing in `assets/js/index.js`
+  - `note` keeps using the existing modal
+  - `article` renders as a teaser card and jumps to `article.html?slug=...`
+- first minimal article frontend files
+  - `article.html`
+  - `assets/js/article.js`
+- article detail data source
+  - index: `content/generated/notion-articles.json`
+  - detail: `content/generated/articles/{slug}.json`
+- current article block renderer supports
+  - headings
+  - paragraph
+  - bulleted / numbered list
+  - quote
+  - callout
+  - divider
+  - image
+  - bookmark
+  - embed
+  - code
+- homepage no-image note cards no longer use fixed height
+- homepage image cards still keep the older fixed visual structure

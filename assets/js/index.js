@@ -3,7 +3,7 @@
   formatLastSeen,
   getStats,
   linkify,
-  loadEntries,
+  loadHomeFeed,
   loadSiteConfig,
   renderMockComments,
   searchEntries,
@@ -62,6 +62,10 @@ function bindImageFallbacks(scope = document) {
   });
 }
 
+function getArticleUrl(entry) {
+  return `article.html?slug=${encodeURIComponent(entry.slug)}`;
+}
+
 function renderTimeline(entries) {
   const timeline = document.getElementById("timeline");
 
@@ -72,11 +76,59 @@ function renderTimeline(entries) {
 
   timeline.innerHTML = entries
     .map((entry) => {
+      const isArticle = entry.contentType === "article";
       const preview = entry.content.join(" ");
-      const safePreview = escapeHtml(preview);
+      const safePreview = escapeHtml(isArticle && !preview ? "\u70b9\u51fb\u9605\u8bfb\u5168\u6587\u3002" : preview);
       const tags = entry.tags.slice(0, 4).map((tag) => `#${tag}`).join(" ");
       const hasImage = entry.images.length > 0;
       const fallback = getFallbackCover(entry.id);
+
+      if (isArticle) {
+        const metaTrail = [entry.date, entry.category, "\u957f\u6587"]
+          .filter(Boolean)
+          .map((item) => `<span>${escapeHtml(item)}</span>`)
+          .join("");
+        const href = getArticleUrl(entry);
+        const articleBadge = '<span class="entry-type-badge">\u6587\u7ae0</span>';
+
+        if (!hasImage) {
+          return `
+            <article class="entry-card no-image article-card">
+              <a class="entry-link article-link" href="${escapeAttr(href)}" aria-label="\u6253\u5f00\u6587\u7ae0\uff1a${escapeAttr(entry.title)}">
+                <div class="entry-shell no-image-shell">
+                  <div class="entry-copy">
+                    <div class="entry-meta">${metaTrail}</div>
+                    <div class="entry-card-head">${articleBadge}</div>
+                    <h3 class="entry-title">${escapeHtml(entry.title)}</h3>
+                    <p class="entry-snippet">${safePreview}</p>
+                    <p class="entry-meta entry-tags">${tags}</p>
+                  </div>
+                </div>
+              </a>
+            </article>
+          `;
+        }
+
+        return `
+          <article class="entry-card has-image article-card">
+            <a class="entry-link article-link" href="${escapeAttr(href)}" aria-label="\u6253\u5f00\u6587\u7ae0\uff1a${escapeAttr(entry.title)}">
+              <div class="entry-shell has-image-shell">
+                <div class="entry-copy">
+                  <div class="entry-meta">${metaTrail}</div>
+                  <div class="entry-card-head">${articleBadge}</div>
+                  <h3 class="entry-title clamp-1">${escapeHtml(entry.title)}</h3>
+                  <p class="entry-snippet clamp-2">${safePreview}</p>
+                  <p class="entry-meta entry-tags">${tags}</p>
+                </div>
+                <div class="entry-visual">
+                  <img class="entry-cover" src="${escapeAttr(entry.images[0])}" data-fallback="${escapeAttr(fallback)}" alt="${escapeAttr(entry.title)}" loading="lazy" />
+                </div>
+                <span class="entry-fusion" aria-hidden="true"></span>
+              </div>
+            </a>
+          </article>
+        `;
+      }
 
       if (!hasImage) {
         return `
@@ -203,17 +255,26 @@ function filterByParams(entries) {
   const params = new URLSearchParams(window.location.search);
   const tag = params.get("tag");
   const archive = params.get("archive");
+  const contentType = params.get("content");
   const heading = document.getElementById("timeline-heading");
 
   let list = entries;
-  if (tag) {
+  if (contentType) {
+    list = list.filter((entry) => entry.contentType === contentType);
+    heading.textContent =
+      contentType === "article"
+        ? "\u6700\u8fd1\u6587\u7ae0"
+        : contentType === "notice"
+          ? "\u6700\u8fd1\u516c\u544a"
+          : "\u6700\u8fd1\u5c0f\u8bb0";
+  } else if (tag) {
     heading.textContent = `标签：#${tag}`;
     list = list.filter((entry) => entry.tags.includes(tag));
   } else if (archive) {
     heading.textContent = `归档：${archive}`;
     list = list.filter((entry) => entry.date.startsWith(archive));
   } else {
-    heading.textContent = "最近日记";
+    heading.textContent = "\u6700\u8fd1\u5185\u5bb9";
   }
 
   return list;
@@ -1232,7 +1293,7 @@ async function main() {
     useWindowScroll: true,
   });
 
-  const [entries, config] = await Promise.all([loadEntries(), loadSiteConfig()]);
+  const [entries, config] = await Promise.all([loadHomeFeed(), loadSiteConfig()]);
   allEntries = entries;
   siteConfig = config;
 

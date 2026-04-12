@@ -23,11 +23,44 @@ function normalizeEntry(entry, source = "local") {
     content,
     author: entry?.author ? String(entry.author).trim() : "",
     likes: Number.isFinite(entry?.likes) ? entry.likes : undefined,
+    contentType: "note",
     source,
   };
 }
 
+function normalizeArticleEntry(entry, source = "notion-article") {
+  const summary = String(entry?.summary ?? "").trim();
+  const cover = String(entry?.cover ?? "").trim();
+  const publishedAt = String(entry?.published_at ?? entry?.date ?? "").trim();
+  const title = String(entry?.title ?? "").trim() || "\u672a\u547d\u540d\u6587\u7ae0";
+
+  return {
+    id: String(entry?.id ?? entry?.slug ?? "").trim(),
+    slug: String(entry?.slug ?? "").trim(),
+    date: publishedAt,
+    mood: "\ud83d\udcd8",
+    title,
+    tags: Array.isArray(entry?.tags)
+      ? entry.tags
+          .map((tag) => String(tag ?? "").trim())
+          .filter(Boolean)
+      : [],
+    images: cover ? [cover] : [],
+    content: summary ? [summary] : [],
+    summary,
+    category: String(entry?.category ?? "").trim(),
+    detailPath: String(entry?.detail_path ?? "").trim(),
+    contentType: "article",
+    source,
+    hasCover: Boolean(cover),
+  };
+}
+
 function getEntryDedupKey(entry) {
+  if (entry.contentType === "article" && entry.slug) {
+    return `article:${entry.slug}`;
+  }
+
   if (entry.id) {
     return `id:${entry.id}`;
   }
@@ -40,7 +73,12 @@ function mergeEntries(localEntries, notionEntries) {
   const seen = new Set();
 
   [...localEntries, ...notionEntries].forEach((entry) => {
-    const normalized = normalizeEntry(entry, entry?.source || "local");
+    const normalized =
+      String(entry?.contentType || entry?.type || "")
+        .trim()
+        .toLowerCase() === "article"
+        ? normalizeArticleEntry(entry, entry?.source || "notion-article")
+        : normalizeEntry(entry, entry?.source || "local");
     const dedupKey = getEntryDedupKey(normalized);
     if (seen.has(dedupKey)) {
       return;
@@ -76,6 +114,20 @@ async function fetchOptionalEntries(url) {
   }
 }
 
+async function fetchOptionalItems(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
 export async function loadEntries() {
   const [localData, notionEntries] = await Promise.all([
     fetchJson("content/diaries.json", "Failed to load local diary content."),
@@ -86,6 +138,52 @@ export async function loadEntries() {
   const notionCompatEntries = notionEntries.map((entry) => ({ ...entry, source: "notion" }));
 
   return mergeEntries(localEntries, notionCompatEntries);
+}
+
+export async function loadHomeFeed() {
+  const [entries, notionArticles] = await Promise.all([
+    loadEntries(),
+    fetchOptionalItems("content/generated/notion-articles.json"),
+  ]);
+
+  const articleEntries = notionArticles
+    .filter((item) => String(item?.status ?? "").trim().toLowerCase() === "published")
+    .map((item) => normalizeArticleEntry(item));
+
+  return mergeEntries(
+    entries.map((entry) => ({ ...entry, contentType: entry.contentType || "note" })),
+    articleEntries,
+  );
+}
+
+export async function loadArticleIndex() {
+  const items = await fetchOptionalItems("content/generated/notion-articles.json");
+  return items
+    .filter((item) => String(item?.status ?? "").trim().toLowerCase() === "published")
+    .map((item) => normalizeArticleEntry(item));
+}
+
+export async function loadArticleDetail(slug) {
+  const articleSlug = String(slug ?? "").trim();
+  if (!articleSlug) {
+    throw new Error("Missing article slug.");
+  }
+
+  const index = await loadArticleIndex();
+  const matched = index.find((item) => item.slug === articleSlug);
+  if (!matched || !matched.detailPath) {
+    throw new Error("Article detail is unavailable.");
+  }
+
+  const detail = await fetchJson(matched.detailPath, "Failed to load article detail.");
+  if (!detail?.item) {
+    throw new Error("Article detail payload is invalid.");
+  }
+
+  return {
+    meta: matched,
+    item: detail.item,
+  };
 }
 
 export async function loadSiteConfig() {
@@ -146,7 +244,7 @@ export function formatLastSeen(isoString) {
 }
 
 export function normalizeText(entry) {
-  return `${entry.title} ${entry.tags.join(" ")} ${entry.content.join(" ")}`.toLowerCase();
+  return `${entry.title} ${entry.tags.join(" ")} ${entry.content.join(" ")} ${entry.summary || ""} ${entry.category || ""}`.toLowerCase();
 }
 
 export function searchEntries(entries, query) {

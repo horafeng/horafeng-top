@@ -183,3 +183,20 @@
 - 这是在改真实评论链路，还是 mock 展示
 - 当前库是新库还是旧库
 - 环境变量和 D1 绑定是不是齐全
+
+---
+
+## 2026-04 Incremental Note
+
+- homepage feed is no longer note-only
+- `assets/js/common.js`
+  - `loadEntries()` = notes/diaries only
+  - `loadHomeFeed()` = notes + notion note compat + notion article teasers
+- homepage article teaser cards are rendered in `assets/js/index.js`
+- article detail frontend entry:
+  - `article.html`
+  - `assets/js/article.js`
+- article detail data source:
+  - `content/generated/notion-articles.json`
+  - `content/generated/articles/{slug}.json`
+- do not send article into the existing note modal
