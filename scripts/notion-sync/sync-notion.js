@@ -10,6 +10,7 @@ import { NotionClient, queryDatabasePages } from "./notion-client.js";
 const GENERATED_DIR = path.join(PROJECT_ROOT, "content", "generated");
 const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
 const MEDIA_DIR = path.join(GENERATED_DIR, "media", "notion");
+const BOOKMARK_FETCH_TIMEOUT_MS = 8000;
 
 function log(message) {
   console.log(`[notion-sync] ${message}`);
@@ -65,64 +66,313 @@ function getFileExtension(url, contentType = "") {
   if (/image\/jpe?g/i.test(contentType)) return ".jpg";
   if (/image\/webp/i.test(contentType)) return ".webp";
   if (/image\/gif/i.test(contentType)) return ".gif";
+  if (/image\/svg\+xml/i.test(contentType)) return ".svg";
   if (/video\/mp4/i.test(contentType)) return ".mp4";
   if (/application\/pdf/i.test(contentType)) return ".pdf";
   return ".bin";
 }
 
-function cloneBlocksWithLocalizedUrls(blocks = [], assetMap = new Map()) {
-  return blocks.map((block) => {
-    const next = {
-      ...block,
-      children: cloneBlocksWithLocalizedUrls(block.children || [], assetMap),
-    };
-
-    if (typeof next.url === "string" && assetMap.has(next.url)) {
-      next.url = assetMap.get(next.url);
+function collectCacheableUrls(value, urls = new Set()) {
+  if (typeof value === "string") {
+    if (isCacheableNotionAsset(value)) {
+      urls.add(value);
     }
+    return urls;
+  }
 
-    return next;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectCacheableUrls(item, urls));
+    return urls;
+  }
+
+  if (value && typeof value === "object") {
+    Object.values(value).forEach((item) => collectCacheableUrls(item, urls));
+  }
+
+  return urls;
+}
+
+function localizeValue(value, assetMap = new Map()) {
+  if (typeof value === "string") {
+    return assetMap.get(value) || value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => localizeValue(item, assetMap));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeValue(item, assetMap)]));
+  }
+
+  return value;
+}
+
+function decodeHtmlEntities(text) {
+  return String(text || "")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&nbsp;/gi, " ");
+}
+
+function stripTags(text) {
+  return decodeHtmlEntities(String(text || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+function resolveUrl(candidate, baseUrl) {
+  const value = String(candidate || "").trim();
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return new URL(value, baseUrl).toString();
+  } catch {
+    return "";
+  }
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function readMetaContent(html, selectors = []) {
+  for (const selector of selectors) {
+    const pattern = new RegExp(`<meta[^>]+(?:property|name)=["']${escapeRegExp(selector)}["'][^>]+content=["']([^"']+)["'][^>]*>`, "i");
+    const reversePattern = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${escapeRegExp(selector)}["'][^>]*>`, "i");
+    const matched = html.match(pattern) || html.match(reversePattern);
+    if (matched?.[1]) {
+      return stripTags(matched[1]);
+    }
+  }
+
+  return "";
+}
+
+function readLinkHref(html, relValue) {
+  const pattern = new RegExp(`<link[^>]+rel=["'][^"']*${escapeRegExp(relValue)}[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>`, "i");
+  const reversePattern = new RegExp(`<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*${escapeRegExp(relValue)}[^"']*["'][^>]*>`, "i");
+  const matched = html.match(pattern) || html.match(reversePattern);
+  return matched?.[1] ? matched[1].trim() : "";
+}
+
+function readTitle(html) {
+  const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "";
+  return stripTags(title);
+}
+
+function withTimeout(promise, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error(`Timed out after ${timeoutMs}ms`)), timeoutMs);
+    promise
+      .then((value) => {
+        clearTimeout(timeout);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
   });
 }
 
-function cloneRecordWithLocalizedUrls(record, assetMap = new Map()) {
+function inferSiteNameFromUrl(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "");
+  } catch {
+    return "";
+  }
+}
+
+async function fetchBookmarkMetadata(url) {
+  const href = String(url || "").trim();
+  if (!href) {
+    return null;
+  }
+
+  try {
+    const response = await withTimeout(
+      fetch(href, {
+        headers: {
+          "user-agent": "HoraFeng-NotionSync/1.0 (+https://horafeng.top)",
+          accept: "text/html,application/xhtml+xml",
+        },
+        redirect: "follow",
+      }),
+      BOOKMARK_FETCH_TIMEOUT_MS,
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!/text\/html|application\/xhtml\+xml/i.test(contentType)) {
+      return {
+        url: response.url || href,
+        title: "",
+        description: "",
+        site_name: inferSiteNameFromUrl(response.url || href),
+        image: "",
+        icon: "",
+      };
+    }
+
+    const html = await response.text();
+    const finalUrl = response.url || href;
+    const title = readMetaContent(html, ["og:title", "twitter:title"]) || readTitle(html);
+    const description = readMetaContent(html, ["og:description", "twitter:description", "description"]);
+    const siteName = readMetaContent(html, ["og:site_name", "application-name"]) || inferSiteNameFromUrl(finalUrl);
+    const image = resolveUrl(readMetaContent(html, ["og:image", "twitter:image", "twitter:image:src"]), finalUrl);
+    const icon =
+      resolveUrl(readLinkHref(html, "icon"), finalUrl) ||
+      resolveUrl(readLinkHref(html, "shortcut icon"), finalUrl) ||
+      resolveUrl("/favicon.ico", finalUrl);
+
+    return {
+      url: finalUrl,
+      title,
+      description,
+      site_name: siteName,
+      image,
+      icon,
+    };
+  } catch (error) {
+    log(`skip bookmark metadata: ${href} (${error.message})`);
+    return null;
+  }
+}
+
+function getEmbedMetadata(url) {
+  const href = String(url || "").trim();
+  if (!href) {
+    return {
+      provider: "",
+      embed_url: "",
+    };
+  }
+
+  try {
+    const parsed = new URL(href);
+    const hostname = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+
+    if (hostname.includes("youtube.com")) {
+      if (parsed.pathname.startsWith("/embed/")) {
+        return {
+          provider: "youtube",
+          embed_url: `https://www.youtube.com${parsed.pathname}${parsed.search ? `${parsed.search}&autoplay=0&rel=0` : "?autoplay=0&rel=0"}`,
+        };
+      }
+
+      const id = parsed.searchParams.get("v");
+      if (id) {
+        return {
+          provider: "youtube",
+          embed_url: `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=0&rel=0`,
+        };
+      }
+    }
+
+    if (hostname === "youtu.be") {
+      const id = parsed.pathname.replace(/^\/+/, "");
+      if (id) {
+        return {
+          provider: "youtube",
+          embed_url: `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=0&rel=0`,
+        };
+      }
+    }
+
+    if (hostname.includes("vimeo.com")) {
+      const id = parsed.pathname.split("/").filter(Boolean).pop();
+      if (id) {
+        return {
+          provider: "vimeo",
+          embed_url: `https://player.vimeo.com/video/${encodeURIComponent(id)}?autoplay=0`,
+        };
+      }
+    }
+
+    if (hostname.includes("bilibili.com")) {
+      if (hostname.includes("player.bilibili.com")) {
+        parsed.protocol = "https:";
+        parsed.searchParams.set("autoplay", "0");
+        return {
+          provider: "bilibili",
+          embed_url: parsed.toString(),
+        };
+      }
+
+      const bvid = parsed.searchParams.get("bvid") || parsed.pathname.split("/").find((segment) => /^BV/i.test(segment));
+      if (bvid) {
+        return {
+          provider: "bilibili",
+          embed_url: `https://player.bilibili.com/player.html?isOutside=true&bvid=${encodeURIComponent(bvid)}&p=1&autoplay=0`,
+        };
+      }
+    }
+
+    if (hostname.includes("douyin.com")) {
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      const videoIndex = segments.findIndex((segment) => segment === "video");
+      const itemId = videoIndex >= 0 ? segments[videoIndex + 1] || "" : "";
+      if (itemId) {
+        return {
+          provider: "douyin",
+          embed_url: `https://www.douyin.com/video/${encodeURIComponent(itemId)}`,
+        };
+      }
+    }
+  } catch {
+    return {
+      provider: "",
+      embed_url: "",
+    };
+  }
+
   return {
-    ...record,
-    cover: assetMap.get(record.cover) || record.cover,
-    images: Array.isArray(record.images) ? record.images.map((url) => assetMap.get(url) || url) : [],
-    media: Array.isArray(record.media)
-      ? record.media.map((item) => ({
-          ...item,
-          url: assetMap.get(item.url) || item.url,
-        }))
-      : [],
+    provider: "",
+    embed_url: "",
   };
 }
 
+async function enrichBlocks(blocks = [], bookmarkCache = new Map()) {
+  const output = [];
+
+  for (const block of blocks) {
+    const next = {
+      ...block,
+      children: Array.isArray(block?.children) && block.children.length ? await enrichBlocks(block.children, bookmarkCache) : [],
+    };
+
+    if (next.type === "bookmark" || next.type === "link_preview") {
+      if (!bookmarkCache.has(next.url)) {
+        bookmarkCache.set(next.url, fetchBookmarkMetadata(next.url));
+      }
+      next.metadata = await bookmarkCache.get(next.url);
+    }
+
+    if (next.type === "embed") {
+      const embedMeta = getEmbedMetadata(next.url);
+      next.provider = embedMeta.provider;
+      next.embed_url = embedMeta.embed_url;
+    }
+
+    output.push(next);
+  }
+
+  return output;
+}
+
 async function cachePageAssets(client, record, blocks = []) {
-  const urls = new Set();
+  const urls = collectCacheableUrls([record, blocks]);
   const assetMap = new Map();
   const pageSlug = sanitizeSegment(record.slug || record.id || record.notion_page_id || "page", "page");
-
-  const collect = (url) => {
-    if (isCacheableNotionAsset(url)) {
-      urls.add(url);
-    }
-  };
-
-  collect(record.cover);
-  (record.images || []).forEach(collect);
-  (record.media || []).forEach((item) => collect(item?.url));
-
-  const walk = (items) => {
-    items.forEach((block) => {
-      collect(block?.url);
-      if (Array.isArray(block?.children) && block.children.length) {
-        walk(block.children);
-      }
-    });
-  };
-  walk(blocks);
+  const pageDir = path.join(MEDIA_DIR, pageSlug);
 
   let assetIndex = 0;
   for (const url of urls) {
@@ -131,7 +381,6 @@ async function cachePageAssets(client, record, blocks = []) {
       const downloaded = await client.downloadFile(url);
       const extension = getFileExtension(url, downloaded.contentType);
       const fileName = `${String(assetIndex).padStart(2, "0")}${extension}`;
-      const pageDir = path.join(MEDIA_DIR, pageSlug);
       const filePath = path.join(pageDir, fileName);
       const publicPath = `content/generated/media/notion/${pageSlug}/${fileName}`;
 
@@ -139,7 +388,7 @@ async function cachePageAssets(client, record, blocks = []) {
       await writeFile(filePath, downloaded.buffer);
       assetMap.set(url, publicPath);
     } catch (error) {
-      log(`跳过资源缓存：${record.title || record.id} -> ${url} (${error.message})`);
+      log(`skip asset cache: ${record.title || record.id} -> ${url} (${error.message})`);
     }
   }
 
@@ -185,11 +434,11 @@ function partitionByType(items = []) {
   };
 }
 
-async function main() {
+export async function syncNotionContent() {
   const notion = resolveNotionConfig();
   const client = new NotionClient({ token: notion.token });
 
-  log(`开始同步数据库 ${notion.databaseId}`);
+  log(`sync start for database ${notion.databaseId}`);
 
   const pages = await queryDatabasePages(client, notion.databaseId, {
     filter: {
@@ -206,7 +455,7 @@ async function main() {
     ],
   });
 
-  log(`读取到 ${pages.length} 条数据库记录，开始转换`);
+  log(`loaded ${pages.length} database rows`);
 
   const indexItems = [];
   const noteItems = [];
@@ -220,19 +469,20 @@ async function main() {
       continue;
     }
 
-    log(`处理第 ${index + 1}/${pages.length} 条：${pageData.properties.title || pageData.pageId}`);
+    log(`processing ${index + 1}/${pages.length}: ${pageData.properties.title || pageData.pageId}`);
 
     const rawBlocks = await fetchPageBlocksRecursively(client, page.id);
     const normalizedBlocks = normalizeBlocks(rawBlocks);
+    const enrichedBlocks = await enrichBlocks(normalizedBlocks);
     const builtRecord = buildContentIndexRecord({
       pageId: pageData.pageId,
       properties: pageData.properties,
       blocks: rawBlocks,
       lastEditedTime: pageData.lastEditedTime,
     });
-    const assetMap = await cachePageAssets(client, builtRecord, normalizedBlocks);
-    const indexRecord = cloneRecordWithLocalizedUrls(builtRecord, assetMap);
-    const localizedBlocks = cloneBlocksWithLocalizedUrls(normalizedBlocks, assetMap);
+    const assetMap = await cachePageAssets(client, builtRecord, enrichedBlocks);
+    const indexRecord = localizeValue(builtRecord, assetMap);
+    const localizedBlocks = localizeValue(enrichedBlocks, assetMap);
 
     indexItems.push(indexRecord);
 
@@ -278,9 +528,7 @@ async function main() {
   const finalCompatNotes = compatNotes.filter((item) => item && item.id);
 
   if (partitionedIndex.notes.length !== finalNoteItems.length) {
-    throw new Error(
-      `note 分类结果不一致：索引中 ${partitionedIndex.notes.length} 条，但 note 输出数组中 ${finalNoteItems.length} 条。已中止写入，请检查 type 解析与分类逻辑。`
-    );
+    throw new Error(`note partition mismatch: index=${partitionedIndex.notes.length}, output=${finalNoteItems.length}`);
   }
 
   const counts = {
@@ -336,11 +584,17 @@ async function main() {
     entries: finalCompatNotes,
   });
 
-  log(`同步完成：${counts.notes} 条 note，${counts.articles} 条 article，${counts.notices} 条 notice`);
-  log(`输出目录：${path.relative(PROJECT_ROOT, GENERATED_DIR)}`);
+  log(`sync done: ${counts.notes} note, ${counts.articles} article, ${counts.notices} notice`);
+  log(`output dir: ${path.relative(PROJECT_ROOT, GENERATED_DIR)}`);
+
+  return {
+    generatedAt,
+    counts,
+    outputDir: GENERATED_DIR,
+  };
 }
 
-main().catch((error) => {
-  console.error(`[notion-sync] 同步失败：${error.message}`);
+syncNotionContent().catch((error) => {
+  console.error(`[notion-sync] sync failed: ${error.message}`);
   process.exitCode = 1;
 });

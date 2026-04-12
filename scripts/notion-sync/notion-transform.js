@@ -125,6 +125,6 @@ export function buildArticleDetailRecord({ indexRecord = null, blocks = [] } = {
   return {
     ...indexRecord,
     blocks,
-    renderer_version: 1,
+    renderer_version: 2,
   };
 }

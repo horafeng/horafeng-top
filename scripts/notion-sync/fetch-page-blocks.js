@@ -18,6 +18,34 @@ function richTextToPlainText(items = []) {
   return (items || []).map((item) => item?.plain_text || "").join("").trim();
 }
 
+function normalizeRichText(items = []) {
+  return (items || []).map((item) => ({
+    type: item?.type || "text",
+    plain_text: item?.plain_text || "",
+    href: item?.href || null,
+    annotations: item?.annotations || {},
+    text: item?.text
+      ? {
+          content: item.text.content || "",
+          link: item.text.link?.url || "",
+        }
+      : null,
+    mention:
+      item?.type === "mention"
+        ? {
+            type: item.mention?.type || "",
+            plain_text: item.plain_text || "",
+          }
+        : null,
+    equation:
+      item?.type === "equation"
+        ? {
+            expression: item.equation?.expression || "",
+          }
+        : null,
+  }));
+}
+
 function fileObjectToUrl(fileLike) {
   if (!fileLike) {
     return "";
@@ -33,6 +61,26 @@ function fileObjectToUrl(fileLike) {
 
 function normalizeCaption(payload) {
   return Array.isArray(payload?.caption) ? richTextToPlainText(payload.caption) : "";
+}
+
+function normalizeIcon(icon) {
+  if (!icon) {
+    return null;
+  }
+
+  if (icon.type === "emoji") {
+    return {
+      type: "emoji",
+      emoji: icon.emoji || "",
+      url: "",
+    };
+  }
+
+  return {
+    type: icon.type || "",
+    emoji: "",
+    url: fileObjectToUrl(icon),
+  };
 }
 
 export async function fetchPageBlocksRecursively(client, pageId) {
@@ -62,18 +110,26 @@ export function normalizeBlock(block) {
     children: Array.isArray(block.children) ? block.children.map(normalizeBlock) : [],
   };
 
+  if (block.type === "callout") {
+    return {
+      ...base,
+      text: richTextToPlainText(payload.rich_text),
+      rich_text: normalizeRichText(payload.rich_text),
+      caption: normalizeCaption(payload),
+      color: payload.color || "default",
+      icon: normalizeIcon(payload.icon),
+    };
+  }
+
   if (TEXT_BLOCK_TYPES.has(block.type)) {
     return {
       ...base,
       text: richTextToPlainText(payload.rich_text),
-      rich_text: (payload.rich_text || []).map((item) => ({
-        plain_text: item.plain_text || "",
-        href: item.href || null,
-        annotations: item.annotations || {},
-      })),
+      rich_text: normalizeRichText(payload.rich_text),
       language: payload.language || "",
       checked: payload.checked ?? null,
       caption: normalizeCaption(payload),
+      color: payload.color || "default",
     };
   }
 
@@ -84,6 +140,7 @@ export function normalizeBlock(block) {
       source_type: payload.type || "",
       expires_at: payload.file?.expiry_time || "",
       caption: normalizeCaption(payload),
+      name: payload.name || "",
     };
   }
 
@@ -92,6 +149,9 @@ export function normalizeBlock(block) {
       ...base,
       url: payload.url || "",
       caption: normalizeCaption(payload),
+      metadata: null,
+      provider: "",
+      embed_url: "",
     };
   }
 
