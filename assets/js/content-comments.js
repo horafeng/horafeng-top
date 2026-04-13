@@ -32,6 +32,7 @@ const TEXT = {
   identityTitle: "\u53d1\u8868\u8bc4\u8bba\u524d\u8bf7\u5148\u586b\u5199\u4fe1\u606f",
   nickname: "\u6635\u79f0",
   contact: "\u8054\u7cfb\u65b9\u5f0f",
+  contactHint: "\u8bf7\u586b\u5199 QQ \u6216\u90ae\u7bb1",
   notify: "\u6536\u5230\u56de\u590d\u65f6\uff0c\u901a\u8fc7\u90ae\u7bb1\u63d0\u9192\u6211",
   continueComment: "\u7ee7\u7eed\u8bc4\u8bba",
   cancel: "\u53d6\u6d88",
@@ -40,6 +41,7 @@ const TEXT = {
   switchIdentity: "\u5207\u6362\u8eab\u4efd",
   verifiedAs: "\u4ee5",
   verifiedSuffix: "\u8eab\u4efd\u8bc4\u8bba",
+  verifiedCompact: "\u5df2\u8bb0\u4f4f\u8eab\u4efd",
   pressHint: "Enter \u53d1\u9001\uff0cShift+Enter \u6362\u884c",
   noText: "\uff08\u8fd9\u6761\u8bc4\u8bba\u6682\u65e0\u6b63\u6587\uff09",
   turnstileHint: "\u8bf7\u5b8c\u6210\u4eba\u673a\u9a8c\u8bc1\u540e\u518d\u7ee7\u7eed\u3002",
@@ -227,7 +229,7 @@ function buildWidgetMarkup(mode) {
       </div>
 
       <section class="content-comment-entry" data-entry-area>
-        <div class="content-comment-identity" data-identity-summary hidden></div>
+        <div class="content-comment-identity-inline subtle" data-identity-summary hidden></div>
         <div class="content-comment-actions-bar" data-actions-bar>
           <button type="button" class="content-comment-primary-btn" data-action="open-compose">${TEXT.writeComment}</button>
           <button type="button" class="content-comment-secondary-btn" data-action="edit-identity" hidden>${TEXT.editIdentity}</button>
@@ -241,7 +243,7 @@ function buildWidgetMarkup(mode) {
           <textarea
             class="content-comment-textarea"
             data-content-input
-            rows="3"
+            rows="1"
             maxlength="2000"
             placeholder="${TEXT.contentPlaceholder}"
           ></textarea>
@@ -287,8 +289,8 @@ function ensureIdentityModal() {
             <input id="comment-identity-nickname" name="nickname" type="text" maxlength="24" required />
           </div>
           <div>
-            <label class="field-block" for="comment-identity-contact">${TEXT.contact}</label>
-            <input id="comment-identity-contact" name="contact" type="text" maxlength="120" required />
+            <label class="field-block" for="comment-identity-contact">${TEXT.contact} <span class="subtle">${TEXT.contactHint}</span></label>
+            <input id="comment-identity-contact" name="contact" type="text" maxlength="120" placeholder="name@example.com \u6216 12345678" required />
           </div>
         </div>
         <label class="notify-option" for="comment-identity-notify">
@@ -361,11 +363,10 @@ function mountContentComments(options = {}) {
 
     identitySummary.hidden = false;
     identitySummary.innerHTML = `
-      <p>
-        <strong>${TEXT.verifiedAs} ${escapeHtml(state.identity.nickname)}</strong>
-        <span class="subtle">${TEXT.verifiedSuffix}</span>
-      </p>
-      <p class="subtle">${escapeHtml(state.identity.contact)}${state.identity.notify_enabled ? " / \u5df2\u5f00\u542f\u56de\u590d\u63d0\u9192" : ""}</p>
+      <span>${TEXT.verifiedCompact}：</span>
+      <strong>${escapeHtml(state.identity.nickname)}</strong>
+      <span>${escapeHtml(state.identity.contact)}</span>
+      ${state.identity.notify_enabled ? "<span>/ \u5df2\u5f00\u542f\u56de\u590d\u63d0\u9192</span>" : ""}
     `;
     editIdentityButton.hidden = false;
   };

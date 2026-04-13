@@ -1135,30 +1135,20 @@ p {
     flex-direction: column;
     min-height: 0;
     max-height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 6px;
   }
 
   .post-layout.has-media-split .post-comments-host,
   .post-layout.has-media-split .content-comment-thread {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
   }
 
   .post-layout.has-media-split .content-comment-thread {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .post-layout.has-media-split .content-comment-list-wrap {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .post-layout.has-media-split .content-comment-list {
-    height: 100%;
-    overflow-y: auto;
-    padding-right: 4px;
+    display: grid;
   }
 }
 
@@ -3671,24 +3661,23 @@ body[data-page="archive"] .archive-flow-panel {
   font-size: 0.92rem;
 }
 
-.content-comment-identity {
-  display: grid;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(101, 125, 159, 0.16);
-  background: rgba(255, 255, 255, 0.64);
+.content-comment-identity-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: 1.4em;
 }
 
-.content-comment-identity strong {
+.content-comment-identity-inline strong {
   color: #445973;
 }
 
 .content-comment-composer {
   display: grid;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 18px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
   border: 1px solid rgba(101, 125, 159, 0.16);
   background: rgba(255, 255, 255, 0.76);
 }
@@ -3703,7 +3692,7 @@ body[data-page="archive"] .archive-flow-panel {
 }
 
 .content-comment-composer-title {
-  font-size: 0.94rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #445973;
 }
@@ -3717,15 +3706,16 @@ body[data-page="archive"] .archive-flow-panel {
 
 .content-comment-textarea {
   width: 100%;
-  min-height: 110px;
-  resize: vertical;
-  border-radius: 14px;
+  min-height: 52px;
+  max-height: 140px;
+  resize: none;
+  border-radius: 12px;
   border: 1px solid rgba(97, 120, 154, 0.22);
   padding: 12px 13px;
   background: rgba(255, 255, 255, 0.92);
   color: var(--text);
   font-family: inherit;
-  line-height: 1.75;
+  line-height: 1.55;
 }
 
 .content-comment-compose-toggle {

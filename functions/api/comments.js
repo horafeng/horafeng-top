@@ -1,6 +1,5 @@
 import {
   boolFromEnv,
-  buildAvatarUrl,
   buildCommentTree,
   clampInt,
   enforceRateLimit,
@@ -265,13 +264,7 @@ export async function onRequestPost(context) {
           is_admin: false,
           created_at: now,
           updated_at: now,
-          avatar_url: buildAvatarUrl(contactResult.value, {
-            defaultAvatarUrl: env.DEFAULT_AVATAR_URL || "/assets/images/avatar-default.svg",
-            qqAvatarBaseUrl: env.QQ_AVATAR_BASE_URL || "https://q1.qlogo.cn/g",
-            emailAvatarBaseUrl: env.EMAIL_AVATAR_BASE_URL || "https://cravatar.cn/avatar",
-            gravatarDefault: env.GRAVATAR_DEFAULT_MODE || "identicon",
-            avatarSize: clampInt(env.PUBLIC_AVATAR_SIZE, 40, 512, 120),
-          }),
+          avatar_url: `/api/avatar/${insertedId}?v=${encodeURIComponent(now)}`,
         },
         message: status === "approved" ? "Comment published." : "Comment submitted and waiting for moderation.",
       },
