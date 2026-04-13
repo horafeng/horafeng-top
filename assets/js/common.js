@@ -128,6 +128,20 @@ async function fetchOptionalItems(url) {
   }
 }
 
+export async function loadRecentComments(limit = 10) {
+  try {
+    const response = await fetch(`/api/comments?recent=1&limit=${encodeURIComponent(limit)}`);
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
 export async function loadEntries() {
   const [localData, notionEntries] = await Promise.all([
     fetchJson("content/diaries.json", "Failed to load local diary content."),

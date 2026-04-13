@@ -10,6 +10,7 @@ import {
   setupSiteChrome,
   setupSplash,
 } from "./common.js";
+import { mountContentComments } from "./content-comments.js";
 
 const FALLBACK_COVERS = [
   "assets/images/diary/cover-01.svg",
@@ -28,6 +29,7 @@ const state = {
   mediaUiTimer: null,
   mediaKeydownHandler: null,
   dragState: null,
+  currentCommentWidget: null,
   lastOpenOrigin: null,
 };
 
@@ -615,6 +617,53 @@ function renderImagePost(entry) {
   renderMockComments(document.getElementById("post-comments-list"), state.siteConfig?.comments?.entryMock || [], 10);
 }
 
+function getNoteCommentPageKey(entry) {
+  return `note:${entry.id}`;
+}
+
+function teardownPostComments() {
+  state.currentCommentWidget?.destroy?.();
+  state.currentCommentWidget = null;
+}
+
+function ensurePostCommentsHost() {
+  const existingHost = document.getElementById("post-comments-host");
+  if (existingHost) {
+    return existingHost;
+  }
+
+  const textEditor = document.querySelector(".text-post-comment-editor");
+  const textComments = document.querySelector(".text-post-comments");
+  if (textEditor) {
+    textEditor.outerHTML = '<section id="post-comments-host" class="post-comments-host"></section>';
+    textComments?.remove();
+    return document.getElementById("post-comments-host");
+  }
+
+  const reserved = document.querySelector(".post-comments");
+  if (reserved) {
+    reserved.outerHTML = '<section id="post-comments-host" class="post-comments-host"></section>';
+    return document.getElementById("post-comments-host");
+  }
+
+  return null;
+}
+
+function mountPostComments(entry) {
+  teardownPostComments();
+
+  const host = ensurePostCommentsHost();
+  if (!host) {
+    return;
+  }
+
+  state.currentCommentWidget = mountContentComments({
+    container: host,
+    pageKey: getNoteCommentPageKey(entry),
+    mode: "note",
+  });
+}
+
 function renderPostModal(entry) {
   const mobileAvatar = document.getElementById("post-mobile-avatar");
   const mobileName = document.getElementById("post-mobile-name");
@@ -634,10 +683,12 @@ function renderPostModal(entry) {
     state.currentImageIndex = 0;
     unbindMediaKeyboard();
     renderTextOnlyPost(entry);
+    mountPostComments(entry);
     return;
   }
 
   renderImagePost(entry);
+  mountPostComments(entry);
 }
 
 function getViewportCenter() {
@@ -711,6 +762,7 @@ function hidePostOverlay() {
   document.body.classList.remove("no-scroll");
   window.clearTimeout(state.mediaUiTimer);
   unbindMediaKeyboard();
+  teardownPostComments();
 }
 
 async function closePost() {

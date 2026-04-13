@@ -37,9 +37,44 @@ export async function onRequestGet(context) {
     const { request, env } = context;
     const db = getDb(env);
     const url = new URL(request.url);
-    const pageKey = normalizePageKey(url.searchParams.get("page_key") || "guestbook");
+    const recentOnly =
+      String(url.searchParams.get("recent") || "")
+        .trim()
+        .toLowerCase() === "1";
     const limit = queryInt(url.searchParams, "limit", 50, 1, 100);
     const offset = queryInt(url.searchParams, "offset", 0, 0, 5000);
+
+    if (recentOnly) {
+      const recentList = await db
+        .prepare(
+          `
+            SELECT id, page_key, parent_id, nickname, content, is_admin, created_at, updated_at
+            FROM comments
+            WHERE status = 'approved'
+            ORDER BY datetime(created_at) DESC, id DESC
+            LIMIT ? OFFSET ?
+          `,
+        )
+        .bind(limit, offset)
+        .all();
+
+      const recentItems = attachAvatarProxy(
+        (recentList.results || []).map((row) => ({
+          ...row,
+          children: [],
+        })),
+      );
+
+      return json({
+        ok: true,
+        recent: true,
+        limit,
+        offset,
+        items: recentItems,
+      });
+    }
+
+    const pageKey = normalizePageKey(url.searchParams.get("page_key") || "guestbook");
 
     const [list, totalRow] = await Promise.all([
       db

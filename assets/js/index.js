@@ -4,13 +4,14 @@
   getStats,
   linkify,
   loadHomeFeed,
+  loadRecentComments,
   loadSiteConfig,
-  renderMockComments,
   searchEntries,
   setupSiteChrome,
   setupPageTransition,
   setupSplash,
 } from "./common.js";
+import { mountContentComments } from "./content-comments.js";
 
 let allEntries = [];
 let visibleEntries = [];
@@ -25,6 +26,7 @@ let mediaKeydownHandler = null;
 let dragState = null;
 let dismissDragState = null;
 let lastOpenOrigin = null;
+let currentCommentWidget = null;
 
 const FALLBACK_COVERS = [
   "assets/images/diary/cover-01.svg",
@@ -196,9 +198,136 @@ function renderSidebar(entries, config) {
     }
   });
 
-  const mock = config.comments?.recentMock || [];
-  renderMockComments(document.getElementById("recent-comments"), mock, 10);
-  renderMockComments(document.getElementById("mobile-recent-comments"), mock, 10);
+  void renderRecentComments(entries);
+}
+
+function getCommentTarget(entry) {
+  if (!entry) {
+    return null;
+  }
+
+  if (entry.contentType === "article" && entry.slug) {
+    return {
+      title: entry.title || "文章",
+      href: getArticleUrl(entry),
+      typeLabel: "\u6587\u7ae0",
+    };
+  }
+
+  return {
+    title: entry.title || "\u5c0f\u8bb0",
+    href: `index.html?post=${encodeURIComponent(entry.id)}`,
+    typeLabel: "\u5c0f\u8bb0",
+  };
+}
+
+function resolveRecentCommentTarget(comment, entries) {
+  const pageKey = String(comment?.page_key || "").trim().toLowerCase();
+  if (!pageKey) {
+    return null;
+  }
+
+  if (pageKey === "guestbook") {
+    return {
+      title: "\u7559\u8a00\u677f",
+      href: "guestbook.html",
+      typeLabel: "\u7559\u8a00\u677f",
+    };
+  }
+
+  if (pageKey.startsWith("article:")) {
+    const slug = pageKey.slice("article:".length);
+    const matched = entries.find((entry) => entry.contentType === "article" && entry.slug === slug);
+    return (
+      getCommentTarget(matched) || {
+        title: "\u6587\u7ae0",
+        href: `article.html?slug=${encodeURIComponent(slug)}`,
+        typeLabel: "\u6587\u7ae0",
+      }
+    );
+  }
+
+  if (pageKey.startsWith("note:")) {
+    const noteId = pageKey.slice("note:".length);
+    const matched = entries.find((entry) => entry.id === noteId);
+    return (
+      getCommentTarget(matched) || {
+        title: "\u5c0f\u8bb0",
+        href: `index.html?post=${encodeURIComponent(noteId)}`,
+        typeLabel: "\u5c0f\u8bb0",
+      }
+    );
+  }
+
+  return {
+    title: pageKey,
+    href: "guestbook.html",
+    typeLabel: "\u7559\u8a00",
+  };
+}
+
+function formatCommentTime(isoString) {
+  const date = new Date(isoString || "");
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+function renderRecentCommentsList(listEl, comments, entries) {
+  if (!listEl) {
+    return;
+  }
+
+  if (!comments.length) {
+    listEl.innerHTML = '<li class="subtle">\u6682\u65f6\u8fd8\u6ca1\u6709\u516c\u5f00\u7559\u8a00\u3002</li>';
+    return;
+  }
+
+  listEl.innerHTML = comments
+    .map((comment) => {
+      const target = resolveRecentCommentTarget(comment, entries);
+      const nickname = escapeHtml(comment.nickname || "\u8bbf\u5ba2");
+      const content = escapeHtml(String(comment.content || "").replace(/\s+/g, " ").trim() || "\uff08\u6682\u65e0\u6b63\u6587\uff09");
+      const avatar = escapeAttr(comment.avatar_url || "/assets/images/avatar-default.svg");
+      const timeLabel = escapeHtml(formatCommentTime(comment.created_at));
+      const targetTitle = target ? escapeHtml(target.title) : "\u533f\u540d\u9875\u9762";
+      const href = target ? escapeAttr(target.href) : "guestbook.html";
+      const typeLabel = target ? escapeHtml(target.typeLabel) : "\u7559\u8a00";
+
+      return `
+        <li class="recent-comment-entry">
+          <a class="recent-comment-link" href="${href}">
+            <img class="recent-comment-avatar" src="${avatar}" alt="${nickname} avatar" loading="lazy" referrerpolicy="no-referrer" />
+            <div class="recent-comment-body">
+              <div class="recent-comment-top">
+                <p class="recent-comment-author">${nickname}</p>
+                <time class="recent-comment-time">${timeLabel}</time>
+              </div>
+              <p class="recent-comment-text">${content}</p>
+              <p class="recent-comment-target">
+                <span class="recent-comment-type">${typeLabel}</span>
+                <span class="recent-comment-title">${targetTitle}</span>
+              </p>
+            </div>
+          </a>
+        </li>
+      `;
+    })
+    .join("");
+}
+
+async function renderRecentComments(entries) {
+  const comments = await loadRecentComments(10);
+  renderRecentCommentsList(document.getElementById("recent-comments"), comments, entries);
+  renderRecentCommentsList(document.getElementById("mobile-recent-comments"), comments, entries);
 }
 
 function renderProfile(config) {
@@ -641,26 +770,12 @@ function renderTextOnlyPost(entry) {
         <span><span data-like-count>${likes}</span> 点赞</span>
       </button>
 
-      <section class="text-post-comment-editor">
-        <h4>发表评论</h4>
-        <textarea placeholder="说点什么吧..." rows="4" aria-label="评论输入"></textarea>
-        <div class="text-post-comment-row">
-          <input type="text" placeholder="昵称" />
-          <input type="text" placeholder="联系方式（邮箱/社交）" />
-          <button type="button">提交</button>
-        </div>
-      </section>
-
-      <section class="text-post-comments">
-        <h4>最新评论</h4>
-        <ul id="post-comments-list" class="comment-list compact"></ul>
-      </section>
+      <section id="post-comments-host" class="post-comments-host"></section>
     </section>
   `;
 
   bindImageFallbacks(layout);
   bindLikeControl(layout);
-  renderMockComments(document.getElementById("post-comments-list"), siteConfig.comments?.entryMock || [], 10);
 }
 
 function renderImagePost(entry) {
@@ -674,15 +789,35 @@ function renderImagePost(entry) {
       <p id="post-meta" class="entry-meta"><span>${escapeHtml(entry.date)}</span><span>${escapeHtml(entry.mood || "")}</span></p>
       <div id="post-tags" class="chips compact">${entry.tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join("")}</div>
       <div id="post-body" class="entry-detail">${entry.content.map((line) => `<p>${linkify(line)}</p>`).join("")}</div>
-      <section class="post-comments">
-        <h4>评论区（预留）</h4>
-        <ul id="post-comments-list" class="comment-list compact"></ul>
-      </section>
+      <section id="post-comments-host" class="post-comments-host"></section>
     </section>
   `;
 
   renderMediaCarousel(entry.images, entry.title, entry.id);
-  renderMockComments(document.getElementById("post-comments-list"), siteConfig.comments?.entryMock || [], 10);
+}
+
+function getNoteCommentPageKey(entry) {
+  return `note:${entry.id}`;
+}
+
+function teardownPostComments() {
+  currentCommentWidget?.destroy?.();
+  currentCommentWidget = null;
+}
+
+function mountPostComments(entry) {
+  teardownPostComments();
+
+  const host = document.getElementById("post-comments-host");
+  if (!host) {
+    return;
+  }
+
+  currentCommentWidget = mountContentComments({
+    container: host,
+    pageKey: getNoteCommentPageKey(entry),
+    mode: "note",
+  });
 }
 
 function renderPostModal(entry) {
@@ -704,10 +839,12 @@ function renderPostModal(entry) {
     currentImageIndex = 0;
     unbindMediaKeyboard();
     renderTextOnlyPost(entry);
+    mountPostComments(entry);
     return;
   }
 
   renderImagePost(entry);
+  mountPostComments(entry);
 }
 
 function getSharedSourceElement(entryId) {
@@ -842,6 +979,7 @@ function hidePostOverlay() {
   syncMobileOverlayChrome(false);
   window.clearTimeout(mediaUiTimer);
   unbindMediaKeyboard();
+  teardownPostComments();
 }
 
 function getViewportCenter() {

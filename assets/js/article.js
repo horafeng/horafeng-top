@@ -1,4 +1,5 @@
 import { escapeHtml, loadArticleDetail, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import { mountContentComments } from "./content-comments.js";
 
 const LABEL_EXTERNAL_LINK = "\u5916\u90e8\u94fe\u63a5";
 const LABEL_BOOKMARK = "\u4e66\u7b7e";
@@ -414,6 +415,13 @@ function renderArticle(meta, item) {
 
   const renderedBody = renderBlocks(item.blocks || []);
   body.innerHTML = renderedBody || `<div class="article-empty">${LABEL_EMPTY}</div>`;
+
+  const commentsHost = document.getElementById("article-comments");
+  mountContentComments({
+    container: commentsHost,
+    pageKey: `article:${meta.slug}`,
+    mode: "article",
+  });
 }
 
 async function main() {

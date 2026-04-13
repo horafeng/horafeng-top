@@ -409,3 +409,23 @@ node scripts/notion-sync/sync-notion.js
 - This avoids homepage note covers and article body images breaking after Notion temporary signed URLs expire.
 - If newly synced Notion images are still missing on the site, rerun:
   - `npm run notion:sync`
+
+## 14. Note / Article Comments
+
+- Notes and articles now reuse the same public comment API: `GET/POST /api/comments`
+- Page key mapping:
+  - note modal: `note:{entry.id}`
+  - article detail: `article:{slug}`
+- Article comments render after the article body in `article.html`
+- Note comments render inside the existing post modal, with a compact mobile dock entry for quick commenting
+- The existing guestbook, admin moderation flow, D1 storage, avatar proxy, Turnstile validation, and email reply notification pipeline are unchanged
+
+## 15. Homepage Recent Comments
+
+- The homepage sidebar and mobile preview no longer use `content/site.json` mock comment rows
+- They now load real approved comments from `GET /api/comments?recent=1&limit=10`
+- The recent list includes comments from:
+  - `guestbook`
+  - `note:{entry.id}`
+  - `article:{slug}`
+- Each recent comment card shows avatar, timestamp, comment excerpt, and the source target it links back to
