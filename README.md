@@ -429,3 +429,14 @@ node scripts/notion-sync/sync-notion.js
   - `note:{entry.id}`
   - `article:{slug}`
 - Each recent comment card shows avatar, timestamp, comment excerpt, and the source target it links back to
+
+## 16. Moderation UX
+
+- The admin comments dashboard now defaults to showing all page comments instead of only `guestbook`
+- Public comment submission now returns the created comment payload
+- When a visitor submits a comment that is still pending moderation:
+  - the comment is shown immediately to that same visitor only
+  - it carries a visible pending badge
+  - once approved and returned by the public API, the local pending marker is removed automatically
+- After comment submission on guestbook, note, and article pages, the site now shows a centered success toast with a check animation:
+  - `评论成功！审核后展现`

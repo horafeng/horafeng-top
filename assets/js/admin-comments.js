@@ -46,6 +46,10 @@ const TEXT = {
   totalLoaded: (count, total) => `\u5df2\u52a0\u8f7d ${count} \u6761\u7559\u8a00\uff08\u603b\u8ba1 ${total} \u6761\uff09\u3002`,
   totalEmpty: "\u5171 0 \u6761\u7559\u8a00\u3002",
   statusUpdated: (status) => `\u5df2\u66f4\u65b0\u72b6\u6001\u4e3a ${status}\u3002`,
+  sourceGuestbook: "\u7559\u8a00\u677f",
+  sourceNote: "\u5c0f\u8bb0",
+  sourceArticle: "\u6587\u7ae0",
+  sourceOther: "\u5176\u4ed6\u9875\u9762",
 };
 
 const state = {
@@ -194,6 +198,7 @@ function syncPollingControl() {
 }
 
 function commentCard(comment) {
+  const source = getCommentSourceMeta(comment.page_key);
   const adminBadge = comment.is_admin ? `<span class="admin-badge">${TEXT.bloggerBadge}</span>` : "";
   const notifyText = comment.notify_enabled ? TEXT.notifyEnabled : TEXT.notifyDisabled;
   const recipient = comment.contact_email_resolved ? ` / ${TEXT.recipientLabel}${escapeHtml(comment.contact_email_resolved)}` : "";
@@ -206,7 +211,7 @@ function commentCard(comment) {
     <article class="admin-comment-card status-${escapeHtml(comment.status)}" data-comment-id="${comment.id}">
       <header class="admin-comment-head">
         <p><strong>${escapeHtml(comment.nickname)}</strong>${adminBadge}</p>
-        <p class="subtle">${escapeHtml(comment.page_key)} / ${formatTime(comment.created_at)}</p>
+        <p class="subtle"><span class="admin-source-pill">${escapeHtml(source.label)}</span> ${escapeHtml(comment.page_key)} / ${formatTime(comment.created_at)}</p>
       </header>
       <p class="admin-comment-contact subtle">${TEXT.contactLabel}${escapeHtml(comment.contact || "-")}</p>
       <p class="admin-comment-contact subtle">${notifyText}${recipient}</p>
@@ -227,6 +232,20 @@ function commentCard(comment) {
       </div>
     </article>
   `;
+}
+
+function getCommentSourceMeta(pageKey) {
+  const key = String(pageKey || "").trim().toLowerCase();
+  if (key === "guestbook") {
+    return { label: TEXT.sourceGuestbook };
+  }
+  if (key.startsWith("note:")) {
+    return { label: TEXT.sourceNote };
+  }
+  if (key.startsWith("article:")) {
+    return { label: TEXT.sourceArticle };
+  }
+  return { label: TEXT.sourceOther };
 }
 
 async function loadComments() {

@@ -1,4 +1,12 @@
 import { escapeHtml, formatLastSeen, linkify, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import {
+  getPendingComments,
+  normalizePendingComment,
+  reconcilePendingComments,
+  renderPendingBadge,
+  savePendingComment,
+  showCommentSuccessToast,
+} from "./comment-ui.js";
 
 const state = {
   pageKey: "guestbook",
@@ -254,6 +262,7 @@ function setReplyTarget(commentId, nickname, previewText = "") {
 function renderCommentNode(node, depth = 0) {
   const levelClass = depth > 0 ? "is-reply" : "is-root";
   const adminClass = node.is_admin ? "is-admin" : "";
+  const pendingClass = node.is_pending_local ? "is-pending-local" : "";
   const replyMeta = node.reply_to ? `<span class="reply-to">回复 @${escapeHtml(node.reply_to)}</span>` : "";
   const children = (node.children || []).map((child) => renderCommentNode(child, depth + 1)).join("");
   const replyPreview = String(node.content || "")
@@ -263,9 +272,10 @@ function renderCommentNode(node, depth = 0) {
     ? state.bloggerAvatarUrl || state.adminAvatarUrl
     : pickDefaultAvatar(`${node.id}:${node.nickname || "guest"}`);
   const avatarUrl = node.avatar_url || fallbackAvatar;
+  const pendingBadge = node.is_pending_local ? renderPendingBadge(node.pending_label) : "";
 
   return `
-    <article class="guestbook-item ${levelClass} ${adminClass}" data-comment-id="${node.id}">
+    <article class="guestbook-item ${levelClass} ${adminClass} ${pendingClass}" data-comment-id="${node.id}">
       <header class="guestbook-item-head">
         <div class="guestbook-user">
           <img
@@ -281,6 +291,7 @@ function renderCommentNode(node, depth = 0) {
             <p class="guestbook-author">
               ${escapeHtml(node.nickname)}
               ${node.is_admin ? '<span class="admin-badge">博主</span>' : ""}
+              ${pendingBadge}
             </p>
             <p class="guestbook-time">${formatTime(node.created_at)}</p>
           </div>
@@ -290,13 +301,19 @@ function renderCommentNode(node, depth = 0) {
       <div class="guestbook-meta">
         ${replyMeta}
       </div>
-      <button
-        type="button"
-        class="link-like guestbook-reply-btn"
-        data-reply-id="${node.id}"
-        data-reply-nick="${escapeHtml(node.nickname)}"
-        data-reply-content="${escapeHtml(replyPreview)}"
-      >回复</button>
+      ${
+        node.is_pending_local
+          ? ""
+          : `
+            <button
+              type="button"
+              class="link-like guestbook-reply-btn"
+              data-reply-id="${node.id}"
+              data-reply-nick="${escapeHtml(node.nickname)}"
+              data-reply-content="${escapeHtml(replyPreview)}"
+            >回复</button>
+          `
+      }
       ${children ? `<div class="guestbook-children">${children}</div>` : ""}
     </article>
   `;
@@ -415,9 +432,12 @@ async function loadComments() {
   list.innerHTML = '<p class="subtle guestbook-empty">正在加载留言…</p>';
 
   const data = await apiJson(`/api/comments?page_key=${encodeURIComponent(state.pageKey)}&limit=100`);
+  reconcilePendingComments(state.pageKey, data.items || []);
   const items = sortCommentTreeByTime(data.items || [], "desc");
+  const pendingItems = getPendingComments(state.pageKey).map((item) => normalizePendingComment(item));
+  const mergedItems = [...pendingItems, ...items];
 
-  if (!items.length) {
+  if (!mergedItems.length) {
     list.innerHTML = `
       <div class="guestbook-empty-card">
         <p class="guestbook-empty-title">还没有公开留言</p>
@@ -427,7 +447,7 @@ async function loadComments() {
     return;
   }
 
-  list.innerHTML = items.map((item) => renderCommentNode(item)).join("");
+  list.innerHTML = mergedItems.map((item) => renderCommentNode(item)).join("");
   bindReplyButtons();
   bindAvatarFallbacks(list);
 }
@@ -619,7 +639,11 @@ function bindForm() {
       });
 
       setFeedback(result.message || "留言成功，感谢来访。");
+      if (result.pending && result.comment) {
+        savePendingComment(state.pageKey, normalizePendingComment(result.comment));
+      }
       showSubmitToast("成功留言！审核通过后会展示在留言区");
+      showCommentSuccessToast("评论成功！审核后展现");
       form.reset();
       const notifyToggle = document.getElementById("guestbook-notify");
       if (notifyToggle) {

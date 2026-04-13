@@ -1,4 +1,12 @@
 import { escapeHtml, linkify } from "./common.js";
+import {
+  getPendingComments,
+  normalizePendingComment,
+  reconcilePendingComments,
+  renderPendingBadge,
+  savePendingComment,
+  showCommentSuccessToast,
+} from "./comment-ui.js";
 
 const TEXT = {
   title: "\u7559\u8a00",
@@ -152,12 +160,14 @@ function renderCommentNode(node, depth = 0) {
   const children = Array.isArray(node.children) ? node.children : [];
   const levelClass = depth > 0 ? "is-reply" : "is-root";
   const adminClass = node.is_admin ? "is-admin" : "";
+  const pendingClass = node.is_pending_local ? "is-pending-local" : "";
   const replyMeta = node.reply_to ? `<span class="content-comment-reply-to">\u56de\u590d @${escapeHtml(node.reply_to)}</span>` : "";
   const avatarUrl = node.avatar_url || DEFAULTS.defaultAvatarUrl;
   const authorName = node.nickname || TEXT.anonymous;
+  const pendingBadge = node.is_pending_local ? renderPendingBadge(node.pending_label) : "";
 
   return `
-    <article class="content-comment-item ${levelClass} ${adminClass}" data-comment-id="${escapeHtml(node.id)}">
+    <article class="content-comment-item ${levelClass} ${adminClass} ${pendingClass}" data-comment-id="${escapeHtml(node.id)}">
       <header class="content-comment-item-head">
         <div class="content-comment-user">
           <img
@@ -171,18 +181,25 @@ function renderCommentNode(node, depth = 0) {
             <p class="content-comment-author">
               ${escapeHtml(authorName)}
               ${node.is_admin ? '<span class="content-comment-admin-badge">\u535a\u4e3b</span>' : ""}
+              ${pendingBadge}
             </p>
             <p class="content-comment-time">${escapeHtml(formatTime(node.created_at))}</p>
           </div>
         </div>
-        <button
-          type="button"
-          class="content-comment-reply-btn"
-          data-action="reply"
-          data-comment-id="${escapeHtml(node.id)}"
-          data-comment-name="${escapeHtml(authorName)}"
-          data-comment-preview="${escapeHtml(truncatePreview(node.content))}"
-        >${TEXT.reply}</button>
+        ${
+          node.is_pending_local
+            ? ""
+            : `
+              <button
+                type="button"
+                class="content-comment-reply-btn"
+                data-action="reply"
+                data-comment-id="${escapeHtml(node.id)}"
+                data-comment-name="${escapeHtml(authorName)}"
+                data-comment-preview="${escapeHtml(truncatePreview(node.content))}"
+              >${TEXT.reply}</button>
+            `
+        }
       </header>
       <div class="content-comment-body">${contentToHtml(node.content)}</div>
       ${replyMeta ? `<div class="content-comment-meta">${replyMeta}</div>` : ""}
@@ -445,7 +462,9 @@ export function mountContentComments(options = {}) {
   };
 
   const renderComments = (items = []) => {
-    const sorted = sortCommentTreeByTime(items, "desc");
+    reconcilePendingComments(state.pageKey, items);
+    const pendingItems = getPendingComments(state.pageKey).map((item) => normalizePendingComment(item));
+    const sorted = [...pendingItems, ...sortCommentTreeByTime(items, "desc")];
     const totalCount = countCommentTree(sorted);
 
     count.textContent = `${totalCount} ${TEXT.countSuffix}`;
@@ -541,11 +560,15 @@ export function mountContentComments(options = {}) {
       });
 
       setFeedback(result.pending ? TEXT.pending : TEXT.published);
+      if (result.pending && result.comment) {
+        savePendingComment(state.pageKey, normalizePendingComment(result.comment));
+      }
       form.reset();
       notifyToggle.checked = state.config.commentNotifyDefault !== false;
       clearReplyTarget();
       resetTurnstile();
       await loadComments();
+      showCommentSuccessToast("\u8bc4\u8bba\u6210\u529f\uff01\u5ba1\u6838\u540e\u5c55\u73b0");
 
       if (mode === "note") {
         collapseComposer();
