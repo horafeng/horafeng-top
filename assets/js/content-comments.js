@@ -1,5 +1,6 @@
 import { escapeHtml, linkify } from "./common.js";
 import {
+  clearCommentIdentity,
   getPendingComments,
   getStoredCommentIdentity,
   normalizePendingComment,
@@ -14,6 +15,7 @@ const TEXT = {
   title: "\u7559\u8a00",
   subtitleArticle: "\u770b\u5b8c\u8fd9\u7bc7\u5185\u5bb9\u540e\uff0c\u6b22\u8fce\u7559\u4e0b\u4f60\u7684\u60f3\u6cd5\u3002",
   subtitleNote: "\u8fd9\u6761\u5c0f\u8bb0\u4e0b\u9762\u4e5f\u53ef\u4ee5\u76f4\u63a5\u7559\u8a00\u3002",
+  subtitleGuestbook: "\u8fd9\u91cc\u662f\u72ec\u7acb\u7559\u8a00\u677f\uff0c\u4e5f\u6b22\u8fce\u56de\u590d\u5176\u4ed6\u8bbf\u5ba2\u3002",
   empty: "\u8fd8\u6ca1\u6709\u516c\u5f00\u7559\u8a00\uff0c\u6b22\u8fce\u5199\u4e0b\u7b2c\u4e00\u6761\u3002",
   loading: "\u6b63\u5728\u52a0\u8f7d\u7559\u8a00...",
   loadFailed: "\u7559\u8a00\u52a0\u8f7d\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
@@ -163,17 +165,77 @@ function countCommentTree(nodes = []) {
   );
 }
 
-function renderCommentNode(node, depth = 0) {
-  const children = Array.isArray(node.children) ? node.children : [];
-  const levelClass = depth > 0 ? "is-reply" : "is-root";
+function cloneCommentNode(node = {}) {
+  return {
+    ...node,
+    children: Array.isArray(node.children) ? node.children.map((child) => cloneCommentNode(child)) : [],
+  };
+}
+
+function mergePendingComments(items = [], pendingItems = []) {
+  const roots = items.map((item) => cloneCommentNode(item));
+  const map = new Map();
+
+  const collect = (node) => {
+    map.set(String(node.id), node);
+    (node.children || []).forEach(collect);
+  };
+  roots.forEach(collect);
+
+  [...pendingItems]
+    .sort((a, b) => (Date.parse(a.created_at || "") || 0) - (Date.parse(b.created_at || "") || 0))
+    .forEach((item) => {
+      const node = {
+        ...normalizePendingComment(item),
+        children: [],
+      };
+      const parentId = node.parent_id === null || node.parent_id === undefined ? "" : String(node.parent_id);
+      const parent = parentId ? map.get(parentId) : null;
+
+      if (parent) {
+        node.reply_to = parent.nickname || TEXT.anonymous;
+        node.reply_to_id = parent.id;
+        parent.children = Array.isArray(parent.children) ? parent.children : [];
+        parent.children.push(node);
+      } else {
+        roots.unshift(node);
+      }
+
+      map.set(String(node.id), node);
+    });
+
+  return sortCommentTreeByTime(roots, "desc");
+}
+
+function flattenReplies(children = [], bucket = []) {
+  children.forEach((child) => {
+    bucket.push(child);
+    if (Array.isArray(child.children) && child.children.length) {
+      flattenReplies(child.children, bucket);
+    }
+  });
+  return bucket;
+}
+
+function renderReplyLabel(node) {
+  if (!node.reply_to && !node.reply_to_id) {
+    return "";
+  }
+
+  const idPart = node.reply_to_id ? `#${escapeHtml(node.reply_to_id)}` : "";
+  const namePart = node.reply_to ? ` @${escapeHtml(node.reply_to)}` : "";
+  return `<span class="content-comment-reply-prefix">回复 ${idPart}${namePart}</span>`;
+}
+
+function renderCommentNode(node, { isReply = false } = {}) {
   const adminClass = node.is_admin ? "is-admin" : "";
   const pendingClass = node.is_pending_local ? "is-pending-local" : "";
   const pendingBadge = node.is_pending_local ? renderPendingBadge(node.pending_label) : "";
   const authorName = node.nickname || TEXT.anonymous;
-  const replyMeta = node.reply_to ? `<span class="content-comment-reply-to">\u56de\u590d @${escapeHtml(node.reply_to)}</span>` : "";
+  const replyLabel = isReply ? renderReplyLabel(node) : "";
 
   return `
-    <article class="content-comment-item ${levelClass} ${adminClass} ${pendingClass}" data-comment-id="${escapeHtml(node.id)}">
+    <article class="content-comment-item ${isReply ? "is-reply" : "is-root"} ${adminClass} ${pendingClass}" data-comment-id="${escapeHtml(node.id)}">
       <header class="content-comment-item-head">
         <div class="content-comment-user">
           <img
@@ -207,20 +269,34 @@ function renderCommentNode(node, depth = 0) {
             `
         }
       </header>
-      <div class="content-comment-body">${contentToHtml(node.content)}</div>
-      ${replyMeta ? `<div class="content-comment-meta">${replyMeta}</div>` : ""}
-      ${children.length ? `<div class="content-comment-children">${children.map((child) => renderCommentNode(child, depth + 1)).join("")}</div>` : ""}
+      <div class="content-comment-body">${replyLabel}${replyLabel ? " " : ""}${contentToHtml(node.content)}</div>
+    </article>
+  `;
+}
+
+function renderCommentThread(node) {
+  const replies = flattenReplies(sortCommentTreeByTime(Array.isArray(node.children) ? node.children : [], "asc")).sort(
+    (a, b) => (Date.parse(a.created_at || "") || 0) - (Date.parse(b.created_at || "") || 0),
+  );
+
+  return `
+    <article class="content-comment-thread-item" data-comment-thread="${escapeHtml(node.id)}">
+      ${renderCommentNode(node)}
+      ${replies.length ? `<div class="content-comment-replies">${replies.map((reply) => renderCommentNode(reply, { isReply: true })).join("")}</div>` : ""}
     </article>
   `;
 }
 
 function buildWidgetMarkup(mode) {
+  const subtitle =
+    mode === "note" ? TEXT.subtitleNote : mode === "guestbook" ? TEXT.subtitleGuestbook : TEXT.subtitleArticle;
+
   return `
     <section class="content-comment-thread content-comment-thread-${mode}">
       <div class="content-comment-head">
         <div>
           <h4>${TEXT.title}</h4>
-          <p class="subtle">${mode === "note" ? TEXT.subtitleNote : TEXT.subtitleArticle}</p>
+          <p class="subtle">${subtitle}</p>
         </div>
         <div class="content-comment-head-actions">
           <span class="content-comment-count" data-comment-count>0 ${TEXT.countSuffix}</span>
@@ -499,15 +575,15 @@ function mountContentComments(options = {}) {
 
   const renderComments = (items = []) => {
     reconcilePendingComments(state.pageKey, items);
-    const pendingItems = getPendingComments(state.pageKey).map((item) => normalizePendingComment(item));
-    const merged = [...pendingItems, ...sortCommentTreeByTime(items, "desc")];
+    const pendingItems = getPendingComments(state.pageKey);
+    const merged = mergePendingComments(sortCommentTreeByTime(items, "desc"), pendingItems);
 
     count.textContent = `${countCommentTree(merged)} ${TEXT.countSuffix}`;
     if (!merged.length) {
       list.innerHTML = `<div class="content-comment-empty-card"><p class="content-comment-empty-title">${TEXT.empty}</p></div>`;
       return;
     }
-    list.innerHTML = merged.map((item) => renderCommentNode(item)).join("");
+    list.innerHTML = merged.map((item) => renderCommentThread(item)).join("");
   };
 
   const loadComments = async () => {

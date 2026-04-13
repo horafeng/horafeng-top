@@ -1,665 +1,90 @@
-import { escapeHtml, formatLastSeen, linkify, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
-import {
-  getPendingComments,
-  normalizePendingComment,
-  reconcilePendingComments,
-  renderPendingBadge,
-  savePendingComment,
-  showCommentSuccessToast,
-} from "./comment-ui.js";
+import { formatLastSeen, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import { mountContentComments } from "./content-comments.js";
 
 const state = {
-  pageKey: "guestbook",
-  widgetId: null,
-  turnstileSiteKey: "",
-  defaultAvatarUrl: "/assets/images/avatar-default.svg",
-  adminAvatarUrl: "/assets/images/Profile.png",
-  bloggerAvatarUrl: "/assets/images/Profile.png",
-  notifyDefault: true,
-  formExpanded: false,
-  turnstileReady: false,
-  turnstileLoading: false,
-  toastHideTimer: null,
-  toastEndTimer: null,
-  commentRevealBound: false,
+  widget: null,
 };
 
-const DEFAULT_AVATAR_POOL = [
-  "/assets/images/avatar-default-1.svg",
-  "/assets/images/avatar-default-2.svg",
-  "/assets/images/avatar-default-3.svg",
-  "/assets/images/avatar-default-4.svg",
-  "/assets/images/avatar-default-5.svg",
-  "/assets/images/avatar-default-6.svg",
-];
-
-function hashSeed(text) {
-  return [...String(text || "guest")].reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) >>> 0, 7);
-}
-
-function pickDefaultAvatar(seed) {
-  return DEFAULT_AVATAR_POOL[hashSeed(seed) % DEFAULT_AVATAR_POOL.length];
-}
-
-function truncatePreview(text, maxLen = 78) {
-  const compact = String(text || "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!compact) {
-    return "（这条留言暂无正文）";
-  }
-  return compact.length > maxLen ? `${compact.slice(0, maxLen)}…` : compact;
-}
-
-function hasReplyTarget() {
-  const parentInput = document.getElementById("guestbook-parent-id");
-  return Boolean(parentInput?.value?.trim());
-}
-
-function isFormDirty() {
-  const content = document.getElementById("guestbook-content")?.value?.trim() || "";
-  const nickname = document.getElementById("guestbook-nickname")?.value?.trim() || "";
-  const contact = document.getElementById("guestbook-contact")?.value?.trim() || "";
-  return Boolean(content || nickname || contact);
-}
-
-function setToggleTip(message = "") {
-  const tip = document.getElementById("guestbook-form-toggle-tip");
-  if (!tip) {
-    return;
-  }
-  tip.textContent = message;
-}
-
-function showSubmitToast(message = "成功留言！审核通过后会展示在留言区") {
-  const toast = document.getElementById("guestbook-toast");
-  const text = document.getElementById("guestbook-toast-text");
-  if (!toast || !text) {
-    return;
-  }
-
-  text.textContent = message;
-  if (state.toastHideTimer) {
-    clearTimeout(state.toastHideTimer);
-  }
-  if (state.toastEndTimer) {
-    clearTimeout(state.toastEndTimer);
-  }
-
-  toast.hidden = false;
-  toast.classList.remove("show", "hide", "done");
-  void toast.offsetWidth;
-  toast.classList.add("show");
-
-  setTimeout(() => {
-    toast.classList.add("done");
-  }, 60);
-
-  state.toastHideTimer = setTimeout(() => {
-    toast.classList.add("hide");
-    toast.classList.remove("show");
-  }, 1500);
-
-  state.toastEndTimer = setTimeout(() => {
-    toast.hidden = true;
-    toast.classList.remove("hide", "done");
-  }, 2050);
-}
-
-function setFormExpanded(expanded, { focus = false, scroll = false } = {}) {
-  const wrap = document.getElementById("guestbook-form-wrap");
-  const toggle = document.getElementById("guestbook-form-toggle");
-  const collapsible = document.getElementById("guestbook-form-collapsible");
-
-  if (!wrap || !toggle || !collapsible) {
-    return;
-  }
-
-  state.formExpanded = expanded;
-  wrap.classList.toggle("expanded", expanded);
-  wrap.classList.toggle("collapsed", !expanded);
-  toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
-  collapsible.setAttribute("aria-hidden", expanded ? "false" : "true");
-
-  if (!expanded) {
-    return;
-  }
-
-  requestAnimationFrame(() => {
-    setupTurnstile().catch(() => {});
-
-    if (scroll) {
-      wrap.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    if (focus) {
-      document.getElementById("guestbook-content")?.focus();
-    }
-  });
-}
-
-function bindFormToggle() {
-  const toggle = document.getElementById("guestbook-form-toggle");
-  if (!toggle) {
-    return;
-  }
-
-  toggle.addEventListener("click", () => {
-    setToggleTip("");
-    if (!state.formExpanded) {
-      setFormExpanded(true, { focus: true, scroll: true });
-      return;
-    }
-    const keepDraft = hasReplyTarget() || isFormDirty();
-    setFormExpanded(false);
-    if (keepDraft) {
-      setToggleTip("已收起，草稿与回复状态已保留。");
-    }
-  });
-}
-
-function formatTime(isoString) {
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) {
-    return isoString || "";
-  }
-  return date.toLocaleString("zh-CN", { hour12: false });
-}
-
-function contentToHtml(text) {
-  return String(text || "")
-    .split("\n")
-    .map((line) => linkify(line))
-    .join("<br />");
-}
-
-function setFeedback(message, isError = false) {
-  const feedback = document.getElementById("guestbook-feedback");
-  feedback.textContent = message || "";
-  feedback.classList.toggle("feedback-error", Boolean(isError));
-}
-
-function bindAvatarFallbacks(scope = document) {
-  scope.querySelectorAll("img[data-default-avatar]").forEach((img) => {
-    if (img.dataset.boundError === "1") {
-      return;
-    }
-
-    img.dataset.boundError = "1";
-    img.addEventListener("error", () => {
-      const fallback = img.dataset.fallbackAvatar || img.dataset.defaultAvatar || state.defaultAvatarUrl;
-      if (img.src.endsWith(fallback)) {
-        return;
-      }
-      img.src = fallback;
-      img.classList.add("is-default-avatar");
-    });
-  });
-}
-
-function parseTimeValue(raw) {
-  const value = String(raw || "").trim();
-  if (!value) {
-    return 0;
-  }
-
-  const direct = Date.parse(value);
-  if (!Number.isNaN(direct)) {
-    return direct;
-  }
-
-  const normalized = value.includes("T") ? value : value.replace(" ", "T");
-  const normalizedValue = Date.parse(normalized);
-  if (!Number.isNaN(normalizedValue)) {
-    return normalizedValue;
-  }
-
-  const utcValue = Date.parse(`${normalized}Z`);
-  return Number.isNaN(utcValue) ? 0 : utcValue;
-}
-
-function sortCommentTreeByTime(nodes = [], order = "desc") {
-  const next = [...nodes];
-  next.sort((a, b) =>
-    order === "asc"
-      ? parseTimeValue(a.created_at) - parseTimeValue(b.created_at) || Number(a.id || 0) - Number(b.id || 0)
-      : parseTimeValue(b.created_at) - parseTimeValue(a.created_at) || Number(b.id || 0) - Number(a.id || 0),
-  );
-
-  next.forEach((node) => {
-    if (Array.isArray(node.children) && node.children.length) {
-      node.children = sortCommentTreeByTime(node.children, "asc");
-    }
-  });
-
-  return next;
-}
-
-function setReplyTarget(commentId, nickname, previewText = "") {
-  const parentInput = document.getElementById("guestbook-parent-id");
-  const hint = document.getElementById("guestbook-replying");
-  parentInput.value = commentId ? String(commentId) : "";
-
-  if (!commentId) {
-    hint.hidden = true;
-    hint.innerHTML = "";
-    setToggleTip("");
-    return;
-  }
-
-  setFormExpanded(true, { focus: true, scroll: true });
-  const preview = truncatePreview(previewText);
-  hint.hidden = false;
-  hint.innerHTML = `
-    <div class="replying-head">
-      <p class="replying-title">正在回复 <strong>${escapeHtml(nickname || "访客")}</strong> 的留言</p>
-      <button type="button" id="reply-cancel" class="link-like replying-cancel">取消回复</button>
-    </div>
-    <p class="replying-preview">${escapeHtml(preview)}</p>
-  `;
-  document.getElementById("reply-cancel")?.addEventListener("click", () => setReplyTarget(null, ""));
-}
-
-function renderCommentNode(node, depth = 0) {
-  const levelClass = depth > 0 ? "is-reply" : "is-root";
-  const adminClass = node.is_admin ? "is-admin" : "";
-  const pendingClass = node.is_pending_local ? "is-pending-local" : "";
-  const replyMeta = node.reply_to ? `<span class="reply-to">回复 @${escapeHtml(node.reply_to)}</span>` : "";
-  const children = (node.children || []).map((child) => renderCommentNode(child, depth + 1)).join("");
-  const replyPreview = String(node.content || "")
-    .replace(/\s+/g, " ")
-    .trim();
-  const fallbackAvatar = node.is_admin
-    ? state.bloggerAvatarUrl || state.adminAvatarUrl
-    : pickDefaultAvatar(`${node.id}:${node.nickname || "guest"}`);
-  const avatarUrl = node.avatar_url || fallbackAvatar;
-  const pendingBadge = node.is_pending_local ? renderPendingBadge(node.pending_label) : "";
-
-  return `
-    <article class="guestbook-item ${levelClass} ${adminClass} ${pendingClass}" data-comment-id="${node.id}">
-      <header class="guestbook-item-head">
-        <div class="guestbook-user">
-          <img
-            class="guestbook-avatar"
-            src="${escapeHtml(avatarUrl)}"
-            data-default-avatar="${escapeHtml(state.defaultAvatarUrl)}"
-            data-fallback-avatar="${escapeHtml(fallbackAvatar)}"
-            alt="${escapeHtml(node.nickname || "访客")} avatar"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-          />
-          <div class="guestbook-user-meta">
-            <p class="guestbook-author">
-              ${escapeHtml(node.nickname)}
-              ${node.is_admin ? '<span class="admin-badge">博主</span>' : ""}
-              ${pendingBadge}
-            </p>
-            <p class="guestbook-time">${formatTime(node.created_at)}</p>
-          </div>
-        </div>
-      </header>
-      <p class="guestbook-content">${contentToHtml(node.content)}</p>
-      <div class="guestbook-meta">
-        ${replyMeta}
-      </div>
-      ${
-        node.is_pending_local
-          ? ""
-          : `
-            <button
-              type="button"
-              class="link-like guestbook-reply-btn"
-              data-reply-id="${node.id}"
-              data-reply-nick="${escapeHtml(node.nickname)}"
-              data-reply-content="${escapeHtml(replyPreview)}"
-            >回复</button>
-          `
-      }
-      ${children ? `<div class="guestbook-children">${children}</div>` : ""}
-    </article>
-  `;
-}
-
-function markCommentActive(targetItem) {
-  document.querySelectorAll(".guestbook-item.is-active, .guestbook-item.is-hover-target").forEach((node) => {
-    if (node !== targetItem) {
-      node.classList.remove("is-active");
-      node.classList.remove("is-hover-target");
-    }
-  });
-  targetItem.classList.add("is-active");
-}
-
-function markCommentHover(targetItem) {
-  document.querySelectorAll(".guestbook-item.is-hover-target").forEach((node) => {
-    if (node !== targetItem) {
-      node.classList.remove("is-hover-target");
-    }
-  });
-  targetItem.classList.add("is-hover-target");
-}
-
-function clearCommentHover(list) {
-  list.querySelectorAll(".guestbook-item.is-hover-target").forEach((node) => node.classList.remove("is-hover-target"));
-}
-
-function bindCommentRevealInteraction() {
-  if (state.commentRevealBound) {
-    return;
-  }
-  const list = document.getElementById("guestbook-list");
-  if (!list) {
-    return;
-  }
-
-  state.commentRevealBound = true;
-  list.addEventListener("pointerover", (event) => {
-    if (event.pointerType && event.pointerType !== "mouse") {
-      return;
-    }
-    const item = event.target?.closest?.(".guestbook-item");
-    if (!item || !list.contains(item)) {
-      return;
-    }
-    markCommentHover(item);
-  });
-
-  list.addEventListener("pointerleave", () => {
-    clearCommentHover(list);
-  });
-
-  list.addEventListener("pointerdown", (event) => {
-    const item = event.target?.closest?.(".guestbook-item");
-    if (!item) {
-      return;
-    }
-    markCommentActive(item);
-  });
-
-  list.addEventListener("focusin", (event) => {
-    const item = event.target?.closest?.(".guestbook-item");
-    if (!item) {
-      return;
-    }
-    markCommentHover(item);
-  });
-
-  document.addEventListener("pointerdown", (event) => {
-    if (list.contains(event.target)) {
-      return;
-    }
-    list.querySelectorAll(".guestbook-item.is-active, .guestbook-item.is-hover-target").forEach((node) => {
-      node.classList.remove("is-active");
-      node.classList.remove("is-hover-target");
-    });
-  });
-}
-
-function bindReplyButtons() {
-  document.querySelectorAll("[data-reply-id]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const commentId = button.getAttribute("data-reply-id");
-      const nickname = button.getAttribute("data-reply-nick") || "";
-      const previewText = button.getAttribute("data-reply-content") || "";
-      setReplyTarget(commentId, nickname, previewText);
-      document.getElementById("guestbook-content")?.focus();
-    });
-  });
-}
-
-async function apiJson(url, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "content-type": "application/json",
-      ...(options.headers || {}),
-    },
-    credentials: "same-origin",
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = payload.message || "请求失败。";
-    const error = new Error(message);
-    error.status = response.status;
-    throw error;
-  }
-
-  return payload;
-}
-
-async function loadComments() {
-  const list = document.getElementById("guestbook-list");
-  list.innerHTML = '<p class="subtle guestbook-empty">正在加载留言…</p>';
-
-  const data = await apiJson(`/api/comments?page_key=${encodeURIComponent(state.pageKey)}&limit=100`);
-  reconcilePendingComments(state.pageKey, data.items || []);
-  const items = sortCommentTreeByTime(data.items || [], "desc");
-  const pendingItems = getPendingComments(state.pageKey).map((item) => normalizePendingComment(item));
-  const mergedItems = [...pendingItems, ...items];
-
-  if (!mergedItems.length) {
-    list.innerHTML = `
-      <div class="guestbook-empty-card">
-        <p class="guestbook-empty-title">还没有公开留言</p>
-        <p class="subtle">欢迎写下第一条留言，让这页有一点温度。</p>
-      </div>
-    `;
-    return;
-  }
-
-  list.innerHTML = mergedItems.map((item) => renderCommentNode(item)).join("");
-  bindReplyButtons();
-  bindAvatarFallbacks(list);
-}
-
-function ensureTurnstileScript() {
-  if (window.turnstile) {
-    return Promise.resolve();
-  }
-
-  if (document.getElementById("turnstile-script")) {
-    return new Promise((resolve, reject) => {
-      const script = document.getElementById("turnstile-script");
-      script.addEventListener("load", () => resolve(), { once: true });
-      script.addEventListener("error", () => reject(new Error("Turnstile 脚本加载失败。")), { once: true });
-    });
-  }
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.id = "turnstile-script";
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Turnstile 脚本加载失败。"));
-    document.head.appendChild(script);
-  });
-}
-
-async function setupTurnstile() {
-  if (state.turnstileReady || state.turnstileLoading) {
-    return;
-  }
-
-  state.turnstileLoading = true;
-  const hint = document.getElementById("turnstile-hint");
-  const widget = document.getElementById("turnstile-widget");
-
-  if (!state.turnstileSiteKey) {
-    hint.textContent = "Turnstile Site Key 未配置。";
-    state.turnstileReady = true;
-    state.turnstileLoading = false;
-    return;
-  }
-
-  try {
-    await ensureTurnstileScript();
-    if (state.widgetId === null) {
-      state.widgetId = window.turnstile.render(widget, {
-        sitekey: state.turnstileSiteKey,
-        theme: "light",
-      });
-    }
-    hint.textContent = "请完成人机验证后再提交留言。";
-    state.turnstileReady = true;
-  } catch (error) {
-    hint.textContent = error.message;
-    state.turnstileReady = false;
-  } finally {
-    state.turnstileLoading = false;
-  }
-}
-
-async function loadConfig() {
-  try {
-    const config = await apiJson("/api/config", { method: "GET", headers: {} });
-    state.turnstileSiteKey = config.turnstileSiteKey || "";
-    state.defaultAvatarUrl = config.defaultAvatarUrl || "/assets/images/avatar-default.svg";
-    state.adminAvatarUrl = config.adminAvatarUrl || "/assets/images/Profile.png";
-    state.notifyDefault = config.commentNotifyDefault !== false;
-  } catch {
-    state.turnstileSiteKey = "";
-    state.defaultAvatarUrl = "/assets/images/avatar-default.svg";
-    state.adminAvatarUrl = "/assets/images/Profile.png";
-    state.notifyDefault = true;
-  }
-}
-
-function collectTurnstileToken() {
-  if (!state.turnstileSiteKey) {
-    return "";
-  }
-  if (!window.turnstile || state.widgetId === null) {
-    return "";
-  }
-  return window.turnstile.getResponse(state.widgetId) || "";
-}
-
-function resetTurnstileToken() {
-  if (!window.turnstile || state.widgetId === null) {
-    return;
-  }
-  window.turnstile.reset(state.widgetId);
-}
-
-function renderProfile(config) {
-  const profile = config.profile || {};
-  const cover = document.getElementById("guestbook-profile-cover");
-  const avatar = document.getElementById("guestbook-profile-avatar");
-  const name = document.getElementById("guestbook-profile-name");
-  const handle = document.getElementById("guestbook-profile-handle");
-  const signature = document.getElementById("guestbook-profile-signature");
-  const bio = document.getElementById("guestbook-profile-bio");
-  const lastSeen = document.getElementById("guestbook-profile-last-seen");
+function applyProfile(profile = {}) {
+  const avatar = String(profile.avatar || "assets/images/Profile.png").trim() || "assets/images/Profile.png";
+  const name = String(profile.name || "HoraFeng").trim() || "HoraFeng";
+  const handle = String(profile.handle || "@horafeng").trim() || "@horafeng";
+  const signature = String(profile.signature || "\u628a\u666e\u901a\u65e5\u5b50\u5199\u6210\u4f1a\u53d1\u5149\u7684\u788e\u7247\u3002").trim();
+  const bio = String(profile.bio || "\u8fd9\u91cc\u662f\u6211\u7684\u8f7b\u65e5\u8bb0\u4e0e\u751f\u6d3b\u8bb0\u4e8b\u3002").trim();
+  const email = String(profile.email || "horafeng@outlook.com").trim();
+
+  const avatarEl = document.getElementById("guestbook-profile-avatar");
+  const nameEl = document.getElementById("guestbook-profile-name");
+  const handleEl = document.getElementById("guestbook-profile-handle");
+  const signatureEl = document.getElementById("guestbook-profile-signature");
+  const bioEl = document.getElementById("guestbook-profile-bio");
+  const lastSeenEl = document.getElementById("guestbook-profile-last-seen");
+  const coverEl = document.getElementById("guestbook-profile-cover");
   const emailButton = document.getElementById("guestbook-email-button");
 
-  if (profile.cover) {
-    cover.style.backgroundImage = `url(${profile.cover})`;
-    cover.style.backgroundSize = "cover";
-    cover.style.backgroundPosition = "center";
+  if (avatarEl) {
+    avatarEl.src = avatar;
   }
-
-  avatar.src = profile.avatar || state.defaultAvatarUrl;
-  avatar.dataset.defaultAvatar = state.defaultAvatarUrl;
-  avatar.dataset.fallbackAvatar = state.defaultAvatarUrl;
-  state.bloggerAvatarUrl = profile.avatar || state.adminAvatarUrl || state.defaultAvatarUrl;
-  name.textContent = profile.name || "HoraFeng";
-  handle.textContent = profile.handle || "@horafeng";
-  signature.textContent = profile.signature || "把普通日子写成会发光的碎片。";
-  bio.textContent = profile.bio || "这里是我的轻日记与生活记事。";
-  lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
-  emailButton.href = `mailto:${profile.email || "horafeng@outlook.com"}`;
-  emailButton.textContent = profile.emailLabel || "发送邮件";
-
-  const notifyToggle = document.getElementById("guestbook-notify");
-  if (notifyToggle) {
-    notifyToggle.checked = state.notifyDefault;
+  if (nameEl) {
+    nameEl.textContent = name;
   }
-
-  bindAvatarFallbacks(document.getElementById("guestbook-profile-panel") || document);
+  if (handleEl) {
+    handleEl.textContent = handle;
+  }
+  if (signatureEl) {
+    signatureEl.textContent = signature;
+  }
+  if (bioEl) {
+    bioEl.textContent = bio;
+  }
+  if (lastSeenEl) {
+    lastSeenEl.textContent = formatLastSeen(profile.lastSeen || profile.last_seen || "");
+  }
+  if (coverEl && profile.cover) {
+    coverEl.style.backgroundImage = `url("${String(profile.cover).trim()}")`;
+  }
+  if (emailButton && email) {
+    emailButton.href = `mailto:${email}`;
+  }
 }
 
-function bindForm() {
-  const form = document.getElementById("guestbook-form");
-  const submitButton = document.getElementById("guestbook-submit");
-  const contentInput = document.getElementById("guestbook-content");
-  const nicknameInput = document.getElementById("guestbook-nickname");
-  const contactInput = document.getElementById("guestbook-contact");
+function mountGuestbookComments() {
+  document.getElementById("guestbook-form-wrap")?.remove();
+  document.getElementById("guestbook-toast")?.remove();
 
-  [contentInput, nicknameInput, contactInput].forEach((input) => {
-    input?.addEventListener("input", () => setToggleTip(""));
-  });
+  const listWrap = document.querySelector(".guestbook-list-wrap");
+  if (!(listWrap instanceof HTMLElement)) {
+    return;
+  }
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    setFeedback("");
+  const head = listWrap.querySelector(".guestbook-list-head");
+  const title = head?.querySelector("h2");
+  const subtitle = head?.querySelector(".subtle");
+  if (title) {
+    title.textContent = "\u6700\u65b0\u4e92\u52a8";
+  }
+  if (subtitle) {
+    subtitle.textContent = "\u9ed8\u8ba4\u5c55\u793a\u4e24\u5c42\u8bc4\u8bba\u7ed3\u6784\uff0c\u56de\u590d\u4ed6\u4eba\u7684\u56de\u590d\u65f6\u4f1a\u6807\u6ce8\u5bf9\u5e94\u697c\u5c42\u3002";
+  }
 
-    const nickname = document.getElementById("guestbook-nickname").value.trim();
-    const contact = document.getElementById("guestbook-contact").value.trim();
-    const content = document.getElementById("guestbook-content").value.trim();
-    const parentRaw = document.getElementById("guestbook-parent-id").value.trim();
-    const notifyEnabled = document.getElementById("guestbook-notify")?.checked !== false;
-    const turnstileToken = collectTurnstileToken();
-
-    if (!nickname) {
-      setFeedback("请填写昵称。", true);
-      return;
+  let host = document.getElementById("guestbook-comments-host");
+  if (!(host instanceof HTMLElement)) {
+    host = document.createElement("section");
+    host.id = "guestbook-comments-host";
+    host.className = "guestbook-comments-host";
+    const legacyList = document.getElementById("guestbook-list");
+    if (legacyList) {
+      legacyList.replaceWith(host);
+    } else {
+      listWrap.appendChild(host);
     }
-    if (!contact) {
-      setFeedback("请填写联系方式（邮箱或 QQ）。", true);
-      return;
-    }
-    if (!content) {
-      setFeedback("请填写留言内容。", true);
-      return;
-    }
-    if (state.turnstileSiteKey && !turnstileToken) {
-      setFeedback("请先完成人机验证。", true);
-      return;
-    }
+  }
 
-    submitButton.disabled = true;
-    submitButton.textContent = "发送中...";
-
-    try {
-      const payload = {
-        page_key: state.pageKey,
-        parent_id: parentRaw ? Number(parentRaw) : null,
-        nickname,
-        contact,
-        content,
-        notify_enabled: notifyEnabled,
-        turnstileToken,
-      };
-
-      const result = await apiJson("/api/comments", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      setFeedback(result.message || "留言成功，感谢来访。");
-      if (result.pending && result.comment) {
-        savePendingComment(state.pageKey, normalizePendingComment(result.comment));
-      }
-      showSubmitToast("成功留言！审核通过后会展示在留言区");
-      showCommentSuccessToast("评论成功！审核后展现");
-      form.reset();
-      const notifyToggle = document.getElementById("guestbook-notify");
-      if (notifyToggle) {
-        notifyToggle.checked = state.notifyDefault;
-      }
-      setReplyTarget(null, "");
-      setFormExpanded(false);
-      resetTurnstileToken();
-      await loadComments();
-    } catch (error) {
-      setFeedback(error.message || "提交失败，请稍后重试。", true);
-      resetTurnstileToken();
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = "发送留言";
-    }
+  state.widget?.destroy?.();
+  state.widget = mountContentComments({
+    container: host,
+    pageKey: "guestbook",
+    mode: "guestbook",
   });
 }
 
@@ -667,27 +92,23 @@ async function main() {
   setupSplash();
   setupPageTransition();
   setupSiteChrome({
-    scrollContainerSelector: ".flow-panel",
-    searchTargetSelector: "#guestbook-content",
+    scrollContainerSelector: ".guestbook-flow-panel",
     useWindowScroll: true,
   });
 
-  if ("scrollRestoration" in history) {
-    history.scrollRestoration = "manual";
-  }
-  window.scrollTo(0, 0);
-
-  await loadConfig();
   const siteConfig = await loadSiteConfig();
-
-  renderProfile(siteConfig);
-  bindFormToggle();
-  bindCommentRevealInteraction();
-  setFormExpanded(false);
-  bindForm();
-  await loadComments();
+  applyProfile(siteConfig?.profile || {});
+  mountGuestbookComments();
 }
 
 main().catch((error) => {
-  setFeedback(error.message || "留言板加载失败，请稍后刷新。", true);
+  const listWrap = document.querySelector(".guestbook-list-wrap");
+  if (!listWrap) {
+    return;
+  }
+
+  const host = document.getElementById("guestbook-comments-host") || document.getElementById("guestbook-list");
+  if (host instanceof HTMLElement) {
+    host.innerHTML = `<p class="subtle">${String(error?.message || "\u7559\u8a00\u677f\u52a0\u8f7d\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002")}</p>`;
+  }
 });

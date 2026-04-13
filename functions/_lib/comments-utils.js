@@ -437,6 +437,7 @@ export function buildCommentTree(rows, options = {}) {
     }
 
     node.reply_to = parent.nickname;
+    node.reply_to_id = parent.id;
     parent.children.push(node);
   });
 

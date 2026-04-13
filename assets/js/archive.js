@@ -2,7 +2,7 @@ import {
   escapeHtml,
   getStats,
   linkify,
-  loadEntries,
+  loadHomeFeed,
   loadSiteConfig,
   renderMockComments,
   searchEntries,
@@ -206,11 +206,24 @@ function renderTimeline(entries) {
       const tagsHtml = (entry.tags || [])
         .map((tag) => `<span class="archive-card-tag">#${escapeHtml(tag)}</span>`)
         .join("");
+      const entryType = entry.contentType === "article" ? "article" : "note";
+      const typeBadge =
+        entryType === "article"
+          ? '<span class="archive-card-kind is-article">文章</span>'
+          : '<span class="archive-card-kind is-note">小记</span>';
+      const actionLabel = entryType === "article" ? "打开文章" : "查看小记";
 
       return `
         <article class="archive-item ${sideClass}${hasImage ? "" : " no-cover"}">
           <span class="archive-item-node" aria-hidden="true"></span>
-          <button class="archive-card${hasImage ? "" : " no-cover"}" type="button" data-entry-id="${escapeAttr(entry.id)}" aria-label="查看 ${escapeAttr(entry.title)}">
+          <button
+            class="archive-card${hasImage ? "" : " no-cover"}"
+            type="button"
+            data-entry-id="${escapeAttr(entry.id)}"
+            data-entry-type="${escapeAttr(entryType)}"
+            data-entry-slug="${escapeAttr(entry.slug || "")}"
+            aria-label="${escapeAttr(actionLabel)} ${escapeAttr(entry.title)}"
+          >
             ${
               hasImage
                 ? `
@@ -228,6 +241,7 @@ function renderTimeline(entries) {
             }
             <div class="archive-card-body">
               <p class="archive-card-time">
+                ${typeBadge}
                 <span>${escapeHtml(formatDate(entry.date))}</span>
                 <span>${escapeHtml(entry.mood || "✦")}</span>
               </p>
@@ -834,13 +848,20 @@ function setupOverlayControls() {
 
 function bindTimelineClicks() {
   document.querySelectorAll(".archive-card[data-entry-id]").forEach((card) => {
-    card.addEventListener("click", async () => {
+    const openCard = async () => {
+      if (card.dataset.entryType === "article" && card.dataset.entrySlug) {
+        window.location.href = `article.html?slug=${encodeURIComponent(card.dataset.entrySlug)}`;
+        return;
+      }
+
       const rect = card.getBoundingClientRect();
       await openPostById(card.dataset.entryId, {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
       });
-    });
+    };
+
+    card.addEventListener("click", openCard);
 
     card.addEventListener("keydown", async (event) => {
       if (event.key !== "Enter" && event.key !== " ") {
@@ -848,11 +869,7 @@ function bindTimelineClicks() {
       }
 
       event.preventDefault();
-      const rect = card.getBoundingClientRect();
-      await openPostById(card.dataset.entryId, {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      });
+      await openCard();
     });
   });
 }
@@ -866,7 +883,7 @@ async function main() {
   });
 
   readStateFromUrl();
-  const [entries, siteConfig] = await Promise.all([loadEntries(), loadSiteConfig()]);
+  const [entries, siteConfig] = await Promise.all([loadHomeFeed(), loadSiteConfig()]);
   state.entries = entries;
   state.siteConfig = siteConfig;
 

@@ -3403,8 +3403,28 @@ body[data-page="archive"] .archive-flow-panel {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
   color: #728194;
   font-size: 0.86rem;
+}
+
+.archive-card-kind {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.archive-card-kind.is-note {
+  color: #5a7495;
+  background: rgba(224, 234, 246, 0.78);
+}
+
+.archive-card-kind.is-article {
+  color: #79563f;
+  background: rgba(248, 232, 216, 0.86);
 }
 
 .archive-card-title {
@@ -3784,7 +3804,8 @@ body[data-page="archive"] .archive-flow-panel {
   min-height: 1.35em;
 }
 
-.content-comment-list {
+.content-comment-list,
+.content-comment-replies {
   display: grid;
   gap: 11px;
 }
@@ -3807,6 +3828,11 @@ body[data-page="archive"] .archive-flow-panel {
   border-radius: 14px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.76);
+}
+
+.content-comment-thread-item {
+  display: grid;
+  gap: 9px;
 }
 
 .content-comment-item.is-admin {
@@ -3890,6 +3916,14 @@ body[data-page="archive"] .archive-flow-panel {
   overflow-wrap: anywhere;
 }
 
+.content-comment-item.is-reply {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .content-comment-body a {
   color: #5879a9;
 }
@@ -3900,12 +3934,19 @@ body[data-page="archive"] .archive-flow-panel {
   font-size: 0.83rem;
 }
 
-.content-comment-children {
+.content-comment-replies {
   margin-top: 10px;
-  padding-left: 10px;
+  padding-left: 18px;
   border-left: 2px solid rgba(96, 113, 138, 0.18);
-  display: grid;
-  gap: 8px;
+}
+
+.content-comment-reply-prefix {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  color: #627690;
+  font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .content-comment-replying {

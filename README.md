@@ -457,3 +457,15 @@ node scripts/notion-sync/sync-notion.js
 - Minimal backend compatibility:
   - `POST /api/comment-identity` verifies Turnstile and sets a short-lived comment identity cookie
   - `POST /api/comments` accepts either a fresh Turnstile token or a valid verified comment identity cookie
+
+## 18. Guestbook + Two-Level Replies + Archive Feed
+
+- `guestbook.html` now reuses the same lightweight comment identity flow as note/article comments
+- The legacy always-open guestbook form is removed at runtime and replaced by the shared comment widget
+- Public comment rendering is now flattened into two visual levels:
+  - root comments
+  - a single reply stream under each root
+- Replies to replies are no longer deeply nested; instead they stay in the second level and show a prefix like `回复 #123 @昵称`
+- The public comment tree payload now includes `reply_to_id` for reply labeling
+- `archive.html` now loads the merged home feed, so both `note` and published `article` entries appear in the archive timeline
+- Clicking an archive note still opens the existing modal; clicking an archive article goes to `article.html?slug=...`
