@@ -745,12 +745,16 @@ function bindLikeControl(layout) {
 
 function renderTextOnlyPost(entry) {
   const layout = document.getElementById("post-layout");
+  const modal = document.getElementById("post-modal");
   const profile = siteConfig?.profile || {};
   const authorName = entry.author || profile.name || "HoraFeng";
   const avatar = profile.avatar || "https://dummyimage.com/120x120/f3f5f8/8a94a6&text=HF";
   const likes = Number.isFinite(entry.likes) ? entry.likes : 1;
 
+  modal?.classList.remove("post-modal-note-split");
+
   layout.classList.add("text-only");
+  layout.classList.remove("has-media-split");
   layout.innerHTML = `
     <section class="text-post-card">
       <header class="text-post-head">
@@ -780,8 +784,11 @@ function renderTextOnlyPost(entry) {
 
 function renderImagePost(entry) {
   const layout = document.getElementById("post-layout");
+  const modal = document.getElementById("post-modal");
 
+  modal?.classList.add("post-modal-note-split");
   layout.classList.remove("text-only");
+  layout.classList.add("has-media-split");
   layout.innerHTML = `
     <section class="post-media" id="post-media"></section>
     <section class="post-content">
@@ -972,6 +979,7 @@ function hidePostOverlay() {
   modal.style.transition = "";
   modal.style.willChange = "";
   modal.style.transformOrigin = "";
+  modal.classList.remove("post-modal-note-split");
 
   overlay.hidden = true;
   overlay.classList.remove("open", "closing", "shared-transition", "mobile-lite", "mobile-ready");

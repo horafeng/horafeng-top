@@ -1,6 +1,7 @@
 import { escapeHtml } from "./common.js";
 
 const STORAGE_KEY = "hf-pending-comments-v1";
+const IDENTITY_KEY = "hf-comment-identity-v1";
 
 function readAllPending() {
   try {
@@ -163,4 +164,59 @@ export function normalizePendingComment(comment = {}) {
 
 export function renderPendingBadge(label = "\u5f85\u5ba1\u6838\uff0c\u4ec5\u81ea\u5df1\u53ef\u89c1") {
   return `<span class="comment-pending-badge">${escapeHtml(label)}</span>`;
+}
+
+export function getStoredCommentIdentity() {
+  try {
+    const raw = window.localStorage.getItem(IDENTITY_KEY);
+    const parsed = JSON.parse(raw || "{}");
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const nickname = String(parsed.nickname || "").trim();
+    const contact = String(parsed.contact || "").trim();
+    if (!nickname || !contact) {
+      return null;
+    }
+
+    return {
+      nickname,
+      contact,
+      notify_enabled: parsed.notify_enabled !== false,
+      verified_at: String(parsed.verified_at || ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveCommentIdentity(identity = {}) {
+  const nickname = String(identity.nickname || "").trim();
+  const contact = String(identity.contact || "").trim();
+  if (!nickname || !contact) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      IDENTITY_KEY,
+      JSON.stringify({
+        nickname,
+        contact,
+        notify_enabled: identity.notify_enabled !== false,
+        verified_at: identity.verified_at || new Date().toISOString(),
+      }),
+    );
+  } catch {
+    // ignore storage failures
+  }
+}
+
+export function clearCommentIdentity() {
+  try {
+    window.localStorage.removeItem(IDENTITY_KEY);
+  } catch {
+    // ignore storage failures
+  }
 }

@@ -932,6 +932,10 @@ p {
   gap: 9px;
 }
 
+.post-layout.has-media-split .post-content {
+  min-width: 0;
+}
+
 .post-comments {
   margin-top: 2px;
   border-top: 1px solid var(--line);
@@ -1097,6 +1101,16 @@ p {
     align-items: start;
   }
 
+  .post-modal.post-modal-note-split {
+    overflow: hidden;
+  }
+
+  .post-layout.has-media-split {
+    align-items: stretch;
+    min-height: calc(100vh - 84px);
+    max-height: calc(100vh - 84px);
+  }
+
   .post-layout.text-only {
     grid-template-columns: 1fr;
   }
@@ -1104,6 +1118,47 @@ p {
   .post-media {
     position: sticky;
     top: 8px;
+  }
+
+  .post-layout.has-media-split .post-media {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .post-layout.has-media-split .media-viewer {
+    height: 100%;
+    max-height: none;
+  }
+
+  .post-layout.has-media-split .post-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .post-layout.has-media-split .post-comments-host,
+  .post-layout.has-media-split .content-comment-thread {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .post-layout.has-media-split .content-comment-thread {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .post-layout.has-media-split .content-comment-list-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .post-layout.has-media-split .content-comment-list {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 4px;
   }
 }
 
@@ -3575,7 +3630,8 @@ body[data-page="archive"] .archive-flow-panel {
 .content-comment-refresh,
 .content-comment-reply-btn,
 .content-comment-cancel-reply,
-.content-comment-compose-toggle {
+.content-comment-compose-toggle,
+.content-comment-secondary-btn {
   border: 1px solid rgba(101, 125, 159, 0.26);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.82);
@@ -3590,6 +3646,86 @@ body[data-page="archive"] .archive-flow-panel {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.72);
   padding: 14px;
+}
+
+.content-comment-entry {
+  display: grid;
+  gap: 10px;
+}
+
+.content-comment-actions-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.content-comment-primary-btn,
+.content-comment-submit-btn {
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 0.92rem;
+}
+
+.content-comment-identity {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(101, 125, 159, 0.16);
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.content-comment-identity strong {
+  color: #445973;
+}
+
+.content-comment-composer {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(101, 125, 159, 0.16);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.content-comment-composer-head,
+.content-comment-composer-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.content-comment-composer-title {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #445973;
+}
+
+.content-comment-composer-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.content-comment-textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid rgba(97, 120, 154, 0.22);
+  padding: 12px 13px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  font-family: inherit;
+  line-height: 1.75;
 }
 
 .content-comment-compose-toggle {
@@ -3841,6 +3977,72 @@ body[data-page="archive"] .archive-flow-panel {
   box-shadow: inset 0 0 0 1px rgba(105, 123, 149, 0.12);
 }
 
+.comment-identity-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+}
+
+.comment-identity-modal[hidden] {
+  display: none !important;
+}
+
+.comment-identity-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 35, 48, 0.36);
+  backdrop-filter: blur(5px);
+}
+
+.comment-identity-dialog {
+  position: relative;
+  width: min(560px, calc(100vw - 28px));
+  margin: min(11vh, 88px) auto 0;
+  padding: 20px 18px 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: rgba(252, 253, 255, 0.98);
+  box-shadow: 0 24px 56px rgba(20, 34, 52, 0.2);
+}
+
+.comment-identity-dialog h3 {
+  font-size: 1.1rem;
+  margin-bottom: 14px;
+  color: #3f556f;
+}
+
+.comment-identity-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(244, 247, 251, 0.94);
+  color: #415771;
+  font-family: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.comment-identity-form {
+  display: grid;
+  gap: 10px;
+}
+
+.comment-identity-hint {
+  margin-top: -2px;
+}
+
+.comment-identity-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .global-comment-toast {
   position: fixed;
   inset: 0;
@@ -3960,6 +4162,26 @@ body[data-page="archive"] .archive-flow-panel {
     grid-template-columns: 1fr;
   }
 
+  .content-comment-actions-bar,
+  .content-comment-composer-head,
+  .content-comment-composer-foot,
+  .comment-identity-actions {
+    align-items: stretch;
+  }
+
+  .content-comment-composer-buttons,
+  .content-comment-actions-bar {
+    width: 100%;
+  }
+
+  .content-comment-primary-btn,
+  .content-comment-submit-btn,
+  .content-comment-secondary-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
   .content-comment-item-head {
     gap: 8px;
   }
@@ -3974,21 +4196,10 @@ body[data-page="archive"] .archive-flow-panel {
     gap: 10px;
   }
 
-  .content-comment-thread-note .content-comment-head {
-    display: none;
-  }
-
-  .content-comment-thread-note .content-comment-compose {
-    padding: 12px;
-    border-radius: 16px;
-  }
-
-  .content-comment-thread-note .content-comment-compose.is-collapsed {
-    display: none;
-  }
-
-  .content-comment-thread-note .content-comment-dock {
-    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  .comment-identity-dialog {
+    width: calc(100vw - 20px);
+    margin-top: max(18px, env(safe-area-inset-top, 0px) + 10px);
+    padding: 18px 14px 14px;
   }
 }
 

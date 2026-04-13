@@ -1,9 +1,11 @@
 import { escapeHtml, linkify } from "./common.js";
 import {
   getPendingComments,
+  getStoredCommentIdentity,
   normalizePendingComment,
   reconcilePendingComments,
   renderPendingBadge,
+  saveCommentIdentity,
   savePendingComment,
   showCommentSuccessToast,
 } from "./comment-ui.js";
@@ -16,35 +18,42 @@ const TEXT = {
   loading: "\u6b63\u5728\u52a0\u8f7d\u7559\u8a00...",
   loadFailed: "\u7559\u8a00\u52a0\u8f7d\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
   refresh: "\u5237\u65b0",
-  submit: "\u53d1\u9001\u7559\u8a00",
+  writeComment: "\u5199\u8bc4\u8bba",
+  submit: "\u53d1\u9001",
   submitting: "\u53d1\u9001\u4e2d...",
-  contentLabel: "\u7559\u8a00\u5185\u5bb9",
-  nicknameLabel: "\u6635\u79f0",
-  contactLabel: "\u8054\u7cfb\u65b9\u5f0f\uff08\u90ae\u7bb1\u6216 QQ\uff09",
   contentPlaceholder: "\u5199\u4e0b\u4f60\u7684\u60f3\u6cd5...",
-  nicknamePlaceholder: "\u4f8b\u5982\uff1a\u8def\u8fc7\u7684\u8bfb\u8005",
-  contactPlaceholder: "name@example.com \u6216 12345678",
-  notify: "\u6536\u5230\u56de\u590d\u65f6\uff0c\u901a\u8fc7\u90ae\u4ef6\u63d0\u9192\u6211",
-  pending: "\u7559\u8a00\u5df2\u63d0\u4ea4\uff0c\u5ba1\u6838\u901a\u8fc7\u540e\u4f1a\u663e\u793a\u5728\u8fd9\u91cc\u3002",
-  published: "\u7559\u8a00\u5df2\u53d1\u5e03\u3002",
-  turnstileHint: "\u8bf7\u5b8c\u6210\u4eba\u673a\u9a8c\u8bc1\u540e\u518d\u63d0\u4ea4\u3002",
-  turnstileMissing: "Turnstile Site Key \u672a\u914d\u7f6e\u3002",
-  dockPlaceholder: "\u5199\u4e0b\u4f60\u7684\u7559\u8a00...",
-  openComposer: "\u5199\u7559\u8a00",
-  cancelReply: "\u53d6\u6d88\u56de\u590d",
-  reply: "\u56de\u590d",
-  replyingTo: "\u6b63\u5728\u56de\u590d",
-  noText: "\uff08\u8fd9\u6761\u7559\u8a00\u6682\u65e0\u6b63\u6587\uff09",
+  pending: "\u8bc4\u8bba\u5df2\u63d0\u4ea4\uff0c\u5ba1\u6838\u540e\u5c55\u73b0\u3002",
+  published: "\u8bc4\u8bba\u5df2\u53d1\u5e03\u3002",
   anonymous: "\u8bbf\u5ba2",
+  reply: "\u56de\u590d",
   countSuffix: "\u6761",
+  replyingTo: "\u6b63\u5728\u56de\u590d",
+  cancelReply: "\u53d6\u6d88\u56de\u590d",
+  identityTitle: "\u53d1\u8868\u8bc4\u8bba\u524d\u8bf7\u5148\u586b\u5199\u4fe1\u606f",
+  nickname: "\u6635\u79f0",
+  contact: "\u8054\u7cfb\u65b9\u5f0f",
+  notify: "\u6536\u5230\u56de\u590d\u65f6\uff0c\u901a\u8fc7\u90ae\u7bb1\u63d0\u9192\u6211",
+  continueComment: "\u7ee7\u7eed\u8bc4\u8bba",
+  cancel: "\u53d6\u6d88",
+  identityHint: "\u4eba\u673a\u9a8c\u8bc1\u901a\u8fc7\u540e\uff0c\u4f1a\u5728\u672c\u673a\u8bb0\u4f4f\u4f60\u7684\u8eab\u4efd\u4fe1\u606f\u3002",
+  editIdentity: "\u4fee\u6539\u4fe1\u606f",
+  switchIdentity: "\u5207\u6362\u8eab\u4efd",
+  verifiedAs: "\u4ee5",
+  verifiedSuffix: "\u8eab\u4efd\u8bc4\u8bba",
+  pressHint: "Enter \u53d1\u9001\uff0cShift+Enter \u6362\u884c",
+  noText: "\uff08\u8fd9\u6761\u8bc4\u8bba\u6682\u65e0\u6b63\u6587\uff09",
+  turnstileHint: "\u8bf7\u5b8c\u6210\u4eba\u673a\u9a8c\u8bc1\u540e\u518d\u7ee7\u7eed\u3002",
+  turnstileMissing: "Turnstile Site Key \u672a\u914d\u7f6e\u3002",
+  fillNickname: "\u8bf7\u586b\u5199\u6635\u79f0\u3002",
+  fillContact: "\u8bf7\u586b\u5199\u8054\u7cfb\u65b9\u5f0f\u3002",
+  fillContent: "\u8bf7\u586b\u5199\u8bc4\u8bba\u5185\u5bb9\u3002",
+  verifyFirst: "\u8bf7\u5148\u5b8c\u6210\u4fe1\u606f\u9a8c\u8bc1\u3002",
 };
 
 const DEFAULTS = {
   turnstileSiteKey: "",
-  turnstileEnabled: false,
   commentNotifyDefault: true,
   defaultAvatarUrl: "/assets/images/avatar-default.svg",
-  adminAvatarUrl: "/assets/images/Profile.png",
 };
 
 let cachedConfigPromise = null;
@@ -55,7 +64,6 @@ function formatTime(isoString) {
   if (Number.isNaN(date.getTime())) {
     return isoString || "";
   }
-
   return date.toLocaleString("zh-CN", { hour12: false });
 }
 
@@ -70,11 +78,9 @@ function truncatePreview(text, maxLen = 80) {
   const compact = String(text || "")
     .replace(/\s+/g, " ")
     .trim();
-
   if (!compact) {
     return TEXT.noText;
   }
-
   return compact.length > maxLen ? `${compact.slice(0, maxLen)}...` : compact;
 }
 
@@ -83,36 +89,34 @@ function sortCommentTreeByTime(nodes = [], order = "desc") {
   next.sort((a, b) => {
     const aTime = Date.parse(a.created_at || "") || 0;
     const bTime = Date.parse(b.created_at || "") || 0;
-
     return order === "asc"
       ? aTime - bTime || Number(a.id || 0) - Number(b.id || 0)
       : bTime - aTime || Number(b.id || 0) - Number(a.id || 0);
   });
-
   next.forEach((node) => {
     if (Array.isArray(node.children) && node.children.length) {
       node.children = sortCommentTreeByTime(node.children, "asc");
     }
   });
-
   return next;
 }
 
 async function apiJson(url, options = {}) {
   const response = await fetch(url, {
     ...options,
+    credentials: "same-origin",
     headers: {
       "content-type": "application/json",
       ...(options.headers || {}),
     },
-    credentials: "same-origin",
   });
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.message || TEXT.loadFailed);
+    const error = new Error(payload.message || TEXT.loadFailed);
+    error.status = response.status;
+    throw error;
   }
-
   return payload;
 }
 
@@ -120,19 +124,14 @@ async function loadConfig() {
   if (!cachedConfigPromise) {
     cachedConfigPromise = apiJson("/api/config", { method: "GET", headers: {} }).catch(() => DEFAULTS);
   }
-
   const config = await cachedConfigPromise;
-  return {
-    ...DEFAULTS,
-    ...config,
-  };
+  return { ...DEFAULTS, ...config };
 }
 
 function ensureTurnstileScript() {
   if (window.turnstile) {
     return Promise.resolve();
   }
-
   if (!turnstileScriptPromise) {
     turnstileScriptPromise = new Promise((resolve, reject) => {
       const existing = document.getElementById("turnstile-script");
@@ -152,8 +151,14 @@ function ensureTurnstileScript() {
       document.head.appendChild(script);
     });
   }
-
   return turnstileScriptPromise;
+}
+
+function countCommentTree(nodes = []) {
+  return nodes.reduce(
+    (total, node) => total + 1 + countCommentTree(Array.isArray(node.children) ? node.children : []),
+    0,
+  );
 }
 
 function renderCommentNode(node, depth = 0) {
@@ -161,10 +166,9 @@ function renderCommentNode(node, depth = 0) {
   const levelClass = depth > 0 ? "is-reply" : "is-root";
   const adminClass = node.is_admin ? "is-admin" : "";
   const pendingClass = node.is_pending_local ? "is-pending-local" : "";
-  const replyMeta = node.reply_to ? `<span class="content-comment-reply-to">\u56de\u590d @${escapeHtml(node.reply_to)}</span>` : "";
-  const avatarUrl = node.avatar_url || DEFAULTS.defaultAvatarUrl;
-  const authorName = node.nickname || TEXT.anonymous;
   const pendingBadge = node.is_pending_local ? renderPendingBadge(node.pending_label) : "";
+  const authorName = node.nickname || TEXT.anonymous;
+  const replyMeta = node.reply_to ? `<span class="content-comment-reply-to">\u56de\u590d @${escapeHtml(node.reply_to)}</span>` : "";
 
   return `
     <article class="content-comment-item ${levelClass} ${adminClass} ${pendingClass}" data-comment-id="${escapeHtml(node.id)}">
@@ -172,7 +176,7 @@ function renderCommentNode(node, depth = 0) {
         <div class="content-comment-user">
           <img
             class="content-comment-avatar"
-            src="${escapeHtml(avatarUrl)}"
+            src="${escapeHtml(node.avatar_url || DEFAULTS.defaultAvatarUrl)}"
             alt="${escapeHtml(authorName)} avatar"
             loading="lazy"
             referrerpolicy="no-referrer"
@@ -208,22 +212,13 @@ function renderCommentNode(node, depth = 0) {
   `;
 }
 
-function countCommentTree(nodes = []) {
-  return nodes.reduce(
-    (total, node) => total + 1 + countCommentTree(Array.isArray(node.children) ? node.children : []),
-    0,
-  );
-}
-
 function buildWidgetMarkup(mode) {
-  const isNote = mode === "note";
-
   return `
     <section class="content-comment-thread content-comment-thread-${mode}">
       <div class="content-comment-head">
         <div>
           <h4>${TEXT.title}</h4>
-          <p class="subtle">${isNote ? TEXT.subtitleNote : TEXT.subtitleArticle}</p>
+          <p class="subtle">${mode === "note" ? TEXT.subtitleNote : TEXT.subtitleArticle}</p>
         </div>
         <div class="content-comment-head-actions">
           <span class="content-comment-count" data-comment-count>0 ${TEXT.countSuffix}</span>
@@ -231,64 +226,34 @@ function buildWidgetMarkup(mode) {
         </div>
       </div>
 
-      <section class="content-comment-compose ${isNote ? "is-collapsed is-note" : "is-article"}" data-compose>
-        <button type="button" class="content-comment-compose-toggle" data-action="toggle-compose">
-          <span>${TEXT.openComposer}</span>
-        </button>
-        <form class="content-comment-form" data-comment-form novalidate>
-          <input type="hidden" name="parent_id" value="" />
-          <div class="content-comment-replying" data-replying hidden></div>
+      <section class="content-comment-entry" data-entry-area>
+        <div class="content-comment-identity" data-identity-summary hidden></div>
+        <div class="content-comment-actions-bar" data-actions-bar>
+          <button type="button" class="content-comment-primary-btn" data-action="open-compose">${TEXT.writeComment}</button>
+          <button type="button" class="content-comment-secondary-btn" data-action="edit-identity" hidden>${TEXT.editIdentity}</button>
+        </div>
 
-          <label class="field-block" for="content-comment-textarea-${mode}">${TEXT.contentLabel}</label>
+        <div class="content-comment-composer" data-composer hidden>
+          <div class="content-comment-composer-head">
+            <p class="content-comment-composer-title" data-composer-title>${TEXT.writeComment}</p>
+            <button type="button" class="content-comment-secondary-btn" data-action="cancel-compose">${TEXT.cancel}</button>
+          </div>
           <textarea
-            id="content-comment-textarea-${mode}"
-            name="content"
-            rows="${isNote ? "4" : "6"}"
+            class="content-comment-textarea"
+            data-content-input
+            rows="3"
             maxlength="2000"
             placeholder="${TEXT.contentPlaceholder}"
-            required
           ></textarea>
-
-          <div class="content-comment-grid">
-            <div>
-              <label class="field-block" for="content-comment-nickname-${mode}">${TEXT.nicknameLabel}</label>
-              <input
-                id="content-comment-nickname-${mode}"
-                name="nickname"
-                type="text"
-                maxlength="24"
-                placeholder="${TEXT.nicknamePlaceholder}"
-                required
-              />
-            </div>
-            <div>
-              <label class="field-block" for="content-comment-contact-${mode}">${TEXT.contactLabel}</label>
-              <input
-                id="content-comment-contact-${mode}"
-                name="contact"
-                type="text"
-                maxlength="120"
-                placeholder="${TEXT.contactPlaceholder}"
-                required
-              />
+          <div class="content-comment-composer-foot">
+            <p class="subtle">${TEXT.pressHint}</p>
+            <div class="content-comment-composer-buttons">
+              <button type="button" class="content-comment-secondary-btn" data-action="edit-identity-inline">${TEXT.switchIdentity}</button>
+              <button type="button" class="content-comment-submit-btn" data-action="submit-comment">${TEXT.submit}</button>
             </div>
           </div>
-
-          <label class="notify-option content-comment-notify" for="content-comment-notify-${mode}">
-            <input id="content-comment-notify-${mode}" name="notify_enabled" type="checkbox" checked />
-            <span>${TEXT.notify}</span>
-          </label>
-
-          <div class="turnstile-slot content-comment-turnstile" data-turnstile-wrap>
-            <div data-turnstile-widget></div>
-            <p class="subtle" data-turnstile-hint></p>
-          </div>
-
-          <div class="content-comment-submit-row">
-            <button type="submit" data-submit>${TEXT.submit}</button>
-            <p class="subtle content-comment-feedback" data-feedback></p>
-          </div>
-        </form>
+          <p class="subtle content-comment-feedback" data-feedback></p>
+        </div>
       </section>
 
       <section class="content-comment-list-wrap">
@@ -296,28 +261,59 @@ function buildWidgetMarkup(mode) {
           <p class="subtle content-comment-empty">${TEXT.loading}</p>
         </div>
       </section>
-
-      ${
-        isNote
-          ? `
-            <div class="content-comment-dock" data-comment-dock>
-              <button type="button" class="content-comment-dock-btn" data-action="open-compose">${TEXT.dockPlaceholder}</button>
-            </div>
-          `
-          : ""
-      }
     </section>
   `;
 }
 
-export function mountContentComments(options = {}) {
-  const {
-    container,
-    pageKey,
-    mode = "article",
-    onRendered,
-  } = options;
+function ensureIdentityModal() {
+  let modal = document.getElementById("comment-identity-modal");
+  if (modal) {
+    return modal;
+  }
 
+  modal = document.createElement("div");
+  modal.id = "comment-identity-modal";
+  modal.className = "comment-identity-modal";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="comment-identity-backdrop" data-close-identity="1"></div>
+    <div class="comment-identity-dialog" role="dialog" aria-modal="true" aria-labelledby="comment-identity-title">
+      <button type="button" class="comment-identity-close" data-close-identity="1" aria-label="${TEXT.cancel}">×</button>
+      <h3 id="comment-identity-title">${TEXT.identityTitle}</h3>
+      <form class="comment-identity-form" data-identity-form novalidate>
+        <div class="content-comment-grid">
+          <div>
+            <label class="field-block" for="comment-identity-nickname">${TEXT.nickname}</label>
+            <input id="comment-identity-nickname" name="nickname" type="text" maxlength="24" required />
+          </div>
+          <div>
+            <label class="field-block" for="comment-identity-contact">${TEXT.contact}</label>
+            <input id="comment-identity-contact" name="contact" type="text" maxlength="120" required />
+          </div>
+        </div>
+        <label class="notify-option" for="comment-identity-notify">
+          <input id="comment-identity-notify" name="notify_enabled" type="checkbox" checked />
+          <span>${TEXT.notify}</span>
+        </label>
+        <div class="turnstile-slot comment-identity-turnstile">
+          <div data-identity-turnstile></div>
+          <p class="subtle" data-identity-turnstile-hint></p>
+        </div>
+        <p class="subtle comment-identity-hint">${TEXT.identityHint}</p>
+        <p class="subtle feedback-error" data-identity-feedback></p>
+        <div class="comment-identity-actions">
+          <button type="button" class="content-comment-secondary-btn" data-close-identity="1">${TEXT.cancel}</button>
+          <button type="submit" class="content-comment-submit-btn" data-identity-submit>${TEXT.continueComment}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function mountContentComments(options = {}) {
+  const { container, pageKey, mode = "article", onRendered } = options;
   if (!(container instanceof HTMLElement) || !pageKey) {
     return { destroy() {} };
   }
@@ -326,159 +322,195 @@ export function mountContentComments(options = {}) {
     pageKey: String(pageKey),
     mode,
     active: true,
-    widgetId: null,
-    turnstileSiteKey: "",
-    turnstileReady: false,
     config: DEFAULTS,
+    identity: getStoredCommentIdentity(),
+    replyTarget: null,
+    modalWidgetId: null,
+    loadingIdentityModal: false,
   };
 
   container.innerHTML = buildWidgetMarkup(mode);
 
-  const compose = container.querySelector("[data-compose]");
-  const form = container.querySelector("[data-comment-form]");
   const list = container.querySelector("[data-comment-list]");
-  const feedback = container.querySelector("[data-feedback]");
   const count = container.querySelector("[data-comment-count]");
-  const submitButton = container.querySelector("[data-submit]");
-  const replying = container.querySelector("[data-replying]");
-  const dock = container.querySelector("[data-comment-dock]");
-  const turnstileHint = container.querySelector("[data-turnstile-hint]");
-  const turnstileWidget = container.querySelector("[data-turnstile-widget]");
-  const notifyToggle = form.elements.notify_enabled;
-  const parentInput = form.elements.parent_id;
-  const contentInput = form.elements.content;
+  const composer = container.querySelector("[data-composer]");
+  const identitySummary = container.querySelector("[data-identity-summary]");
+  const editIdentityButton = container.querySelector("[data-action='edit-identity']");
+  const composerTitle = container.querySelector("[data-composer-title]");
+  const contentInput = container.querySelector("[data-content-input]");
+  const feedback = container.querySelector("[data-feedback]");
+  const submitButton = container.querySelector("[data-action='submit-comment']");
 
   const setFeedback = (message = "", isError = false) => {
     feedback.textContent = message;
     feedback.classList.toggle("feedback-error", Boolean(isError));
   };
 
-  const resetTurnstile = () => {
-    if (!window.turnstile || state.widgetId === null) {
-      return;
-    }
-
-    window.turnstile.reset(state.widgetId);
+  const clearReplyTarget = () => {
+    state.replyTarget = null;
+    composerTitle.textContent = TEXT.writeComment;
   };
 
-  const getTurnstileToken = () => {
-    if (!state.turnstileSiteKey || !window.turnstile || state.widgetId === null) {
-      return "";
+  const applyIdentitySummary = () => {
+    if (!state.identity) {
+      identitySummary.hidden = true;
+      identitySummary.innerHTML = "";
+      editIdentityButton.hidden = true;
+      return;
     }
 
-    return window.turnstile.getResponse(state.widgetId) || "";
+    identitySummary.hidden = false;
+    identitySummary.innerHTML = `
+      <p>
+        <strong>${TEXT.verifiedAs} ${escapeHtml(state.identity.nickname)}</strong>
+        <span class="subtle">${TEXT.verifiedSuffix}</span>
+      </p>
+      <p class="subtle">${escapeHtml(state.identity.contact)}${state.identity.notify_enabled ? " / \u5df2\u5f00\u542f\u56de\u590d\u63d0\u9192" : ""}</p>
+    `;
+    editIdentityButton.hidden = false;
   };
 
-  const ensureTurnstile = async () => {
-    if (!state.active || state.turnstileReady) {
+  const openComposer = () => {
+    composer.hidden = false;
+    contentInput.focus();
+  };
+
+  const closeComposer = () => {
+    if (String(contentInput.value || "").trim()) {
       return;
     }
+    composer.hidden = true;
+    clearReplyTarget();
+    setFeedback("");
+  };
 
-    if (!state.turnstileSiteKey) {
-      turnstileHint.textContent = TEXT.turnstileMissing;
-      state.turnstileReady = true;
-      return;
+  const openIdentityModal = async (afterConfirm) => {
+    const modal = ensureIdentityModal();
+    const form = modal.querySelector("[data-identity-form]");
+    const nicknameInput = modal.querySelector("#comment-identity-nickname");
+    const contactInput = modal.querySelector("#comment-identity-contact");
+    const notifyInput = modal.querySelector("#comment-identity-notify");
+    const submit = modal.querySelector("[data-identity-submit]");
+    const feedbackEl = modal.querySelector("[data-identity-feedback]");
+    const turnstileHint = modal.querySelector("[data-identity-turnstile-hint]");
+    const turnstileSlot = modal.querySelector("[data-identity-turnstile]");
+
+    const closeModal = () => {
+      modal.hidden = true;
+      document.body.classList.remove("no-scroll");
+    };
+
+    const identity = state.identity || getStoredCommentIdentity();
+    nicknameInput.value = identity?.nickname || "";
+    contactInput.value = identity?.contact || "";
+    notifyInput.checked = identity?.notify_enabled !== false;
+    feedbackEl.textContent = "";
+    modal.hidden = false;
+    document.body.classList.add("no-scroll");
+
+    modal.querySelectorAll("[data-close-identity]").forEach((button) => {
+      button.onclick = () => closeModal();
+    });
+
+    if (!state.loadingIdentityModal) {
+      state.loadingIdentityModal = true;
+      try {
+        if (!state.config.turnstileSiteKey) {
+          turnstileHint.textContent = TEXT.turnstileMissing;
+        } else {
+          await ensureTurnstileScript();
+          if (state.modalWidgetId === null) {
+            state.modalWidgetId = window.turnstile.render(turnstileSlot, {
+              sitekey: state.config.turnstileSiteKey,
+              theme: "light",
+            });
+          } else {
+            window.turnstile.reset(state.modalWidgetId);
+          }
+          turnstileHint.textContent = TEXT.turnstileHint;
+        }
+      } catch (error) {
+        turnstileHint.textContent = error.message || TEXT.loadFailed;
+      } finally {
+        state.loadingIdentityModal = false;
+      }
+    } else if (window.turnstile && state.modalWidgetId !== null) {
+      window.turnstile.reset(state.modalWidgetId);
     }
 
-    try {
-      await ensureTurnstileScript();
-      if (!state.active || state.widgetId !== null) {
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      feedbackEl.textContent = "";
+
+      const nickname = String(nicknameInput.value || "").trim();
+      const contact = String(contactInput.value || "").trim();
+      const notify_enabled = notifyInput.checked;
+      const turnstileToken =
+        state.config.turnstileSiteKey && window.turnstile && state.modalWidgetId !== null
+          ? window.turnstile.getResponse(state.modalWidgetId) || ""
+          : "";
+
+      if (!nickname) {
+        feedbackEl.textContent = TEXT.fillNickname;
+        return;
+      }
+      if (!contact) {
+        feedbackEl.textContent = TEXT.fillContact;
+        return;
+      }
+      if (state.config.turnstileSiteKey && !turnstileToken) {
+        feedbackEl.textContent = TEXT.verifyFirst;
         return;
       }
 
-      state.widgetId = window.turnstile.render(turnstileWidget, {
-        sitekey: state.turnstileSiteKey,
-        theme: "light",
-      });
-      turnstileHint.textContent = TEXT.turnstileHint;
-      state.turnstileReady = true;
-    } catch (error) {
-      turnstileHint.textContent = error.message || TEXT.loadFailed;
-    }
-  };
+      submit.disabled = true;
+      submit.textContent = TEXT.submitting;
 
-  const expandComposer = async ({ focus = false, scroll = false } = {}) => {
-    compose.classList.remove("is-collapsed");
-    compose.classList.add("is-expanded");
-    dock?.classList.add("is-hidden");
-    await ensureTurnstile();
+      try {
+        const result = await apiJson("/api/comment-identity", {
+          method: "POST",
+          body: JSON.stringify({
+            nickname,
+            contact,
+            notify_enabled,
+            turnstileToken,
+          }),
+        });
 
-    if (scroll) {
-      compose.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-    if (focus) {
-      window.setTimeout(() => contentInput.focus(), 80);
-    }
-  };
-
-  const collapseComposer = () => {
-    if (mode !== "note") {
-      return;
-    }
-
-    const hasDraft =
-      String(form.elements.content.value || "").trim() ||
-      String(form.elements.nickname.value || "").trim() ||
-      String(form.elements.contact.value || "").trim() ||
-      String(parentInput.value || "").trim();
-
-    if (hasDraft) {
-      return;
-    }
-
-    compose.classList.add("is-collapsed");
-    compose.classList.remove("is-expanded");
-    dock?.classList.remove("is-hidden");
-  };
-
-  const clearReplyTarget = () => {
-    parentInput.value = "";
-    replying.hidden = true;
-    replying.innerHTML = "";
-  };
-
-  const setReplyTarget = async (commentId, nickname, previewText) => {
-    if (!commentId) {
-      clearReplyTarget();
-      collapseComposer();
-      return;
-    }
-
-    parentInput.value = String(commentId);
-    replying.hidden = false;
-    replying.innerHTML = `
-      <div class="content-comment-replying-head">
-        <p>${TEXT.replyingTo} <strong>${escapeHtml(nickname || TEXT.anonymous)}</strong></p>
-        <button type="button" class="content-comment-cancel-reply" data-action="cancel-reply">${TEXT.cancelReply}</button>
-      </div>
-      <p class="content-comment-replying-preview">${escapeHtml(previewText || TEXT.noText)}</p>
-    `;
-    replying.querySelector("[data-action='cancel-reply']")?.addEventListener("click", () => {
-      clearReplyTarget();
-      contentInput.focus();
-    });
-
-    await expandComposer({ focus: true, scroll: true });
+        state.identity = result.identity || {
+          nickname,
+          contact,
+          notify_enabled,
+          verified_at: new Date().toISOString(),
+        };
+        saveCommentIdentity(state.identity);
+        applyIdentitySummary();
+        closeModal();
+        afterConfirm?.();
+      } catch (error) {
+        feedbackEl.textContent = error.message || TEXT.loadFailed;
+      } finally {
+        submit.disabled = false;
+        submit.textContent = TEXT.continueComment;
+      }
+    };
   };
 
   const renderComments = (items = []) => {
     reconcilePendingComments(state.pageKey, items);
     const pendingItems = getPendingComments(state.pageKey).map((item) => normalizePendingComment(item));
-    const sorted = [...pendingItems, ...sortCommentTreeByTime(items, "desc")];
-    const totalCount = countCommentTree(sorted);
+    const merged = [...pendingItems, ...sortCommentTreeByTime(items, "desc")];
 
-    count.textContent = `${totalCount} ${TEXT.countSuffix}`;
-    if (!sorted.length) {
+    count.textContent = `${countCommentTree(merged)} ${TEXT.countSuffix}`;
+    if (!merged.length) {
       list.innerHTML = `<div class="content-comment-empty-card"><p class="content-comment-empty-title">${TEXT.empty}</p></div>`;
       return;
     }
-
-    list.innerHTML = sorted.map((item) => renderCommentNode(item)).join("");
+    list.innerHTML = merged.map((item) => renderCommentNode(item)).join("");
   };
 
   const loadComments = async () => {
     list.innerHTML = `<p class="subtle content-comment-empty">${TEXT.loading}</p>`;
-
     try {
       const payload = await apiJson(`/api/comments?page_key=${encodeURIComponent(state.pageKey)}&limit=100`);
       if (!state.active) {
@@ -493,52 +525,15 @@ export function mountContentComments(options = {}) {
     }
   };
 
-  container.addEventListener("click", (event) => {
-    const target = event.target instanceof HTMLElement ? event.target : null;
-    if (!target) {
+  const submitComment = async () => {
+    if (!state.identity) {
+      await openIdentityModal(() => openComposer());
       return;
     }
 
-    const action = target.dataset.action;
-    if (action === "refresh") {
-      void loadComments();
-      return;
-    }
-    if (action === "toggle-compose" || action === "open-compose") {
-      void expandComposer({ focus: true, scroll: mode === "note" });
-      return;
-    }
-    if (action === "reply") {
-      const commentId = target.dataset.commentId || "";
-      const nickname = target.dataset.commentName || "";
-      const previewText = target.dataset.commentPreview || "";
-      void setReplyTarget(commentId, nickname, previewText);
-    }
-  });
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    setFeedback("");
-
-    const nickname = String(form.elements.nickname.value || "").trim();
-    const contact = String(form.elements.contact.value || "").trim();
     const content = String(contentInput.value || "").trim();
-    const turnstileToken = getTurnstileToken();
-
-    if (!nickname) {
-      setFeedback("\u8bf7\u586b\u5199\u6635\u79f0\u3002", true);
-      return;
-    }
-    if (!contact) {
-      setFeedback("\u8bf7\u586b\u5199\u8054\u7cfb\u65b9\u5f0f\u3002", true);
-      return;
-    }
     if (!content) {
-      setFeedback("\u8bf7\u586b\u5199\u7559\u8a00\u5185\u5bb9\u3002", true);
-      return;
-    }
-    if (state.turnstileSiteKey && !turnstileToken) {
-      setFeedback("\u8bf7\u5148\u5b8c\u6210\u4eba\u673a\u9a8c\u8bc1\u3002", true);
+      setFeedback(TEXT.fillContent, true);
       return;
     }
 
@@ -550,50 +545,98 @@ export function mountContentComments(options = {}) {
         method: "POST",
         body: JSON.stringify({
           page_key: state.pageKey,
-          parent_id: parentInput.value ? Number(parentInput.value) : null,
-          nickname,
-          contact,
+          parent_id: state.replyTarget?.id || null,
+          nickname: state.identity.nickname,
+          contact: state.identity.contact,
           content,
-          notify_enabled: notifyToggle.checked,
-          turnstileToken,
+          notify_enabled: state.identity.notify_enabled,
         }),
       });
 
-      setFeedback(result.pending ? TEXT.pending : TEXT.published);
       if (result.pending && result.comment) {
         savePendingComment(state.pageKey, normalizePendingComment(result.comment));
       }
-      form.reset();
-      notifyToggle.checked = state.config.commentNotifyDefault !== false;
-      clearReplyTarget();
-      resetTurnstile();
-      await loadComments();
-      showCommentSuccessToast("\u8bc4\u8bba\u6210\u529f\uff01\u5ba1\u6838\u540e\u5c55\u73b0");
 
-      if (mode === "note") {
-        collapseComposer();
-      }
+      contentInput.value = "";
+      setFeedback(result.pending ? TEXT.pending : TEXT.published, false);
+      showCommentSuccessToast("\u8bc4\u8bba\u6210\u529f\uff01\u5ba1\u6838\u540e\u5c55\u73b0");
+      clearReplyTarget();
+      await loadComments();
+      closeComposer();
     } catch (error) {
-      setFeedback(error.message || TEXT.loadFailed, true);
-      resetTurnstile();
+      if (error.status === 400 && /Turnstile|verification/i.test(error.message || "")) {
+        await openIdentityModal(() => openComposer());
+      } else {
+        setFeedback(error.message || TEXT.loadFailed, true);
+      }
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = TEXT.submit;
     }
+  };
+
+  container.addEventListener("click", async (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) {
+      return;
+    }
+
+    const action = target.dataset.action;
+    if (action === "refresh") {
+      void loadComments();
+      return;
+    }
+    if (action === "open-compose") {
+      if (state.identity) {
+        openComposer();
+      } else {
+        await openIdentityModal(() => openComposer());
+      }
+      return;
+    }
+    if (action === "edit-identity" || action === "edit-identity-inline") {
+      await openIdentityModal(() => openComposer());
+      return;
+    }
+    if (action === "cancel-compose") {
+      closeComposer();
+      return;
+    }
+    if (action === "reply") {
+      state.replyTarget = {
+        id: target.dataset.commentId || "",
+        name: target.dataset.commentName || TEXT.anonymous,
+        preview: target.dataset.commentPreview || TEXT.noText,
+      };
+      composerTitle.textContent = `${TEXT.replyingTo} ${state.replyTarget.name}`;
+      if (state.identity) {
+        openComposer();
+      } else {
+        await openIdentityModal(() => openComposer());
+      }
+    }
   });
+
+  contentInput.addEventListener("keydown", async (event) => {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return;
+    }
+    event.preventDefault();
+    await submitComment();
+  });
+
+  submitButton.addEventListener("click", () => {
+    submitComment().catch(() => {});
+  });
+
+  applyIdentitySummary();
 
   void (async () => {
     state.config = await loadConfig();
     if (!state.active) {
       return;
     }
-
-    state.turnstileSiteKey = state.config.turnstileSiteKey || "";
-    notifyToggle.checked = state.config.commentNotifyDefault !== false;
-    if (mode !== "note") {
-      await ensureTurnstile();
-    }
-
+    applyIdentitySummary();
     await loadComments();
     onRendered?.();
   })();
@@ -604,15 +647,14 @@ export function mountContentComments(options = {}) {
     },
     destroy() {
       state.active = false;
-      if (window.turnstile && state.widgetId !== null) {
-        try {
-          window.turnstile.remove(state.widgetId);
-        } catch {
-          // ignore widget removal failures during teardown
-        }
-      }
-      state.widgetId = null;
       container.innerHTML = "";
+    },
+    clearIdentity() {
+      clearCommentIdentity();
+      state.identity = null;
+      applyIdentitySummary();
     },
   };
 }
+
+export { mountContentComments };

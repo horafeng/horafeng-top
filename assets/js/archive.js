@@ -541,6 +541,7 @@ function bindLikeControl(layout) {
 
 function renderTextOnlyPost(entry) {
   const layout = document.getElementById("post-layout");
+  const modal = document.getElementById("post-modal");
   const profile = state.siteConfig?.profile || {};
   const authorName = entry.author || profile.name || "HoraFeng";
   const avatar = profile.avatar || "assets/images/Profile.png";
@@ -550,7 +551,9 @@ function renderTextOnlyPost(entry) {
     return;
   }
 
+  modal?.classList.remove("post-modal-note-split");
   layout.classList.add("text-only");
+  layout.classList.remove("has-media-split");
   layout.innerHTML = `
     <section class="text-post-card">
       <header class="text-post-head">
@@ -593,12 +596,15 @@ function renderTextOnlyPost(entry) {
 
 function renderImagePost(entry) {
   const layout = document.getElementById("post-layout");
+  const modal = document.getElementById("post-modal");
 
   if (!layout) {
     return;
   }
 
+  modal?.classList.add("post-modal-note-split");
   layout.classList.remove("text-only");
+  layout.classList.add("has-media-split");
   layout.innerHTML = `
     <section class="post-media" id="post-media"></section>
     <section class="post-content">
@@ -756,6 +762,7 @@ function hidePostOverlay() {
   modal.style.transition = "";
   modal.style.willChange = "";
   modal.style.transformOrigin = "";
+  modal.classList.remove("post-modal-note-split");
 
   overlay.hidden = true;
   overlay.classList.remove("open", "closing");

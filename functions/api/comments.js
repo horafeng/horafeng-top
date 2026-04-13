@@ -17,6 +17,7 @@ import {
   verifyTurnstile,
 } from "../_lib/comments-utils.js";
 import { buildNotifyPreference, triggerReplyNotification } from "../_lib/comment-notify.js";
+import { hasValidCommentIdentityCookie } from "../_lib/comment-identity.js";
 
 function queryInt(params, key, fallback, min, max) {
   return clampInt(params.get(key), min, max, fallback);
@@ -179,14 +180,17 @@ export async function onRequestPost(context) {
       return json({ ok: false, message: "Too many requests, please try later." }, 429);
     }
 
-    const turnstileCheck = await verifyTurnstile({
-      secret: env.TURNSTILE_SECRET_KEY,
-      token: turnstileToken,
-      ip,
-      bypass: boolFromEnv(env.TURNSTILE_BYPASS, false),
-    });
-    if (!turnstileCheck.ok) {
-      return json({ ok: false, message: turnstileCheck.message || "Turnstile verification failed." }, 400);
+    const hasIdentityCookie = await hasValidCommentIdentityCookie(request, env);
+    if (!hasIdentityCookie) {
+      const turnstileCheck = await verifyTurnstile({
+        secret: env.TURNSTILE_SECRET_KEY,
+        token: turnstileToken,
+        ip,
+        bypass: boolFromEnv(env.TURNSTILE_BYPASS, false),
+      });
+      if (!turnstileCheck.ok) {
+        return json({ ok: false, message: turnstileCheck.message || "Turnstile verification failed." }, 400);
+      }
     }
 
     const autoApprove = boolFromEnv(env.COMMENTS_AUTO_APPROVE, true);

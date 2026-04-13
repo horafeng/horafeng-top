@@ -440,3 +440,20 @@ node scripts/notion-sync/sync-notion.js
   - once approved and returned by the public API, the local pending marker is removed automatically
 - After comment submission on guestbook, note, and article pages, the site now shows a centered success toast with a check animation:
   - `评论成功！审核后展现`
+
+## 17. Lightweight Comment Identity Flow
+
+- Note and article pages no longer keep a large always-open comment form on screen
+- Default interaction:
+  - show `写评论`
+  - show `回复` under public comments
+- First-time visitor flow on note/article pages:
+  - click `写评论` or `回复`
+  - open an identity modal
+  - fill nickname, contact, reply-notify preference, and Turnstile
+  - continue back to a lightweight content-only composer
+- The visitor identity is stored in `localStorage`, so later interactions on the same browser open the lightweight composer directly
+- A `修改信息 / 切换身份` path is available from the composer area
+- Minimal backend compatibility:
+  - `POST /api/comment-identity` verifies Turnstile and sets a short-lived comment identity cookie
+  - `POST /api/comments` accepts either a fresh Turnstile token or a valid verified comment identity cookie
