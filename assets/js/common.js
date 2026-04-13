@@ -1,4 +1,4 @@
-function normalizeEntry(entry, source = "local") {
+﻿function normalizeEntry(entry, source = "local") {
   const content = Array.isArray(entry?.content)
     ? entry.content
         .map((line) => String(line ?? "").trim())
@@ -26,6 +26,144 @@ function normalizeEntry(entry, source = "local") {
     contentType: "note",
     source,
   };
+}
+
+function sitePath(path) {
+  const normalized = String(path || "").trim();
+  if (!normalized) {
+    return "/";
+  }
+
+  return normalized.startsWith("/") ? normalized : `/${normalized.replace(/^\/+/, "")}`;
+}
+
+const SITE_START_AT = "2025-01-14T00:00:00+09:24";
+const COPYRIGHT_START_YEAR = 2026;
+let footerTimerId = null;
+let footerStatsPromise = null;
+
+function padDuration(value) {
+  return String(Math.max(0, value)).padStart(2, "0");
+}
+
+function formatSiteUptime(startAt = SITE_START_AT) {
+  const start = new Date(startAt).getTime();
+  const now = Date.now();
+  const diffSeconds = Math.max(0, Math.floor((now - start) / 1000));
+  const days = Math.floor(diffSeconds / 86400);
+  const hours = Math.floor((diffSeconds % 86400) / 3600);
+  const minutes = Math.floor((diffSeconds % 3600) / 60);
+  const seconds = diffSeconds % 60;
+  return `${days}\u5929 ${padDuration(hours)}:${padDuration(minutes)}:${padDuration(seconds)}`;
+}
+
+function formatCopyrightYears() {
+  const currentYear = new Date().getFullYear();
+  if (currentYear <= COPYRIGHT_START_YEAR) {
+    return String(COPYRIGHT_START_YEAR);
+  }
+  return `${COPYRIGHT_START_YEAR}-${currentYear}`;
+}
+
+function formatMetricNumber(value) {
+  return new Intl.NumberFormat("zh-CN").format(Math.max(0, Number(value || 0)));
+}
+
+function readLocalVisitFallback() {
+  try {
+    const key = "hf-site-visit-fallback-v1";
+    const nextValue = Number.parseInt(window.localStorage.getItem(key) || "0", 10) + 1;
+    window.localStorage.setItem(key, String(nextValue));
+    return nextValue;
+  } catch {
+    return 0;
+  }
+}
+
+async function loadFooterStats() {
+  if (!footerStatsPromise) {
+    footerStatsPromise = (async () => {
+      const [articles, stats] = await Promise.all([
+        loadArticleIndex().catch(() => []),
+        fetch("/api/site-stats?increment=1", { credentials: "same-origin" })
+          .then((response) => (response.ok ? response.json() : null))
+          .catch(() => null),
+      ]);
+
+      return {
+        articleCount: Array.isArray(articles) ? articles.length : 0,
+        pageviews: Number(stats?.pageviews || 0) || readLocalVisitFallback(),
+      };
+    })();
+  }
+
+  return footerStatsPromise;
+}
+
+function ensureGlobalFooter() {
+  let footer = document.querySelector("[data-global-footer]");
+  if (footer) {
+    return footer;
+  }
+
+  footer = document.createElement("footer");
+  footer.className = "site-footer";
+  footer.setAttribute("data-global-footer", "1");
+  footer.innerHTML = `
+    <div class="site-footer-inner">
+      <div class="site-footer-top">
+        <a class="site-footer-icp" href="https://icp.gov.moe/?keyword=20250315" target="_blank" rel="noopener noreferrer">\u840cICP\u590720250315\u53f7</a>
+        <span class="site-footer-copyright">&copy; <span data-site-copyright-years>${formatCopyrightYears()}</span> HoraFeng All Rights Reserved.</span>
+      </div>
+      <div class="site-footer-metrics">
+        <span class="site-footer-metric">\u6587\u7ae0\u603b\u6570 <strong data-site-article-count>--</strong></span>
+        <span class="site-footer-metric">\u8bbf\u95ee\u91cf <strong data-site-pageviews>--</strong></span>
+        <span class="site-footer-metric">\u5c0f\u7ad9\u5df2\u8fd0\u884c <strong data-site-uptime>--</strong></span>
+      </div>
+    </div>
+  `;
+
+  const shell = document.querySelector(".app-shell");
+  if (shell?.parentElement) {
+    shell.insertAdjacentElement("afterend", footer);
+  } else {
+    document.body.appendChild(footer);
+  }
+
+  return footer;
+}
+
+function setupGlobalFooter() {
+  const footer = ensureGlobalFooter();
+  const uptime = footer.querySelector("[data-site-uptime]");
+  const articleCount = footer.querySelector("[data-site-article-count]");
+  const pageviews = footer.querySelector("[data-site-pageviews]");
+  const copyrightYears = footer.querySelector("[data-site-copyright-years]");
+  if (!(uptime instanceof HTMLElement)) {
+    return;
+  }
+
+  const render = () => {
+    uptime.textContent = formatSiteUptime();
+    if (copyrightYears instanceof HTMLElement) {
+      copyrightYears.textContent = formatCopyrightYears();
+    }
+  };
+
+  render();
+  if (footerTimerId) {
+    window.clearInterval(footerTimerId);
+  }
+  footerTimerId = window.setInterval(render, 1000);
+
+  void loadFooterStats().then((stats) => {
+    if (articleCount instanceof HTMLElement) {
+      articleCount.textContent = formatMetricNumber(stats.articleCount);
+    }
+    if (pageviews instanceof HTMLElement) {
+      pageviews.textContent = formatMetricNumber(stats.pageviews);
+    }
+  });
 }
 
 function normalizeArticleEntry(entry, source = "notion-article") {
@@ -92,7 +230,7 @@ function mergeEntries(localEntries, notionEntries) {
 }
 
 async function fetchJson(url, errorMessage) {
-  const response = await fetch(url);
+  const response = await fetch(sitePath(url));
   if (!response.ok) {
     throw new Error(errorMessage);
   }
@@ -102,7 +240,7 @@ async function fetchJson(url, errorMessage) {
 
 async function fetchOptionalEntries(url) {
   try {
-    const response = await fetch(url);
+    const response = await fetch(sitePath(url));
     if (!response.ok) {
       return [];
     }
@@ -116,7 +254,7 @@ async function fetchOptionalEntries(url) {
 
 async function fetchOptionalItems(url) {
   try {
-    const response = await fetch(url);
+    const response = await fetch(sitePath(url));
     if (!response.ok) {
       return [];
     }
@@ -201,7 +339,7 @@ export async function loadArticleDetail(slug) {
 }
 
 export async function loadSiteConfig() {
-  const response = await fetch("content/site.json");
+  const response = await fetch(sitePath("content/site.json"));
   if (!response.ok) {
     throw new Error("Failed to load site config.");
   }
@@ -271,6 +409,8 @@ export function searchEntries(entries, query) {
 }
 
 export function setupSplash() {
+  setupGlobalFooter();
+
   const splash = document.getElementById("splash-screen");
   if (!splash) {
     return;
@@ -486,3 +626,4 @@ export function renderMockComments(listEl, comments, limit = 10) {
     .map((item) => `<li><p class="comment-author">${escapeHtml(item.nick || "\u8bbf\u5ba2")}</p><p class="comment-text">${escapeHtml(item.content || "")}</p></li>`)
     .join("");
 }
+

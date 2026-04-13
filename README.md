@@ -469,3 +469,21 @@ node scripts/notion-sync/sync-notion.js
 - The public comment tree payload now includes `reply_to_id` for reply labeling
 - `archive.html` now loads the merged home feed, so both `note` and published `article` entries appear in the archive timeline
 - Clicking an archive note still opens the existing modal; clicking an archive article goes to `article.html?slug=...`
+
+## 19. Global Footer
+
+- A site-wide footer is injected from `assets/js/common.js`, so all public pages share the same bottom bar
+- Footer content includes:
+  - linked `萌ICP备20250315号` -> `https://icp.gov.moe/?keyword=20250315`
+  - auto-updating copyright years: `© 2026 HoraFeng All Rights Reserved.` and later `© 2026-YYYY ...`
+  - `文章总数`
+  - `访问量`
+  - live site uptime (`小站已运行 ...`) updating every second
+- The default uptime start point is `2025-01-14T00:00:00+09:24`
+- `访问量` comes from `GET /api/site-stats?increment=1`, backed by D1 and auto-creating the `site_metrics` table on first use
+## Friends Page
+
+- 新增 `/friends/` 友链页，页面文件为 `friends/index.html`
+- 友链数据维护在 `content/friends.json`
+- 友链前端渲染逻辑在 `assets/js/friends.js`
+- 顶栏已补充 `友链` 入口

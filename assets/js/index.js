@@ -330,6 +330,40 @@ async function renderRecentComments(entries) {
   renderRecentCommentsList(document.getElementById("mobile-recent-comments"), comments, entries);
 }
 
+function renderProfileActionLinks(profile, options = {}) {
+  const email = String(profile.email || "horafeng@outlook.com").trim();
+  const github = String(profile.github || "https://github.com/horafeng").trim();
+  const emailId = options.includeEmailId ? ' id="email-button"' : "";
+  const githubId = options.includeGithubId ? ' id="github-button"' : "";
+
+  return `
+    <a
+      ${githubId}
+      class="profile-action-btn profile-action-icon"
+      href="${github}"
+      target="_blank"
+      rel="noreferrer"
+      aria-label="GitHub"
+      title="GitHub"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2C6.48 2 2 6.58 2 12.22c0 4.5 2.87 8.32 6.84 9.66.5.09.68-.22.68-.49 0-.24-.01-1.04-.01-1.88-2.78.62-3.37-1.2-3.37-1.2-.46-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .08 1.53 1.05 1.53 1.05.9 1.56 2.36 1.11 2.94.85.09-.67.35-1.11.63-1.37-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.72 0 0 .84-.28 2.75 1.05A9.35 9.35 0 0 1 12 6.84c.85 0 1.71.12 2.51.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.46.1 2.72.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.69.95.69 1.93 0 1.39-.01 2.5-.01 2.84 0 .27.18.59.69.49A10.24 10.24 0 0 0 22 12.22C22 6.58 17.52 2 12 2Z" />
+      </svg>
+    </a>
+    <a
+      ${emailId}
+      class="profile-action-btn profile-action-icon"
+      href="mailto:${email}"
+      aria-label="邮箱"
+      title="邮箱"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5.5h16A1.5 1.5 0 0 1 21.5 7v10A1.5 1.5 0 0 1 20 18.5H4A1.5 1.5 0 0 1 2.5 17V7A1.5 1.5 0 0 1 4 5.5Zm0 1.5v.18l8 5.34 8-5.34V7H4Zm16 10V8.96l-7.58 5.06a.75.75 0 0 1-.84 0L4 8.96V17h16Z" />
+      </svg>
+    </a>
+  `;
+}
+
 function renderProfile(config) {
   const profile = config.profile || {};
 
@@ -340,7 +374,9 @@ function renderProfile(config) {
   const signature = document.getElementById("profile-signature");
   const bio = document.getElementById("profile-bio");
   const lastSeen = document.getElementById("profile-last-seen");
+  const actions = document.querySelector("#desktop-profile-panel .profile-actions");
   const emailButton = document.getElementById("email-button");
+  const githubButton = document.getElementById("github-button");
 
   if (profile.cover) {
     cover.style.backgroundImage = `url(${profile.cover})`;
@@ -355,8 +391,16 @@ function renderProfile(config) {
   bio.textContent = profile.bio || "这里是我的轻日记与生活记事。";
   lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
 
-  emailButton.href = "mailto:horafeng@outlook.com";
-  emailButton.textContent = "发送邮件";
+  if (actions) {
+    actions.innerHTML = renderProfileActionLinks(profile, { includeEmailId: true, includeGithubId: true });
+  } else {
+    if (githubButton) {
+      githubButton.href = profile.github || "https://github.com/horafeng";
+    }
+    if (emailButton) {
+      emailButton.href = `mailto:${profile.email || "horafeng@outlook.com"}`;
+    }
+  }
 
   const mobileSlot = document.getElementById("mobile-profile-slot");
   mobileSlot.innerHTML = `
@@ -369,8 +413,8 @@ function renderProfile(config) {
       <p class="subtle">${profile.bio || "这里是我的轻日记与生活记事。"}</p>
       <p class="last-seen subtle">${formatLastSeen(profile.lastSeenAt)}</p>
     </div>
-    <div class="profile-actions compact">
-      <a class="profile-action-btn" href="mailto:horafeng@outlook.com">发送邮件</a>
+    <div class="profile-actions compact" aria-label="联系方式">
+      ${renderProfileActionLinks(profile)}
     </div>
     <nav class="soft-nav">
       <a class="active" href="index.html">日记流</a>

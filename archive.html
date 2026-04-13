@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>归档时间轴 | HoraFeng</title>
+    <title>&#24402;&#26723;&#26102;&#38388;&#36724; | HoraFeng</title>
     <link rel="stylesheet" href="assets/css/diary.css" />
   </head>
   <body data-page="archive">
@@ -15,27 +15,28 @@
 
     <header class="site-nav" data-site-nav>
       <div class="site-nav-inner">
-        <a class="site-nav-left" href="index.html">HoraFeng的博客</a>
+        <a class="site-nav-left" href="index.html">HoraFeng &#30340;&#21338;&#23458;</a>
 
-        <nav class="site-nav-center" aria-label="主导航">
-          <a class="site-nav-link" href="index.html">首页</a>
+        <nav class="site-nav-center" aria-label="&#20027;&#23548;&#33322;">
+          <a class="site-nav-link" href="index.html">&#39318;&#39029;</a>
           <div class="site-nav-dropdown" data-nav-dropdown>
             <button class="site-nav-link site-nav-dropdown-toggle" type="button" data-nav-dropdown-toggle>
-              内容
-              <span class="site-nav-caret" aria-hidden="true">▾</span>
+              &#20869;&#23481;
+              <span class="site-nav-caret" aria-hidden="true">&#9662;</span>
             </button>
             <div class="site-nav-dropdown-menu">
-              <a href="index.html?content=article">文章</a>
-              <a href="index.html?content=note">小记</a>
-              <a href="index.html?content=notice">公告</a>
+              <a href="index.html?content=article">&#25991;&#31456;</a>
+              <a href="index.html?content=note">&#23567;&#35760;</a>
+              <a href="index.html?content=notice">&#20844;&#21578;</a>
             </div>
           </div>
-          <a class="site-nav-link active" href="archive.html">归档</a>
-          <a class="site-nav-link" href="guestbook.html">留言板</a>
+          <a class="site-nav-link active" href="archive.html">&#24402;&#26723;</a>
+          <a class="site-nav-link" href="guestbook.html">&#30041;&#35328;&#26495;</a>
+          <a class="site-nav-link" href="friends/">&#21451;&#38142;</a>
         </nav>
 
         <button class="site-nav-brand-mini" type="button" data-nav-brand-center>HoraFeng</button>
-        <button class="site-nav-backtop" type="button" data-nav-backtop>返回顶部 ↑</button>
+        <button class="site-nav-backtop" type="button" data-nav-backtop>&#36820;&#22238;&#39030;&#37096; &#8593;</button>
       </div>
     </header>
 
@@ -45,29 +46,29 @@
           <p class="archive-kicker">Archive Timeline</p>
           <div class="archive-hero-top">
             <div class="archive-hero-copy">
-              <h1>归档 / 时间轴</h1>
-              <p class="archive-lead">把每一篇日记、每一条小记，沿着同一条时间线回望。这里保留时间的先后，也保留每段生活的颜色。</p>
+              <h1>&#24402;&#26723;&#12290; / &#26102;&#38388;&#36724;</h1>
+              <p class="archive-lead">&#25226;&#27599;&#19968;&#31687;&#26085;&#35760;&#12289;&#27599;&#19968;&#26465;&#23567;&#35760;&#65292;&#27839;&#30528;&#21516;&#19968;&#26465;&#26102;&#38388;&#32447;&#22238;&#26395;&#12290;&#36825;&#37324;&#20445;&#30041;&#26102;&#38388;&#30340;&#20808;&#21518;&#65292;&#20063;&#20445;&#30041;&#27599;&#27573;&#29983;&#27963;&#30340;&#39068;&#33394;&#12290;</p>
             </div>
 
-            <div class="archive-total-card" aria-label="归档统计">
-              <span class="archive-total-label">总文章数</span>
+            <div class="archive-total-card" aria-label="&#24402;&#26723;&#32479;&#35745;">
+              <span class="archive-total-label">&#24635;&#20869;&#23481;&#25968;</span>
               <strong id="archive-total-count">0</strong>
-              <p id="archive-visible-meta" class="subtle">正在整理归档内容...</p>
+              <p id="archive-visible-meta" class="subtle">&#27491;&#22312;&#25972;&#29702;&#24402;&#26723;&#20869;&#23481;...</p>
             </div>
           </div>
 
           <div class="archive-toolbar">
             <form id="archive-search-form" class="archive-search-form" role="search">
-              <label class="archive-search-label" for="archive-search-input">搜索归档</label>
+              <label class="archive-search-label" for="archive-search-input">&#25628;&#32034;&#24402;&#26723;</label>
               <div class="archive-search-field">
-                <input id="archive-search-input" type="search" placeholder="搜索标题、摘要或标签..." aria-label="搜索归档内容" />
+                <input id="archive-search-input" type="search" placeholder="&#25628;&#32034;&#26631;&#39064;&#12289;&#25688;&#35201;&#25110;&#26631;&#31614;..." aria-label="&#25628;&#32034;&#24402;&#26723;&#20869;&#23481;" />
               </div>
             </form>
 
             <section class="archive-filter-panel" aria-labelledby="archive-tag-title">
               <div class="archive-filter-head">
-                <h2 id="archive-tag-title">标签筛选</h2>
-                <p class="subtle">点击标签后仍保持时间线排布，不退化为普通列表。</p>
+                <h2 id="archive-tag-title">&#26631;&#31614;&#31579;&#36873;</h2>
+                <p class="subtle">&#28857;&#20987;&#26631;&#31614;&#21518;&#20173;&#20445;&#25345;&#26102;&#38388;&#32447;&#25490;&#24067;&#65292;&#19981;&#36864;&#21270;&#20026;&#26222;&#36890;&#21015;&#34920;&#12290;</p>
               </div>
               <div id="archive-tag-filters" class="archive-tag-filters" role="list"></div>
             </section>
@@ -75,8 +76,8 @@
         </header>
 
         <section id="archive-empty" class="archive-empty-state" hidden>
-          <p class="archive-empty-title">暂时没有匹配到归档内容</p>
-          <p id="archive-empty-copy" class="subtle">换个关键词，或者回到“全部档案”试试。</p>
+          <p class="archive-empty-title">&#26242;&#26102;&#27809;&#26377;&#21305;&#37197;&#21040;&#24402;&#26723;&#20869;&#23481;</p>
+          <p id="archive-empty-copy" class="subtle">&#25442;&#20010;&#20851;&#38190;&#35789;&#65292;&#25110;&#32773;&#22238;&#21040;&#8220;&#20840;&#37096;&#26723;&#26696;&#8221;&#35797;&#35797;&#12290;</p>
         </section>
 
         <section id="archive-timeline" class="archive-timeline" aria-live="polite"></section>
@@ -85,24 +86,24 @@
 
     <div id="post-overlay" class="post-overlay" hidden>
       <div class="post-backdrop" data-close-overlay="1"></div>
-      <article id="post-modal" class="post-modal" role="dialog" aria-modal="true" aria-label="帖子详情">
-        <button id="post-close" class="post-close" type="button">×</button>
+      <article id="post-modal" class="post-modal" role="dialog" aria-modal="true" aria-label="&#24086;&#23376;&#35814;&#24773;">
+        <button id="post-close" class="post-close" type="button">&#215;</button>
         <header id="post-mobile-header" class="post-mobile-header">
-          <button id="post-close-mobile" class="post-close-mobile" type="button" aria-label="返回">‹</button>
+          <button id="post-close-mobile" class="post-close-mobile" type="button" aria-label="&#36820;&#22238;">&#8249;</button>
           <div class="post-mobile-author">
-            <img id="post-mobile-avatar" class="post-mobile-avatar" src="assets/images/Profile.png" alt="作者头像" />
+            <img id="post-mobile-avatar" class="post-mobile-avatar" src="assets/images/Profile.png" alt="&#20316;&#32773;&#22836;&#50cf;" />
             <p id="post-mobile-name">HoraFeng</p>
           </div>
         </header>
         <div class="post-layout" id="post-layout">
           <section class="post-media" id="post-media"></section>
           <section class="post-content">
-            <h3 id="post-title">标题</h3>
+            <h3 id="post-title">&#26631;&#39064;</h3>
             <p id="post-meta" class="entry-meta"></p>
             <div id="post-tags" class="chips compact"></div>
             <div id="post-body" class="entry-detail"></div>
             <section class="post-comments">
-              <h4>评论区（预留）</h4>
+              <h4>&#35780;&#35770;&#21306;&#65288;&#39044;&#30041;&#65289;</h4>
               <ul id="post-comments-list" class="comment-list compact"></ul>
             </section>
           </section>

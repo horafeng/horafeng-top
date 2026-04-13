@@ -18,6 +18,44 @@ const FALLBACK_COVERS = [
   "assets/images/diary/cover-03.svg",
 ];
 
+const TEXT = {
+  emptySummary: "\u8fd9\u7bc7\u5f52\u6863\u6682\u65f6\u8fd8\u6ca1\u6709\u6458\u8981\uff0c\u53ef\u4ee5\u76f4\u63a5\u6253\u5f00\u5361\u7247\u7ee7\u7eed\u770b\u5b8c\u6574\u5185\u5bb9\u3002",
+  allArchives: "\u5168\u90e8\u6863\u6848",
+  filterTagPrefix: "\u6807\u7b7e #",
+  filterQueryPrefix: "\u5173\u952e\u8bcd\u201c",
+  filterQuerySuffix: "\u201d",
+  metaWithFiltersPrefix: "\u5f53\u524d\u5c55\u793a ",
+  metaWithFiltersMiddle: " / ",
+  metaWithFiltersSuffix: " \u6761\uff0c\u5df2\u5e94\u7528 ",
+  metaWithoutFiltersPrefix: "\u5f53\u524d\u5c55\u793a\u5168\u90e8 ",
+  metaWithoutFiltersSuffix: " \u6761\u5f52\u6863\u5185\u5bb9",
+  emptyWithFiltersPrefix: "\u6ca1\u6709\u627e\u5230\u7b26\u5408 ",
+  emptyWithFiltersMiddle: " \u548c ",
+  emptyWithFiltersSuffix: " \u7684\u5f52\u6863\u5185\u5bb9\uff0c\u8bd5\u8bd5\u6e05\u7a7a\u5173\u952e\u8bcd\u6216\u5207\u56de\u201c\u5168\u90e8\u6863\u6848\u201d\u3002",
+  emptyWithoutFilters: "\u6362\u4e2a\u5173\u952e\u8bcd\uff0c\u6216\u8005\u56de\u5230\u201c\u5168\u90e8\u6863\u6848\u201d\u8bd5\u8bd5\u3002",
+  article: "\u6587\u7ae0",
+  note: "\u5c0f\u8bb0",
+  openArticle: "\u6253\u5f00\u6587\u7ae0",
+  openNote: "\u67e5\u770b\u5c0f\u8bb0",
+  fallbackMood: "\u2726",
+  mediaEmpty: "\u8fd9\u6761\u5e16\u5b50\u6ca1\u6709\u914d\u56fe\u3002",
+  prevImage: "\u4e0a\u4e00\u5f20",
+  nextImage: "\u4e0b\u4e00\u5f20",
+  authorAvatar: "\u4f5c\u8005\u5934\u50cf",
+  archiveNote: "\u5f52\u6863\u968f\u8bb0",
+  authorPrefix: "\u4f5c\u8005\uff1a",
+  timePrefix: "\u65f6\u95f4\uff1a",
+  like: "\u70b9\u8d5e",
+  commentReserved: "\u8bc4\u8bba\u533a\uff08\u9884\u7559\uff09",
+  commentPlaceholder: "\u8fd9\u91cc\u6682\u65f6\u4ecd\u662f\u5c55\u793a\u7528\u533a\u57df...",
+  commentInput: "\u8bc4\u8bba\u8f93\u5165",
+  nickname: "\u6635\u79f0",
+  contact: "\u8054\u7cfb\u65b9\u5f0f\uff08\u90ae\u7bb1 / \u793e\u4ea4\uff09",
+  submit: "\u63d0\u4ea4",
+  latestComments: "\u6700\u65b0\u8bc4\u8bba",
+  loadFailed: "\u5f52\u6863\u9875\u52a0\u8f7d\u5931\u8d25\u3002",
+};
+
 const state = {
   entries: [],
   query: "",
@@ -69,7 +107,7 @@ function getSummary(entry) {
     .trim();
 
   if (!compact) {
-    return "这篇归档暂时还没有摘要，可以直接打开卡片继续看完整内容。";
+    return TEXT.emptySummary;
   }
 
   return compact.length > 92 ? `${compact.slice(0, 92)}...` : compact;
@@ -123,7 +161,7 @@ function renderTagFilters(entries) {
   state.activeTag = activeTag;
 
   container.innerHTML = [
-    `<button type="button" class="archive-filter-btn${activeTag === "all" ? " active" : ""}" data-tag="all">全部档案 <span>${entries.length}</span></button>`,
+    `<button type="button" class="archive-filter-btn${activeTag === "all" ? " active" : ""}" data-tag="all">${TEXT.allArchives} <span>${entries.length}</span></button>`,
     ...sortedTags.map(
       ([tag, count]) =>
         `<button type="button" class="archive-filter-btn${activeTag === tag ? " active" : ""}" data-tag="${escapeAttr(tag)}">#${escapeHtml(tag)} <span>${count}</span></button>`,
@@ -163,22 +201,22 @@ function renderMeta(filteredEntries) {
 
   const filters = [];
   if (state.activeTag !== "all") {
-    filters.push(`标签 #${state.activeTag}`);
+    filters.push(`${TEXT.filterTagPrefix}${state.activeTag}`);
   }
   if (state.query.trim()) {
-    filters.push(`关键词 “${state.query.trim()}”`);
+    filters.push(`${TEXT.filterQueryPrefix}${state.query.trim()}${TEXT.filterQuerySuffix}`);
   }
 
   if (visibleMeta) {
     visibleMeta.textContent = filters.length
-      ? `当前展示 ${filteredEntries.length} / ${state.entries.length} 条，已应用 ${filters.join(" · ")}`
-      : `当前展示全部 ${filteredEntries.length} 条归档内容`;
+      ? `${TEXT.metaWithFiltersPrefix}${filteredEntries.length}${TEXT.metaWithFiltersMiddle}${state.entries.length}${TEXT.metaWithFiltersSuffix}${filters.join(" · ")}`
+      : `${TEXT.metaWithoutFiltersPrefix}${filteredEntries.length}${TEXT.metaWithoutFiltersSuffix}`;
   }
 
   if (emptyCopy) {
     emptyCopy.textContent = filters.length
-      ? `没有找到符合 ${filters.join(" 和 ")} 的归档内容，试试清空关键词或切回“全部档案”。`
-      : "换个关键词，或者回到“全部档案”试试。";
+      ? `${TEXT.emptyWithFiltersPrefix}${filters.join(TEXT.emptyWithFiltersMiddle)}${TEXT.emptyWithFiltersSuffix}`
+      : TEXT.emptyWithoutFilters;
   }
 }
 
@@ -203,15 +241,13 @@ function renderTimeline(entries) {
       const cover = entry.images?.[0] || "";
       const hasImage = Boolean(cover);
       const fallback = getFallbackCover(entry.id);
-      const tagsHtml = (entry.tags || [])
-        .map((tag) => `<span class="archive-card-tag">#${escapeHtml(tag)}</span>`)
-        .join("");
+      const tagsHtml = (entry.tags || []).map((tag) => `<span class="archive-card-tag">#${escapeHtml(tag)}</span>`).join("");
       const entryType = entry.contentType === "article" ? "article" : "note";
       const typeBadge =
         entryType === "article"
-          ? '<span class="archive-card-kind is-article">文章</span>'
-          : '<span class="archive-card-kind is-note">小记</span>';
-      const actionLabel = entryType === "article" ? "打开文章" : "查看小记";
+          ? `<span class="archive-card-kind is-article">${TEXT.article}</span>`
+          : `<span class="archive-card-kind is-note">${TEXT.note}</span>`;
+      const actionLabel = entryType === "article" ? TEXT.openArticle : TEXT.openNote;
 
       return `
         <article class="archive-item ${sideClass}${hasImage ? "" : " no-cover"}">
@@ -243,7 +279,7 @@ function renderTimeline(entries) {
               <p class="archive-card-time">
                 ${typeBadge}
                 <span>${escapeHtml(formatDate(entry.date))}</span>
-                <span>${escapeHtml(entry.mood || "✦")}</span>
+                <span>${escapeHtml(entry.mood || TEXT.fallbackMood)}</span>
               </p>
               <h2 class="archive-card-title">${escapeHtml(entry.title)}</h2>
               <div class="archive-card-tags">${tagsHtml}</div>
@@ -503,7 +539,7 @@ function renderMediaCarousel(images, title, fallbackKey = "modal") {
 
   if (!state.currentImages.length) {
     unbindMediaKeyboard();
-    media.innerHTML = '<div class="media-empty subtle">这条帖子没有配图。</div>';
+    media.innerHTML = `<div class="media-empty subtle">${TEXT.mediaEmpty}</div>`;
     return;
   }
 
@@ -528,8 +564,8 @@ function renderMediaCarousel(images, title, fallbackKey = "modal") {
           )
           .join("")}
       </div>
-      <button type="button" class="media-nav prev" id="media-prev" aria-label="上一张">‹</button>
-      <button type="button" class="media-nav next" id="media-next" aria-label="下一张">›</button>
+      <button type="button" class="media-nav prev" id="media-prev" aria-label="${TEXT.prevImage}">&#8249;</button>
+      <button type="button" class="media-nav next" id="media-next" aria-label="${TEXT.nextImage}">&#8250;</button>
       <p class="media-counter" id="media-counter">1/${state.currentImages.length}</p>
     </div>
   `;
@@ -571,10 +607,10 @@ function renderTextOnlyPost(entry) {
   layout.innerHTML = `
     <section class="text-post-card">
       <header class="text-post-head">
-        <img class="text-post-avatar" src="${escapeAttr(avatar)}" alt="作者头像" />
+        <img class="text-post-avatar" src="${escapeAttr(avatar)}" alt="${TEXT.authorAvatar}" />
         <div class="text-post-head-meta">
-          <h3>归档随记</h3>
-          <p>作者：${escapeHtml(authorName)} · 时间：${escapeHtml(entry.date)}</p>
+          <h3>${TEXT.archiveNote}</h3>
+          <p>${TEXT.authorPrefix}${escapeHtml(authorName)} · ${TEXT.timePrefix}${escapeHtml(entry.date)}</p>
         </div>
       </header>
 
@@ -583,22 +619,22 @@ function renderTextOnlyPost(entry) {
       </article>
 
       <button type="button" class="text-post-like" data-like-button>
-        <span>♡</span>
-        <span><span data-like-count>${likes}</span> 点赞</span>
+        <span>&#9825;</span>
+        <span><span data-like-count>${likes}</span> ${TEXT.like}</span>
       </button>
 
       <section class="text-post-comment-editor">
-        <h4>评论区（预留）</h4>
-        <textarea placeholder="这里暂时仍是展示用区域..." rows="4" aria-label="评论输入"></textarea>
+        <h4>${TEXT.commentReserved}</h4>
+        <textarea placeholder="${TEXT.commentPlaceholder}" rows="4" aria-label="${TEXT.commentInput}"></textarea>
         <div class="text-post-comment-row">
-          <input type="text" placeholder="昵称" />
-          <input type="text" placeholder="联系方式（邮箱/社交）" />
-          <button type="button">提交</button>
+          <input type="text" placeholder="${TEXT.nickname}" />
+          <input type="text" placeholder="${TEXT.contact}" />
+          <button type="button">${TEXT.submit}</button>
         </div>
       </section>
 
       <section class="text-post-comments">
-        <h4>最新评论</h4>
+        <h4>${TEXT.latestComments}</h4>
         <ul id="post-comments-list" class="comment-list compact"></ul>
       </section>
     </section>
@@ -627,7 +663,7 @@ function renderImagePost(entry) {
       <div id="post-tags" class="chips compact">${entry.tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join("")}</div>
       <div id="post-body" class="entry-detail">${entry.content.map((line) => `<p>${linkify(line)}</p>`).join("")}</div>
       <section class="post-comments">
-        <h4>评论区（预留）</h4>
+        <h4>${TEXT.commentReserved}</h4>
         <ul id="post-comments-list" class="comment-list compact"></ul>
       </section>
     </section>
@@ -895,6 +931,6 @@ async function main() {
 main().catch((error) => {
   const timeline = document.getElementById("archive-timeline");
   if (timeline) {
-    timeline.innerHTML = `<p class="subtle">${escapeHtml(error.message || "归档页加载失败。")}</p>`;
+    timeline.innerHTML = `<p class="subtle">${escapeHtml(error.message || TEXT.loadFailed)}</p>`;
   }
 });
