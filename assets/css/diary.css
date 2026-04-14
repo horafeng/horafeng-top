@@ -264,6 +264,130 @@ p {
   gap: 14px;
 }
 
+#friends-empty + .friends-grid,
+.friends-guide-grid + #friends-empty,
+.friends-guide-grid + .friends-grid {
+  margin-top: 2px;
+}
+
+.friends-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.friends-guide-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.friends-guide-kicker,
+.friends-guide-modal-kicker {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7b8ca5;
+  margin-bottom: 6px;
+}
+
+.friends-guide-card h2 {
+  font-size: 1.04rem;
+  margin-bottom: 6px;
+}
+
+.friend-guide-trigger {
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  box-shadow: 0 10px 22px rgba(84, 106, 141, 0.18);
+}
+
+.friends-comments-host {
+  margin-top: 4px;
+}
+
+.friends-guide-modal {
+  width: min(820px, calc(100vw - 28px));
+}
+
+.friends-guide-modal-body {
+  padding: 8px 28px 28px;
+}
+
+.friends-guide-modal h2 {
+  font-size: 1.46rem;
+  margin-bottom: 14px;
+}
+
+.friends-guide-format-tabs {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.friends-guide-format-btn {
+  border: 1px solid rgba(101, 125, 159, 0.26);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #55739c;
+  padding: 7px 12px;
+  font-family: inherit;
+}
+
+.friends-guide-format-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.friends-guide-content {
+  display: grid;
+  gap: 16px;
+  color: #4a586c;
+  line-height: 1.82;
+}
+
+.friends-guide-section h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: #37475e;
+}
+
+.friends-guide-section p + p,
+.friends-guide-section ul + p {
+  margin-top: 10px;
+}
+
+.friends-guide-section ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.friends-guide-section li + li {
+  margin-top: 6px;
+}
+
+.friends-code-block {
+  margin: 10px 0 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(101, 125, 159, 0.16);
+  background: rgba(246, 249, 255, 0.88);
+  overflow: auto;
+  font-family: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.86rem;
+  line-height: 1.7;
+  color: #40536e;
+}
+
 .friend-card {
   display: grid;
   gap: 14px;
@@ -3331,39 +3455,18 @@ body[data-page="archive"].with-site-nav {
 
 body[data-page="archive"] .bg-layer {
   background-image:
-    linear-gradient(180deg, rgba(13, 24, 34, 0.18) 0%, rgba(13, 24, 34, 0.08) 18%, rgba(13, 24, 34, 0.02) 42%, rgba(13, 24, 34, 0) 100%),
-    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.34), transparent 28%),
-    radial-gradient(circle at 82% 12%, rgba(233, 245, 255, 0.24), transparent 30%),
-    linear-gradient(180deg, rgba(247, 250, 253, 0.34), rgba(246, 241, 249, 0.18)),
-    url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2200&q=80");
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  background-position: center top, center top, center top, center top, center top;
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
+    radial-gradient(circle at 18% 20%, rgba(250, 247, 242, 0.95), transparent 40%),
+    radial-gradient(circle at 82% 8%, rgba(231, 240, 252, 0.92), transparent 38%),
+    radial-gradient(circle at 76% 85%, rgba(244, 236, 252, 0.65), transparent 35%),
+    linear-gradient(164deg, #f7f6f3 0%, #ecf3ff 58%, #f5efff 100%);
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-position: center top, center top, center top, center top;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
 }
 
 body[data-page="archive"] .bg-layer::before,
 body[data-page="archive"] .bg-layer::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(10px);
-  pointer-events: none;
-}
-
-body[data-page="archive"] .bg-layer::before {
-  width: 260px;
-  height: 260px;
-  top: 14%;
-  left: 9%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0));
-}
-
-body[data-page="archive"] .bg-layer::after {
-  width: 320px;
-  height: 320px;
-  top: 9%;
-  right: 8%;
-  background: radial-gradient(circle, rgba(228, 241, 255, 0.34), rgba(228, 241, 255, 0));
+  content: none;
 }
 
 .archive-shell {
@@ -4473,6 +4576,22 @@ body[data-page="archive"] .archive-flow-panel {
 @media (max-width: 767px) {
   .friends-hero-top {
     grid-template-columns: 1fr;
+  }
+
+  .friends-guide-card {
+    flex-direction: column;
+  }
+
+  .friend-guide-trigger {
+    width: 100%;
+  }
+
+  .friends-guide-modal {
+    width: calc(100vw - 20px);
+  }
+
+  .friends-guide-modal-body {
+    padding: 8px 16px 20px;
   }
 
   .friends-summary-card {

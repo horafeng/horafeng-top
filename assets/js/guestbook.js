@@ -21,6 +21,7 @@ function applyProfile(profile = {}) {
   const lastSeenEl = document.getElementById("guestbook-profile-last-seen");
   const coverEl = document.getElementById("guestbook-profile-cover");
   const emailButton = document.getElementById("guestbook-email-button");
+  const githubButton = document.getElementById("guestbook-github-button");
 
   if (avatarEl) {
     avatarEl.src = avatar;
@@ -46,6 +47,9 @@ function applyProfile(profile = {}) {
   if (emailButton && email) {
     emailButton.href = `mailto:${email}`;
   }
+  if (githubButton && profile.github) {
+    githubButton.href = String(profile.github).trim();
+  }
 }
 
 function mountGuestbookComments() {
@@ -55,16 +59,6 @@ function mountGuestbookComments() {
   const listWrap = document.querySelector(".guestbook-list-wrap");
   if (!(listWrap instanceof HTMLElement)) {
     return;
-  }
-
-  const head = listWrap.querySelector(".guestbook-list-head");
-  const title = head?.querySelector("h2");
-  const subtitle = head?.querySelector(".subtle");
-  if (title) {
-    title.textContent = "\u6700\u65b0\u4e92\u52a8";
-  }
-  if (subtitle) {
-    subtitle.textContent = "\u9ed8\u8ba4\u5c55\u793a\u4e24\u5c42\u8bc4\u8bba\u7ed3\u6784\uff0c\u56de\u590d\u4ed6\u4eba\u7684\u56de\u590d\u65f6\u4f1a\u6807\u6ce8\u5bf9\u5e94\u697c\u5c42\u3002";
   }
 
   let host = document.getElementById("guestbook-comments-host");

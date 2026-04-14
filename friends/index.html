@@ -62,13 +62,51 @@
           </div>
         </header>
 
-        <section id="friends-grid" class="friends-grid" aria-live="polite"></section>
+        <section class="friends-guide-grid" aria-label="&#21451;&#24773;&#38142;&#25509;&#35828;&#26126;">
+          <article class="panel-lite friends-guide-card">
+            <div>
+              <p class="friends-guide-kicker">&#21451;&#38142;&#35828;&#26126;</p>
+              <h2>&#30003;&#35831;&#21451;&#24773;&#38142;&#25509;</h2>
+              <p class="subtle">&#26597;&#30475;&#30003;&#35831;&#26465;&#20214;&#12289;&#25552;&#20132;&#26684;&#24335;&#19982;&#21518;&#32493;&#26816;&#26597;&#35828;&#26126;&#12290;</p>
+            </div>
+            <button class="friend-guide-trigger" type="button" data-guide-open="apply">&#26597;&#30475;&#35828;&#26126;</button>
+          </article>
+
+          <article class="panel-lite friends-guide-card">
+            <div>
+              <p class="friends-guide-kicker">&#26412;&#31449;&#20449;&#24687;</p>
+              <h2>&#21152;&#20837;&#26412;&#31449;&#21040;&#36149;&#31449;&#21451;&#38142;</h2>
+              <p class="subtle">&#25552;&#20379; HTML &#19982; YAML &#20004;&#31181;&#26684;&#24335;&#65292;&#26041;&#20415;&#20320;&#30452;&#25509;&#22797;&#21046;&#12290;</p>
+            </div>
+            <button class="friend-guide-trigger" type="button" data-guide-open="site">&#26597;&#30475;&#26412;&#31449;&#20449;&#24687;</button>
+          </article>
+        </section>
 
         <section id="friends-empty" class="panel-lite friends-empty" hidden>
           <h2>&#21451;&#38142;&#27491;&#22312;&#25972;&#29702;&#20013;</h2>
           <p class="subtle">&#31561;&#20320;&#25226;&#31532;&#19968;&#20301;&#21338;&#21451;&#20889;&#36827; <code>/content/friends.json</code>&#65292;&#36825;&#37324;&#23601;&#20250;&#33258;&#21160;&#38271;&#20986;&#21345;&#29255;&#12290;</p>
         </section>
+
+        <section id="friends-grid" class="friends-grid" aria-live="polite"></section>
+
+        <section id="friends-comments-host" class="friends-comments-host"></section>
       </main>
+    </div>
+
+    <div id="friends-guide-overlay" class="post-overlay friends-guide-overlay" hidden>
+      <div class="post-backdrop" data-friends-guide-close="1"></div>
+      <article id="friends-guide-modal" class="post-modal friends-guide-modal" role="dialog" aria-modal="true" aria-labelledby="friends-guide-title">
+        <button id="friends-guide-close" class="post-close" type="button">&#215;</button>
+        <div class="friends-guide-modal-body">
+          <p id="friends-guide-kicker" class="friends-guide-modal-kicker"></p>
+          <h2 id="friends-guide-title"></h2>
+          <div id="friends-guide-format-tabs" class="friends-guide-format-tabs" hidden>
+            <button type="button" class="friends-guide-format-btn active" data-format="html">HTML</button>
+            <button type="button" class="friends-guide-format-btn" data-format="yaml">YAML</button>
+          </div>
+          <div id="friends-guide-content" class="friends-guide-content"></div>
+        </div>
+      </article>
     </div>
 
     <script type="module" src="../assets/js/friends.js"></script>
