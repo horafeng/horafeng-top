@@ -135,11 +135,29 @@ function getPageIconUrl(page) {
   return "";
 }
 
+function getCoverUrl(page) {
+  const cover = page?.cover;
+  if (!cover) {
+    return "";
+  }
+
+  if (cover.type === "external") {
+    return cover.external?.url || "";
+  }
+
+  if (cover.type === "file") {
+    return cover.file?.url || "";
+  }
+
+  return "";
+}
+
 export function normalizeDatabasePage(page) {
   const properties = page.properties || {};
   const type = normalizeContentType(getSelectName(properties, "type")) || CONTENT_TYPES.NOTE;
   const signature = getRichTextByNames(properties, ["Signature", "signature", "签名"]);
   const pageIcon = getPageIconUrl(page);
+  const pageCover = getCoverUrl(page);
 
   return {
     pageId: page.id,
@@ -160,6 +178,7 @@ export function normalizeDatabasePage(page) {
       mood: getRichText(properties, "mood") || getSelectName(properties, "mood"),
       signature,
       page_icon: pageIcon,
+      page_cover: pageCover,
       ai_generated:
         getCheckboxByNames(properties, ["ai_generated", "AI Generated", "AIGC", "自动生成"]) ||
         ["ai", "aigc", "auto", "自动生成"].includes(getSelectByNames(properties, ["author_type", "source", "origin"]).trim().toLowerCase()),

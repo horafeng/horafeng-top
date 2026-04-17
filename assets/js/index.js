@@ -1800,6 +1800,12 @@ async function main() {
   const [entries, config] = await Promise.all([loadHomeFeed(), loadSiteConfig()]);
   allEntries = entries;
   siteConfig = config;
+  setupSiteChrome({
+    profileCoverUrl: config?.profile?.cover || "",
+    scrollContainerSelector: ".flow-panel",
+    searchTargetSelector: "#search-input",
+    useWindowScroll: true,
+  });
 
   setupWelcomeTyping();
   const noticeController = setupNoticeOverlay();

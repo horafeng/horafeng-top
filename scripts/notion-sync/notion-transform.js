@@ -88,7 +88,7 @@ export function buildContentIndexRecord({ pageId = "", properties = {}, blocks =
   const noteMedia =
     type === CONTENT_TYPES.NOTE
       ? deriveNoteMediaFields(blocks, properties.cover || "")
-      : { has_media: false, media: [], images: [], cover: properties.cover || "" };
+      : { has_media: false, media: [], images: [], cover: properties.cover || properties.page_cover || "" };
 
   Object.assign(record, {
     id: pageId,
@@ -100,7 +100,7 @@ export function buildContentIndexRecord({ pageId = "", properties = {}, blocks =
     summary: properties.summary || "",
     tags: Array.isArray(properties.tags) ? properties.tags : [],
     category: properties.category || "",
-    cover: noteMedia.cover || properties.cover || "",
+    cover: noteMedia.cover || properties.cover || properties.page_cover || "",
     published_at: properties.published_at || "",
     featured: Boolean(properties.featured),
     pin: Boolean(properties.pin),
