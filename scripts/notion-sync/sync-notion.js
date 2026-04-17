@@ -10,9 +10,11 @@ import { NotionClient, queryDatabasePages, retrieveDatabase } from "./notion-cli
 const GENERATED_DIR = path.join(PROJECT_ROOT, "content", "generated");
 const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
 const MEDIA_DIR = path.join(GENERATED_DIR, "media", "notion");
+const PROFILE_MEDIA_DIR = path.join(MEDIA_DIR, "profile");
 const SITE_CONFIG_PATH = path.join(PROJECT_ROOT, "content", "site.json");
 const SITE_ORIGIN = String(process.env.SITE_ORIGIN || "https://horafeng.top").replace(/\/+$/, "");
 const BOOKMARK_FETCH_TIMEOUT_MS = 8000;
+const LEGACY_AI_SIGNATURE = "这里是我的轻日记与生活记事。";
 
 function log(message) {
   console.log(`[notion-sync] ${message}`);
@@ -107,6 +109,40 @@ function resolveProfileFromDatabaseMeta(databaseMeta = {}) {
     avatar: extractIconUrl(databaseMeta.icon),
     signature: richTextToPlainText(databaseMeta.description || []),
   };
+}
+
+async function persistProfileAvatar(client, avatarUrl) {
+  const source = String(avatarUrl || "").trim();
+  if (!source) {
+    return "";
+  }
+
+  if (/^data:image\/svg\+xml/i.test(source)) {
+    const payload = source.split(",", 2)[1] || "";
+    const svg = decodeURIComponent(payload);
+    const fileName = "avatar.svg";
+    const filePath = path.join(PROFILE_MEDIA_DIR, fileName);
+    await mkdir(PROFILE_MEDIA_DIR, { recursive: true });
+    await writeFile(filePath, svg, "utf8");
+    return `content/generated/media/notion/profile/${fileName}`;
+  }
+
+  if (!/^https?:\/\//i.test(source)) {
+    return source;
+  }
+
+  try {
+    const downloaded = await client.downloadFile(source);
+    const extension = getFileExtension(source, downloaded.contentType);
+    const fileName = `avatar${extension}`;
+    const filePath = path.join(PROFILE_MEDIA_DIR, fileName);
+    await mkdir(PROFILE_MEDIA_DIR, { recursive: true });
+    await writeFile(filePath, downloaded.buffer);
+    return `content/generated/media/notion/profile/${fileName}`;
+  } catch (error) {
+    log(`skip profile avatar cache: ${error.message}`);
+    return source;
+  }
 }
 
 function isCacheableNotionAsset(url) {
@@ -671,13 +707,15 @@ export async function syncNotionContent() {
   const nextProfile = {
     ...(currentSiteConfig.profile || {}),
   };
-  const syncedProfileAvatar = databaseProfile.avatar;
-  const syncedProfileSignature = databaseProfile.signature;
+  const cachedProfileAvatar = await persistProfileAvatar(client, databaseProfile.avatar);
+  const syncedProfileAvatar = cachedProfileAvatar || databaseProfile.avatar || "";
+  const syncedProfileSignature = String(databaseProfile.signature || "").trim();
   if (syncedProfileAvatar) {
     nextProfile.avatar = syncedProfileAvatar;
   }
-  if (syncedProfileSignature) {
-    nextProfile.signature = syncedProfileSignature;
+  nextProfile.signature = syncedProfileSignature;
+  if (String(nextProfile.bio || "").trim() === LEGACY_AI_SIGNATURE) {
+    nextProfile.bio = "";
   }
   const nextSiteConfig = {
     ...currentSiteConfig,
@@ -685,7 +723,7 @@ export async function syncNotionContent() {
   };
   await writeJson(SITE_CONFIG_PATH, nextSiteConfig);
 
-  const homeCover = toAbsoluteSiteUrl(nextProfile.cover || syncedProfileAvatar || indexItems[0]?.cover);
+  const homeCover = toAbsoluteSiteUrl(syncedProfileAvatar || nextProfile.cover || indexItems[0]?.cover);
   const homeSeo = buildSeoMeta({
     title: `${nextProfile.name || "HoraFeng"} 的博客`,
     description: nextProfile.signature || nextProfile.bio || "欢迎来到我的博客。",

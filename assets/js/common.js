@@ -196,6 +196,7 @@ function normalizeArticleEntry(entry, source = "notion-article") {
 
 function normalizeNoticeEntry(entry, source = "notion-notice") {
   const publishedAt = String(entry?.published_at ?? entry?.date ?? entry?.created_time ?? "").trim();
+  const updatedAt = String(entry?.source_updated_at ?? entry?.updated_at ?? entry?.last_edited_time ?? publishedAt).trim();
   const title = String(entry?.title ?? "").trim() || "\u516c\u544a";
   const summary = String(entry?.summary ?? "").trim();
   const directLines = Array.isArray(entry?.content)
@@ -224,6 +225,7 @@ function normalizeNoticeEntry(entry, source = "notion-notice") {
     slug: String(entry?.slug ?? "").trim(),
     title,
     date: publishedAt,
+    updatedAt,
     content: details,
     source,
     status: String(entry?.status ?? "").trim().toLowerCase(),
@@ -370,6 +372,7 @@ export async function loadHomeFeed() {
         id: notice.id,
         slug: notice.slug,
         date: notice.date,
+        updatedAt: notice.updatedAt,
         mood: "📢",
         title: notice.title,
         tags: Array.isArray(item?.tags) ? item.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
@@ -404,6 +407,10 @@ export async function loadNoticeIndex() {
     .sort((a, b) => {
       if (Boolean(a.pin) !== Boolean(b.pin)) {
         return a.pin ? -1 : 1;
+      }
+      const updatedDiff = new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      if (updatedDiff !== 0) {
+        return updatedDiff;
       }
       return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
     });

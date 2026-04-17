@@ -83,7 +83,7 @@ function applyHomeSeo(config, entries) {
   const first = Array.isArray(entries) ? entries[0] : null;
   const title = `${profile.name || "HoraFeng"} 的博客`;
   const description = String(profile.signature || profile.bio || "欢迎来到我的博客。").trim();
-  const image = toAbsoluteUrl(profile.cover || profile.avatar || first?.images?.[0] || "");
+  const image = toAbsoluteUrl(profile.avatar || profile.cover || first?.images?.[0] || "");
   const url = `${DEFAULT_SITE_ORIGIN}/`;
 
   setMetaTag({ property: "og:title", content: title });
@@ -416,6 +416,36 @@ async function renderRecentComments(entries) {
   renderRecentCommentsList(document.getElementById("mobile-recent-comments"), comments, entries);
 }
 
+async function renderHomeNoticeStrip() {
+  const list = document.getElementById("home-notice-list");
+  if (!list) {
+    return;
+  }
+
+  const notices = await loadNoticeIndex();
+  if (!notices.length) {
+    list.innerHTML = '<p class="subtle">暂无公告。</p>';
+    return;
+  }
+
+  list.innerHTML = notices
+    .slice(0, 3)
+    .map((notice) => {
+      const summary = Array.isArray(notice.content) ? notice.content.find((line) => String(line || "").trim()) || "" : "";
+      return `
+        <article class="home-notice-item">
+          <div class="home-notice-item-meta">
+            <span>${escapeHtml(notice.date || "")}</span>
+            ${notice.pin ? '<span class="entry-type-badge">置顶</span>' : ""}
+          </div>
+          <h4 class="home-notice-item-title">${escapeHtml(notice.title || "公告")}</h4>
+          ${summary ? `<p class="home-notice-item-summary">${linkify(summary)}</p>` : ""}
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function renderProfileActionLinks(profile, options = {}) {
   const email = String(profile.email || "horafeng@outlook.com").trim();
   const github = String(profile.github || "https://github.com/horafeng").trim();
@@ -474,7 +504,7 @@ function renderProfile(config) {
   name.textContent = profile.name || "HoraFeng";
   handle.textContent = profile.handle || "@horafeng";
   signature.textContent = profile.signature || "把普通日子写成会发光的碎片。";
-  bio.textContent = profile.bio || "这里是我的轻日记与生活记事。";
+  bio.textContent = profile.bio || "喜欢记录通勤、雨天、夜晚散步和慢节奏生活。";
   lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
 
   if (actions) {
@@ -496,7 +526,7 @@ function renderProfile(config) {
       <h1>${profile.name || "HoraFeng"}</h1>
       <p class="profile-handle">${profile.handle || "@horafeng"}</p>
       <p class="subtle">${profile.signature || "把普通日子写成会发光的碎片。"}</p>
-      <p class="subtle">${profile.bio || "这里是我的轻日记与生活记事。"}</p>
+      <p class="subtle">${profile.bio || "喜欢记录通勤、雨天、夜晚散步和慢节奏生活。"}</p>
       <p class="last-seen subtle">${formatLastSeen(profile.lastSeenAt)}</p>
     </div>
     <div class="profile-actions compact" aria-label="联系方式">
@@ -687,6 +717,18 @@ function filterByParams(entries) {
   let list = entries;
   if (contentType) {
     list = list.filter((entry) => entry.contentType === contentType);
+    if (contentType === "notice") {
+      list = [...list].sort((a, b) => {
+        if (Boolean(a.pin) !== Boolean(b.pin)) {
+          return a.pin ? -1 : 1;
+        }
+        const updatedDiff = new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+        if (updatedDiff !== 0) {
+          return updatedDiff;
+        }
+        return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+      });
+    }
     heading.textContent =
       contentType === "article"
         ? "\u6700\u8fd1\u6587\u7ae0"
@@ -1748,6 +1790,7 @@ async function main() {
   applyHomeSeo(config, visibleEntries);
   renderTimeline(visibleEntries);
   renderSidebar(entries, config);
+  await renderHomeNoticeStrip();
 
   setupSearch();
   setupDesktopSidebarLayout();

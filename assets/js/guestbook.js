@@ -10,7 +10,7 @@ function applyProfile(profile = {}) {
   const name = String(profile.name || "HoraFeng").trim() || "HoraFeng";
   const handle = String(profile.handle || "@horafeng").trim() || "@horafeng";
   const signature = String(profile.signature || "\u628a\u666e\u901a\u65e5\u5b50\u5199\u6210\u4f1a\u53d1\u5149\u7684\u788e\u7247\u3002").trim();
-  const bio = String(profile.bio || "\u8fd9\u91cc\u662f\u6211\u7684\u8f7b\u65e5\u8bb0\u4e0e\u751f\u6d3b\u8bb0\u4e8b\u3002").trim();
+  const bio = String(profile.bio || "\u559c\u6b22\u8bb0\u5f55\u901a\u52e4\u3001\u96e8\u5929\u3001\u591c\u665a\u6563\u6b65\u548c\u6162\u8282\u594f\u751f\u6d3b\u3002").trim();
   const email = String(profile.email || "horafeng@outlook.com").trim();
 
   const avatarEl = document.getElementById("guestbook-profile-avatar");
