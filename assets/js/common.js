@@ -221,11 +221,13 @@ function normalizeNoticeEntry(entry, source = "notion-notice") {
 
   return {
     id: String(entry?.id ?? entry?.slug ?? title).trim(),
+    slug: String(entry?.slug ?? "").trim(),
     title,
     date: publishedAt,
     content: details,
     source,
     status: String(entry?.status ?? "").trim().toLowerCase(),
+    pin: Boolean(entry?.pin),
   };
 }
 
@@ -246,12 +248,34 @@ function mergeEntries(localEntries, notionEntries) {
   const seen = new Set();
 
   [...localEntries, ...notionEntries].forEach((entry) => {
-    const normalized =
-      String(entry?.contentType || entry?.type || "")
-        .trim()
-        .toLowerCase() === "article"
-        ? normalizeArticleEntry(entry, entry?.source || "notion-article")
-        : normalizeEntry(entry, entry?.source || "local");
+    const contentType = String(entry?.contentType || entry?.type || "")
+      .trim()
+      .toLowerCase();
+    let normalized = null;
+
+    if (contentType === "article") {
+      normalized = normalizeArticleEntry(entry, entry?.source || "notion-article");
+    } else if (contentType === "notice") {
+      const notice = normalizeNoticeEntry(entry, entry?.source || "notion-notice");
+      normalized = {
+        id: notice.id,
+        slug: notice.slug,
+        date: notice.date,
+        mood: "📢",
+        title: notice.title,
+        tags: Array.isArray(entry?.tags) ? entry.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
+        images: [],
+        content: notice.content,
+        summary: notice.content[0] || "",
+        category: String(entry?.category || "公告").trim(),
+        contentType: "notice",
+        source: notice.source,
+        pin: notice.pin,
+      };
+    } else {
+      normalized = normalizeEntry(entry, entry?.source || "local");
+    }
+
     const dedupKey = getEntryDedupKey(normalized);
     if (seen.has(dedupKey)) {
       return;
@@ -328,18 +352,40 @@ export async function loadEntries() {
 }
 
 export async function loadHomeFeed() {
-  const [entries, notionArticles] = await Promise.all([
+  const [entries, notionArticles, notionNotices] = await Promise.all([
     loadEntries(),
     fetchOptionalItems("content/generated/notion-articles.json"),
+    fetchOptionalItems("content/generated/notion-notices.json"),
   ]);
 
   const articleEntries = notionArticles
     .filter((item) => String(item?.status ?? "").trim().toLowerCase() === "published")
     .map((item) => normalizeArticleEntry(item));
 
+  const noticeEntries = notionNotices
+    .filter((item) => String(item?.status ?? "").trim().toLowerCase() === "published")
+    .map((item) => {
+      const notice = normalizeNoticeEntry(item);
+      return {
+        id: notice.id,
+        slug: notice.slug,
+        date: notice.date,
+        mood: "📢",
+        title: notice.title,
+        tags: Array.isArray(item?.tags) ? item.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
+        images: [],
+        content: notice.content,
+        summary: notice.content[0] || "",
+        category: String(item?.category || "公告").trim(),
+        contentType: "notice",
+        source: notice.source,
+        pin: notice.pin,
+      };
+    });
+
   return mergeEntries(
     entries.map((entry) => ({ ...entry, contentType: entry.contentType || "note" })),
-    articleEntries,
+    [...articleEntries, ...noticeEntries],
   );
 }
 
@@ -355,7 +401,12 @@ export async function loadNoticeIndex() {
   return items
     .map((item) => normalizeNoticeEntry(item))
     .filter((item) => !item.status || item.status === "published")
-    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+    .sort((a, b) => {
+      if (Boolean(a.pin) !== Boolean(b.pin)) {
+        return a.pin ? -1 : 1;
+      }
+      return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+    });
 }
 
 export async function loadArticleDetail(slug) {

@@ -191,6 +191,33 @@ function renderTimeline(entries) {
         `;
       }
 
+      if (entry.contentType === "notice") {
+        const metaTrail = [entry.date, entry.category || "公告", entry.pin ? "置顶" : ""]
+          .filter(Boolean)
+          .map((item) => `<span>${escapeHtml(item)}</span>`)
+          .join("");
+        const lines = Array.isArray(entry.content) ? entry.content : [];
+        const body = lines.length ? lines.map((line) => `<p>${linkify(line)}</p>`).join("") : "<p>本条公告暂无详细正文。</p>";
+        const tagsHtml = entry.tags.length ? `<p class="entry-meta entry-tags">${entry.tags.map((tag) => `#${escapeHtml(tag)}`).join(" ")}</p>` : "";
+        const pinBadge = entry.pin ? '<span class="entry-type-badge">置顶公告</span>' : '<span class="entry-type-badge">公告</span>';
+
+        return `
+          <article class="entry-card no-image article-card notice-card" data-entry-id="${escapeAttr(entry.id)}">
+            <div class="entry-link article-link notice-link-static">
+              <div class="entry-shell no-image-shell">
+                <div class="entry-copy">
+                  <div class="entry-meta">${metaTrail}</div>
+                  <div class="entry-card-head">${pinBadge}</div>
+                  <h3 class="entry-title">${escapeHtml(entry.title)}</h3>
+                  <div class="entry-detail notice-inline-body">${body}</div>
+                  ${tagsHtml}
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
       if (!hasImage) {
         return `
           <article class="entry-card no-image" data-entry-card="${entry.id}" data-entry-id="${entry.id}" tabindex="0" role="button" aria-label="打开帖子：${escapeAttr(entry.title)}">
@@ -626,10 +653,14 @@ function setupNoticeOverlay() {
 
 async function maybeShowLatestNotice(noticeController) {
   const notices = await loadNoticeIndex();
-  const latest = notices[0];
-  if (!latest) {
+  if (!notices.length) {
     return;
   }
+
+  const pinned = notices
+    .filter((item) => Boolean(item?.pin))
+    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+  const latest = pinned[0] || notices[0];
 
   const navigation = performance.getEntriesByType("navigation")[0];
   const navType = navigation?.type || "navigate";

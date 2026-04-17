@@ -150,7 +150,8 @@ function openGuideModal(key) {
   kicker.textContent = guide.kicker;
   content.innerHTML = renderGuideContent(key);
   overlay.hidden = false;
-  overlay.classList.add("open");
+  overlay.classList.remove("closing");
+  requestAnimationFrame(() => overlay.classList.add("open"));
   document.body.classList.add("no-scroll");
 }
 
@@ -160,9 +161,13 @@ function closeGuideModal() {
     return;
   }
 
+  overlay.classList.add("closing");
   overlay.classList.remove("open");
-  overlay.hidden = true;
-  document.body.classList.remove("no-scroll");
+  window.setTimeout(() => {
+    overlay.hidden = true;
+    overlay.classList.remove("closing");
+    document.body.classList.remove("no-scroll");
+  }, 190);
 }
 
 function setupGuideModal() {

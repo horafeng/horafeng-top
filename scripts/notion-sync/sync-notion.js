@@ -477,17 +477,20 @@ function buildSeoMeta({ title = "", description = "", image = "", url = "", type
   };
 }
 
-function pickProfileValue(currentValue, ...candidates) {
-  if (currentValue) {
-    return currentValue;
+function pickProfileValue(current, candidate, editedAt = 0) {
+  const value = String(candidate || "").trim();
+  if (!value) {
+    return current;
   }
-  for (const candidate of candidates) {
-    const value = String(candidate || "").trim();
-    if (value) {
-      return value;
-    }
+
+  if (!current.value || editedAt >= current.editedAt) {
+    return {
+      value,
+      editedAt,
+    };
   }
-  return currentValue;
+
+  return current;
 }
 
 function partitionByType(items = []) {
@@ -526,8 +529,8 @@ export async function syncNotionContent() {
   const articleItems = [];
   const noticeItems = [];
   const compatNotes = [];
-  let latestProfileAvatar = "";
-  let latestProfileSignature = "";
+  let latestProfileAvatar = { value: "", editedAt: 0 };
+  let latestProfileSignature = { value: "", editedAt: 0 };
 
   for (const [index, page] of pages.entries()) {
     const pageData = normalizeDatabasePage(page);
@@ -549,8 +552,9 @@ export async function syncNotionContent() {
     const assetMap = await cachePageAssets(client, builtRecord, enrichedBlocks);
     const indexRecord = localizeValue(builtRecord, assetMap);
     const localizedBlocks = localizeValue(enrichedBlocks, assetMap);
-    latestProfileAvatar = pickProfileValue(latestProfileAvatar, indexRecord.page_icon, pageData.properties.page_icon);
-    latestProfileSignature = pickProfileValue(latestProfileSignature, indexRecord.signature, pageData.properties.signature);
+    const editedAt = Date.parse(pageData.lastEditedTime || indexRecord.source_updated_at || pageData.properties.published_at || "") || 0;
+    latestProfileAvatar = pickProfileValue(latestProfileAvatar, indexRecord.page_icon || pageData.properties.page_icon || "", editedAt);
+    latestProfileSignature = pickProfileValue(latestProfileSignature, indexRecord.signature || pageData.properties.signature || "", editedAt);
 
     indexItems.push(indexRecord);
 
@@ -563,7 +567,7 @@ export async function syncNotionContent() {
 
     if (normalizeContentType(indexRecord.type) === CONTENT_TYPES.ARTICLE) {
       const articleUrl = `${SITE_ORIGIN}/article.html?slug=${encodeURIComponent(indexRecord.slug)}`;
-      const articleImage = toAbsoluteSiteUrl(indexRecord.cover || indexRecord.images?.[0] || latestProfileAvatar);
+      const articleImage = toAbsoluteSiteUrl(indexRecord.cover || indexRecord.images?.[0] || indexRecord.page_icon || latestProfileAvatar.value);
       const articleSeo = buildSeoMeta({
         title: indexRecord.title || "文章",
         description: indexRecord.summary || indexRecord.title || "",
@@ -624,11 +628,11 @@ export async function syncNotionContent() {
   const nextProfile = {
     ...(currentSiteConfig.profile || {}),
   };
-  if (latestProfileAvatar) {
-    nextProfile.avatar = latestProfileAvatar;
+  if (latestProfileAvatar.value) {
+    nextProfile.avatar = latestProfileAvatar.value;
   }
-  if (latestProfileSignature) {
-    nextProfile.signature = latestProfileSignature;
+  if (latestProfileSignature.value) {
+    nextProfile.signature = latestProfileSignature.value;
   }
   const nextSiteConfig = {
     ...currentSiteConfig,
@@ -636,7 +640,7 @@ export async function syncNotionContent() {
   };
   await writeJson(SITE_CONFIG_PATH, nextSiteConfig);
 
-  const homeCover = toAbsoluteSiteUrl(nextProfile.cover || indexItems[0]?.cover || latestProfileAvatar);
+  const homeCover = toAbsoluteSiteUrl(nextProfile.cover || indexItems[0]?.cover || latestProfileAvatar.value);
   const homeSeo = buildSeoMeta({
     title: `${nextProfile.name || "HoraFeng"} 的博客`,
     description: nextProfile.signature || nextProfile.bio || "欢迎来到我的博客。",
@@ -650,7 +654,7 @@ export async function syncNotionContent() {
     ...buildSeoMeta({
       title: article.title || "文章",
       description: article.summary || article.title || "",
-      image: toAbsoluteSiteUrl(article.cover || article.images?.[0] || latestProfileAvatar),
+      image: toAbsoluteSiteUrl(article.cover || article.images?.[0] || article.page_icon || latestProfileAvatar.value),
       url: `${SITE_ORIGIN}/article.html?slug=${encodeURIComponent(article.slug)}`,
       type: "article",
     }),

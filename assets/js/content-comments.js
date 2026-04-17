@@ -473,8 +473,13 @@ function mountContentComments(options = {}) {
     const turnstileSlot = modal.querySelector("[data-identity-turnstile]");
 
     const closeModal = () => {
-      modal.hidden = true;
-      document.body.classList.remove("no-scroll");
+      modal.classList.add("closing");
+      modal.classList.remove("open");
+      window.setTimeout(() => {
+        modal.hidden = true;
+        modal.classList.remove("closing");
+        document.body.classList.remove("no-scroll");
+      }, 190);
     };
 
     const identity = state.identity || getStoredCommentIdentity();
@@ -483,6 +488,8 @@ function mountContentComments(options = {}) {
     notifyInput.checked = identity?.notify_enabled !== false;
     feedbackEl.textContent = "";
     modal.hidden = false;
+    modal.classList.remove("closing");
+    requestAnimationFrame(() => modal.classList.add("open"));
     document.body.classList.add("no-scroll");
 
     modal.querySelectorAll("[data-close-identity]").forEach((button) => {

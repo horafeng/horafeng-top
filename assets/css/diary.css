@@ -408,6 +408,18 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   color: #506b8f;
 }
 
+.notice-link-static {
+  cursor: default;
+}
+
+.notice-inline-body {
+  margin-top: 6px;
+}
+
+.notice-inline-body p + p {
+  margin-top: 8px;
+}
+
 .friends-guide-format-btn {
   border: 1px solid rgba(101, 125, 159, 0.26);
   border-radius: 999px;
@@ -1199,8 +1211,19 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   border: 1px solid rgba(255, 255, 255, 0.75);
   background: rgba(252, 253, 255, 0.97);
   box-shadow: 0 20px 60px rgba(11, 20, 33, 0.26);
+  opacity: 0;
+  transform: translate3d(0, 16px, 0) scale(0.985);
+  transition: opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.78, 0.24, 1);
+}
+
+.post-overlay.open:not(.mobile-lite) .post-modal {
   opacity: 1;
-  transition: opacity 140ms ease, transform 180ms ease;
+  transform: none;
+}
+
+.post-overlay.closing:not(.mobile-lite) .post-modal {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0) scale(0.985);
 }
 
 .post-overlay.shared-transition .post-modal {
@@ -3528,22 +3551,6 @@ body[data-page="archive"].with-site-nav {
   --site-hero-gap: clamp(110px, 16vh, 180px);
 }
 
-body[data-page="archive"] .bg-layer {
-  background-image:
-    radial-gradient(circle at 18% 20%, rgba(250, 247, 242, 0.95), transparent 40%),
-    radial-gradient(circle at 82% 8%, rgba(231, 240, 252, 0.92), transparent 38%),
-    radial-gradient(circle at 76% 85%, rgba(244, 236, 252, 0.65), transparent 35%),
-    linear-gradient(164deg, #f7f6f3 0%, #ecf3ff 58%, #f5efff 100%);
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-  background-position: center top, center top, center top, center top;
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
-}
-
-body[data-page="archive"] .bg-layer::before,
-body[data-page="archive"] .bg-layer::after {
-  content: none;
-}
-
 .archive-shell {
   width: min(1280px, calc(100vw - 28px));
 }
@@ -4476,6 +4483,16 @@ body[data-page="archive"] .archive-flow-panel {
   position: fixed;
   inset: 0;
   z-index: 210;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.comment-identity-modal.open {
+  opacity: 1;
+}
+
+.comment-identity-modal.closing {
+  opacity: 0;
 }
 
 .comment-identity-modal[hidden] {
@@ -4498,6 +4515,14 @@ body[data-page="archive"] .archive-flow-panel {
   border: 1px solid rgba(255, 255, 255, 0.82);
   background: rgba(252, 253, 255, 0.98);
   box-shadow: 0 24px 56px rgba(20, 34, 52, 0.2);
+  opacity: 0;
+  transform: translate3d(0, 16px, 0) scale(0.985);
+  transition: opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.78, 0.24, 1);
+}
+
+.comment-identity-modal.open .comment-identity-dialog {
+  opacity: 1;
+  transform: none;
 }
 
 .comment-identity-dialog h3 {
