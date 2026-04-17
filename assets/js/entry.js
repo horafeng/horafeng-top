@@ -1,10 +1,10 @@
-﻿import { linkify, loadEntries, loadSiteConfig, renderMockComments, setupSplash } from "./common.js";
+import { linkify, loadEntries, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import { mountContentComments } from "./content-comments.js";
 
-function renderEntry(entry, config) {
+function renderEntry(entry) {
   const title = document.getElementById("entry-title");
   const body = document.getElementById("entry-body");
   const comments = document.getElementById("comment-box");
-  const hint = document.getElementById("comment-setup-hint");
 
   title.textContent = entry.title;
 
@@ -19,26 +19,32 @@ function renderEntry(entry, config) {
     ${entry.content.map((line) => `<p>${linkify(line)}</p>`).join("")}
   `;
 
-  comments.innerHTML = '<ul id="entry-mock-comments" class="comment-list compact"></ul>';
-  renderMockComments(document.getElementById("entry-mock-comments"), config.comments?.entryMock || [], 10);
-
-  hint.textContent = "当前评论功能暂未真实启用，这里仅保留评论区展示空间。";
+  comments.innerHTML = '<section id="entry-comments-host" class="post-comments-host"></section>';
+  mountContentComments({
+    container: document.getElementById("entry-comments-host"),
+    pageKey: `note:${entry.id}`,
+    mode: "note",
+  });
 }
 
 async function main() {
   setupSplash();
+  setupPageTransition();
+  setupSiteChrome({
+    scrollContainerSelector: ".flow-panel",
+    useWindowScroll: true,
+  });
 
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
-
-  const [entries, config] = await Promise.all([loadEntries(), loadSiteConfig()]);
+  const entries = await loadEntries();
   const entry = entries.find((item) => item.id === id);
 
   if (!entry) {
     throw new Error("没有找到这篇日记，可以先回到首页看看最近记录。");
   }
 
-  renderEntry(entry, config);
+  renderEntry(entry);
 }
 
 main().catch((error) => {

@@ -4,7 +4,6 @@ import {
   linkify,
   loadHomeFeed,
   loadSiteConfig,
-  renderMockComments,
   searchEntries,
   setupPageTransition,
   setupSiteChrome,
@@ -633,15 +632,11 @@ function renderTextOnlyPost(entry) {
         </div>
       </section>
 
-      <section class="text-post-comments">
-        <h4>${TEXT.latestComments}</h4>
-        <ul id="post-comments-list" class="comment-list compact"></ul>
-      </section>
+      <section id="post-comments-host" class="post-comments-host"></section>
     </section>
   `;
 
   bindLikeControl(layout);
-  renderMockComments(document.getElementById("post-comments-list"), state.siteConfig?.comments?.entryMock || [], 10);
 }
 
 function renderImagePost(entry) {
@@ -662,15 +657,11 @@ function renderImagePost(entry) {
       <p id="post-meta" class="entry-meta"><span>${escapeHtml(entry.date)}</span><span>${escapeHtml(entry.mood || "")}</span></p>
       <div id="post-tags" class="chips compact">${entry.tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join("")}</div>
       <div id="post-body" class="entry-detail">${entry.content.map((line) => `<p>${linkify(line)}</p>`).join("")}</div>
-      <section class="post-comments">
-        <h4>${TEXT.commentReserved}</h4>
-        <ul id="post-comments-list" class="comment-list compact"></ul>
-      </section>
+      <section id="post-comments-host" class="post-comments-host"></section>
     </section>
   `;
 
   renderMediaCarousel(entry.images, entry.title, entry.id);
-  renderMockComments(document.getElementById("post-comments-list"), state.siteConfig?.comments?.entryMock || [], 10);
 }
 
 function getNoteCommentPageKey(entry) {
@@ -686,20 +677,6 @@ function ensurePostCommentsHost() {
   const existingHost = document.getElementById("post-comments-host");
   if (existingHost) {
     return existingHost;
-  }
-
-  const textEditor = document.querySelector(".text-post-comment-editor");
-  const textComments = document.querySelector(".text-post-comments");
-  if (textEditor) {
-    textEditor.outerHTML = '<section id="post-comments-host" class="post-comments-host"></section>';
-    textComments?.remove();
-    return document.getElementById("post-comments-host");
-  }
-
-  const reserved = document.querySelector(".post-comments");
-  if (reserved) {
-    reserved.outerHTML = '<section id="post-comments-host" class="post-comments-host"></section>';
-    return document.getElementById("post-comments-host");
   }
 
   return null;

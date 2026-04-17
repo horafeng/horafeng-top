@@ -433,6 +433,8 @@ node scripts/notion-sync/sync-notion.js
 ## 16. Moderation UX
 
 - The admin comments dashboard now defaults to showing all page comments instead of only `guestbook`
+- `entry.html` now also mounts real comments via `mountContentComments`
+- `content/site.json.comments.recentMock` / `entryMock` are deprecated compatibility fields and should stay empty
 - Public comment submission now returns the created comment payload
 - When a visitor submits a comment that is still pending moderation:
   - the comment is shown immediately to that same visitor only

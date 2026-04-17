@@ -366,8 +366,11 @@ export async function loadEntries() {
 
   const localEntries = Array.isArray(localData?.entries) ? localData.entries : [];
   const notionCompatEntries = notionEntries.map((entry) => ({ ...entry, source: "notion" }));
+  if (notionCompatEntries.length) {
+    return mergeEntries([], notionCompatEntries);
+  }
 
-  return mergeEntries(localEntries, notionCompatEntries);
+  return mergeEntries(localEntries, []);
 }
 
 export async function loadHomeFeed() {
@@ -759,21 +762,5 @@ export function setupSiteChrome(options = {}) {
       scrollToTop();
     });
   }
-}
-
-export function renderMockComments(listEl, comments, limit = 10) {
-  if (!listEl) {
-    return;
-  }
-
-  const rows = (comments || []).slice(0, limit);
-  if (!rows.length) {
-    listEl.innerHTML = '<li class="subtle">\u8bc4\u8bba\u533a\u6682\u672a\u5f00\u653e\u3002</li>';
-    return;
-  }
-
-  listEl.innerHTML = rows
-    .map((item) => `<li><p class="comment-author">${escapeHtml(item.nick || "\u8bbf\u5ba2")}</p><p class="comment-text">${escapeHtml(item.content || "")}</p></li>`)
-    .join("");
 }
 

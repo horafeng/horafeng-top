@@ -512,7 +512,7 @@ function renderProfile(config) {
   avatar.src = profile.avatar || avatar.src;
   name.textContent = profile.name || "HoraFeng";
   handle.textContent = profile.handle || "@horafeng";
-  signature.textContent = profile.signature || "把普通日子写成会发光的碎片。";
+  signature.textContent = profile.signature || "";
   bio.textContent = profile.bio || "";
   lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
 
@@ -534,7 +534,7 @@ function renderProfile(config) {
       <img class="profile-avatar" src="${profile.avatar || avatar.src}" alt="博主头像" />
       <h1>${profile.name || "HoraFeng"}</h1>
       <p class="profile-handle">${profile.handle || "@horafeng"}</p>
-      <p class="subtle">${profile.signature || "把普通日子写成会发光的碎片。"}</p>
+      <p class="subtle">${profile.signature || ""}</p>
       <p class="subtle">${profile.bio || ""}</p>
       <p class="last-seen subtle">${formatLastSeen(profile.lastSeenAt)}</p>
     </div>

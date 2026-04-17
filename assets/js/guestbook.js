@@ -9,7 +9,7 @@ function applyProfile(profile = {}) {
   const avatar = String(profile.avatar || "assets/images/Profile.png").trim() || "assets/images/Profile.png";
   const name = String(profile.name || "HoraFeng").trim() || "HoraFeng";
   const handle = String(profile.handle || "@horafeng").trim() || "@horafeng";
-  const signature = String(profile.signature || "\u628a\u666e\u901a\u65e5\u5b50\u5199\u6210\u4f1a\u53d1\u5149\u7684\u788e\u7247\u3002").trim();
+  const signature = String(profile.signature || "").trim();
   const bio = String(profile.bio || "").trim();
   const email = String(profile.email || "horafeng@outlook.com").trim();
 

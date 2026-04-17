@@ -133,8 +133,8 @@
 
 重要事实：
 
-- 首页帖子详情里的“评论区”目前仍是 mock 数据，来源于 `content/site.json`
-- 首页没有接真实评论 API
+- 首页帖子详情里的评论区现已走真实评论组件 `mountContentComments`
+- 不要再往 `content/site.json.comments.*` 写展示数据
 
 ### 2.2 留言板页
 
@@ -247,7 +247,7 @@
 已实现交互：
 
 - 仅基础渲染
-- 评论区仍是 mock 数据，来源于 `content/site.json`
+- 评论区现已接入真实评论组件
 
 重要事实：
 
@@ -982,9 +982,9 @@ Resend 的角色是：
 
 需要特别强调的“目前仍不是全站真实启用”的能力：
 
-- 首页帖子评论区仍是 mock
-- `entry.html` 评论区仍是 mock
-- `content/site.json` 中 `comments.enabled = false` 只反映首页 / 详情 mock 区，不代表留言板已关闭
+- 首页帖子评论区已接真实评论
+- `entry.html` 评论区已接真实评论
+- `content/site.json.comments.*` 仅保留兼容字段，应保持空数组/空字符串
 
 ---
 
@@ -1045,8 +1045,8 @@ Resend 的角色是：
 - 评论审核状态和邮件提醒不是独立功能，审核通过会触发提醒
 - 头像展示和 contact 隐私不是独立功能，头像来源依赖 contact，但前台不能暴露 contact
 - 顶部导航折叠、`window` 滚动、sticky 侧栏是联动的，改滚动容易把导航逻辑改坏
-- 首页帖子详情弹层和 `entry.html` 虽然表面是两套详情页，但都依赖 `content/diaries.json`
-- `content/site.json.comments.*` 只影响 mock 展示，不等于真实评论系统开关
+- 首页帖子详情弹层和 `entry.html` 仍依赖 note 数据源，但评论都走真实接口
+- `content/site.json.comments.*` 不再作为前台评论展示源
 
 ### 8.4 哪些代码不能随便重写
 
@@ -1345,8 +1345,8 @@ Resend 的角色是：
   - notes/diaries only
 - `loadHomeFeed()`:
   - homepage mixed feed
-  - merges `content/diaries.json`
-  - merges `content/generated/notion-diaries-compat.json`
+  - prefers `content/generated/notion-diaries-compat.json`
+  - falls back to `content/diaries.json` only when generated compat output is absent
   - merges `content/generated/notion-articles.json`
 - homepage routing in `assets/js/index.js`
   - `note` keeps using the existing modal

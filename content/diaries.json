@@ -1,185 +1,29 @@
-﻿{
+{
   "entries": [
     {
-      "id": "2026-04-08-riverside-notes",
-      "date": "2026-04-08",
-      "mood": "🌤️",
-      "title": "河边慢走，顺手记了三行",
-      "tags": ["日常", "散步", "城市"],
-      "images": [
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=62"
-      ],
-      "content": [
-        "下班后绕到河边，风有一点凉，刚好让脑子安静下来。",
-        "今天不追求高效，就想把脚步放慢一点。",
-        "看到一篇有意思的短文：https://example.com/slow-river"
-      ]
-    },
-    {
-      "id": "2026-04-07-night-milk",
-      "date": "2026-04-07",
-      "mood": "🙂",
-      "title": "晚风和便利店热牛奶",
-      "tags": ["日常", "散步", "夜晚"],
-      "images": [
-        "https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1280&q=62"
-      ],
-      "content": [
-        "晚饭后慢慢走到河边，耳机里是 Lo-Fi，风刚好不冷。",
-        "路过便利店买了热牛奶，坐在路口看人群，有一种被城市轻轻接住的感觉。",
-        "今天看到一篇很喜欢的文章：https://example.com/evening-notes"
-      ]
-    },
-    {
-      "id": "2026-04-06-subway-window",
-      "date": "2026-04-06",
-      "mood": "🚇",
-      "title": "地铁窗边，拍到一张竖图",
-      "tags": ["通勤", "记录"],
-      "images": [
-        "https://picsum.photos/seed/subway-window/900/1400"
-      ],
-      "content": [
-        "早高峰还是拥挤，但靠窗站着也能有一点自己的小空间。",
-        "把城市切成一格一格，忽然就不焦虑了。",
-        "备忘链接：https://example.com/subway-window"
-      ]
-    },
-    {
-      "id": "2026-04-05-rainy-bookstore",
-      "date": "2026-04-05",
-      "mood": "🌧️",
+      "id": "2026-04-12-rainy-bookstore",
+      "date": "2026-04-12",
+      "mood": "",
       "title": "下雨天躲进书店",
-      "tags": ["雨天", "阅读", "日常"],
+      "tags": ["阅读", "慢生活", "雨天"],
       "images": [
-        "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1280&q=62",
-        "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&h=1400&q=62",
-        "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1280&q=62"
+        "content/generated/media/notion/rainy-bookstore/01.png",
+        "content/generated/media/notion/rainy-bookstore/02.png"
       ],
-      "content": [
-        "午后突然下雨，鞋边都湿了，索性拐进小书店。",
-        "翻到一本关于写作节奏的书，里面说先记录，再理解，很受用。",
-        "书店主页在这里：https://example.com/bookstore"
-      ]
+      "content": ["看看有没有图片"]
     },
     {
-      "id": "2026-04-03-lunch-break-sky",
-      "date": "2026-04-03",
-      "mood": "☁️",
-      "title": "午休抬头，云层很柔软",
-      "tags": ["办公室", "记录"],
-      "images": [
-        "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?auto=format&fit=crop&w=900&h=1400&q=62"
-      ],
-      "content": [
-        "午休去楼下走了十分钟，抬头看到云层像被揉过的棉花。",
-        "最近在学着把小情绪写下来，不再全塞进脑子里。",
-        "读到一句话很喜欢：https://example.com/soft-cloud"
-      ]
-    },
-    {
-      "id": "2026-03-30-weekend-market",
-      "date": "2026-03-30",
-      "mood": "🧺",
-      "title": "周末菜市场的小热闹",
-      "tags": ["周末", "城市", "慢生活"],
-      "images": [
-        "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=1280&q=62",
-        "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&h=1400&q=62"
-      ],
-      "content": [
-        "本来只想买水果，结果拎了一袋青菜和一束小花。",
-        "市场很吵，但这种吵闹反而有点疗愈。",
-        "今天的采购清单：https://example.com/weekend-market"
-      ]
-    },
-    {
-      "id": "2026-03-29-sunday-home",
-      "date": "2026-03-29",
-      "mood": "🫖",
-      "title": "周日宅家也有光",
-      "tags": ["周末", "居家", "慢生活"],
-      "images": [],
-      "content": [
-        "把房间角落重新整理了一下，白色桌布配木头托盘，意外治愈。",
-        "下午泡茶写下周计划，没有强行追进度，反而更踏实。",
-        "最近在用的待办思路：https://example.com/simple-planner"
-      ]
-    },
-    {
-      "id": "2026-03-24-night-crossing",
-      "date": "2026-03-24",
-      "mood": "🌃",
-      "title": "夜里过街，霓虹反光很好看",
-      "tags": ["夜晚", "城市"],
-      "images": [
-        "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1280&q=62"
-      ],
-      "content": [
-        "本来很累，结果在路口等灯的时候拍了两张，心情突然好一点。",
-        "有些时候，不需要发生大事才值得记录。",
-        "地标位置：https://example.com/night-crossing"
-      ]
-    },
-    {
-      "id": "2026-03-18-morning-route",
-      "date": "2026-03-18",
-      "mood": "🌤️",
-      "title": "换一条上班路",
-      "tags": ["通勤", "城市", "记录"],
-      "images": [
-        "https://picsum.photos/seed/morning-route/1280/800"
-      ],
-      "content": [
-        "今天提前二十分钟出门，绕了一段老街，早餐摊的烟火气很足。",
-        "同样的目的地，不同的路径，心情真的会不一样。",
-        "地铁口附近新开的咖啡店：https://example.com/new-cafe"
-      ]
-    },
-    {
-      "id": "2026-03-11-stationery-day",
-      "date": "2026-03-11",
-      "mood": "🖊️",
-      "title": "文具店里挑了一支新笔",
-      "tags": ["记录", "写作"],
-      "images": [
-        "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&h=1400&q=62"
-      ],
-      "content": [
-        "试写了好几款，最后还是选了最顺手的那支。",
-        "新的笔记本也开封了，决定每天都写几行。",
-        "今天的清单：https://example.com/new-pen"
-      ]
-    },
-    {
-      "id": "2026-03-03-cafe-corner",
-      "date": "2026-03-03",
-      "mood": "☕",
+      "id": "2026-04-12-coffee-corner",
+      "date": "2026-04-12",
+      "mood": "",
       "title": "咖啡店角落的两小时",
       "tags": ["阅读", "慢生活"],
-      "images": [
-        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1280&q=62",
-        "https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=900&h=1400&q=62"
-      ],
-      "content": [
-        "点了一杯手冲，把手机扣在桌上，慢慢读完半章。",
-        "最近对“慢慢做完一件事”有点上瘾。",
-        "书摘地址：https://example.com/cafe-note"
-      ]
-    },
-    {
-      "id": "2026-02-26-small-progress",
-      "date": "2026-02-26",
-      "mood": "✨",
-      "title": "小进步也值得写下来",
-      "tags": ["成长", "写作", "慢生活"],
       "images": [],
       "content": [
-        "今天把拖了很久的小功能做完了，虽然不大，但终于前进了一步。",
-        "开始相信细小但稳定的力量。",
-        "灵感来源这篇文章：https://example.com/tiny-steps"
+        "测试：",
+        "点了一杯手冲，把手机扣在桌上，慢慢读完半章。",
+        "最近对“慢慢做完一件事”有点上瘾。"
       ]
     }
   ]
 }
-

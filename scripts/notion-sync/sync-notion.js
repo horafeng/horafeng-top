@@ -12,6 +12,7 @@ const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
 const MEDIA_DIR = path.join(GENERATED_DIR, "media", "notion");
 const PROFILE_MEDIA_DIR = path.join(MEDIA_DIR, "profile");
 const SITE_CONFIG_PATH = path.join(PROJECT_ROOT, "content", "site.json");
+const LEGACY_DIARIES_PATH = path.join(PROJECT_ROOT, "content", "diaries.json");
 const SITE_ORIGIN = String(process.env.SITE_ORIGIN || "https://horafeng.top").replace(/\/+$/, "");
 const BOOKMARK_FETCH_TIMEOUT_MS = 8000;
 const LEGACY_AI_SIGNATURE = "这里是我的轻日记与生活记事。";
@@ -721,6 +722,13 @@ export async function syncNotionContent() {
   }
   const nextSiteConfig = {
     ...currentSiteConfig,
+    comments: {
+      ...(currentSiteConfig.comments || {}),
+      enabled: true,
+      note: "",
+      recentMock: [],
+      entryMock: [],
+    },
     profile: nextProfile,
   };
   await writeJson(SITE_CONFIG_PATH, nextSiteConfig);
@@ -788,6 +796,10 @@ export async function syncNotionContent() {
       database_id: notion.databaseId,
       compatibility_for: "content/diaries.json",
     },
+    entries: finalCompatNotes,
+  });
+
+  await writeJson(LEGACY_DIARIES_PATH, {
     entries: finalCompatNotes,
   });
 
