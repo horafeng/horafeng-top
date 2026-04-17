@@ -23,6 +23,7 @@ export const NOTION_DATABASE_FIELDS = Object.freeze({
   published_at: { notionType: "date", required: true },
   featured: { notionType: "checkbox", required: false },
   pin: { notionType: "checkbox", required: false },
+  signature: { notionType: "rich_text", required: false },
 });
 
 export const NOTE_IMAGE_BLOCK_TYPES = Object.freeze(["image"]);
@@ -57,6 +58,8 @@ export function createEmptyContentRecord() {
     published_at: "",
     featured: false,
     pin: false,
+    signature: "",
+    page_icon: "",
     has_media: false,
     images: [],
     media: [],

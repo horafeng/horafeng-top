@@ -27,6 +27,16 @@ function getRichText(properties, name) {
   return property?.type === "rich_text" ? richTextToPlainText(property.rich_text) : "";
 }
 
+function getRichTextByNames(properties, names = []) {
+  for (const name of names) {
+    const value = getRichText(properties, name);
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+}
+
 function getSelectName(properties, name) {
   const property = propertyByName(properties, name);
   if (property?.type === "select") {
@@ -75,9 +85,42 @@ function getFilesUrl(properties, name) {
   return "";
 }
 
+function makeEmojiDataUrl(emoji) {
+  const value = String(emoji || "").trim();
+  if (!value) {
+    return "";
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" rx="80" fill="#f4f6fa"/><text x="50%" y="54%" font-size="92" text-anchor="middle" dominant-baseline="middle">${value}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function getPageIconUrl(page) {
+  const icon = page?.icon;
+  if (!icon) {
+    return "";
+  }
+
+  if (icon.type === "external") {
+    return icon.external?.url || "";
+  }
+
+  if (icon.type === "file") {
+    return icon.file?.url || "";
+  }
+
+  if (icon.type === "emoji") {
+    return makeEmojiDataUrl(icon.emoji);
+  }
+
+  return "";
+}
+
 export function normalizeDatabasePage(page) {
   const properties = page.properties || {};
   const type = normalizeContentType(getSelectName(properties, "type")) || CONTENT_TYPES.NOTE;
+  const signature = getRichTextByNames(properties, ["Signature", "signature", "签名"]);
+  const pageIcon = getPageIconUrl(page);
 
   return {
     pageId: page.id,
@@ -96,6 +139,8 @@ export function normalizeDatabasePage(page) {
       featured: getCheckbox(properties, "featured"),
       pin: getCheckbox(properties, "pin"),
       mood: getRichText(properties, "mood") || getSelectName(properties, "mood"),
+      signature,
+      page_icon: pageIcon,
     },
   };
 }

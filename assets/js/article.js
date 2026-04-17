@@ -14,9 +14,61 @@ const LABEL_EMPTY = "\u8fd9\u7bc7\u6587\u7ae0\u7684\u6b63\u6587\u6682\u65f6\u4e3
 const LABEL_UNAVAILABLE = "\u5185\u5bb9\u4e0d\u53ef\u7528";
 const LABEL_LOAD_FAILED = "\u52a0\u8f7d\u5931\u8d25";
 const LABEL_ARTICLE_UNAVAILABLE = "\u6587\u7ae0\u4e0d\u53ef\u7528";
+const DEFAULT_SITE_ORIGIN = "https://horafeng.top";
 
 function escapeAttr(text) {
   return String(text ?? "").replaceAll('"', "&quot;");
+}
+
+function toAbsoluteUrl(url) {
+  const value = String(url || "").trim();
+  if (!value) {
+    return "";
+  }
+  if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) {
+    return value;
+  }
+  return `${DEFAULT_SITE_ORIGIN}/${value.replace(/^\/+/, "")}`;
+}
+
+function setMetaTag({ property = "", name = "", content = "" } = {}) {
+  const value = String(content || "").trim();
+  if (!value) {
+    return;
+  }
+
+  const selector = property ? `meta[property="${property}"]` : `meta[name="${name}"]`;
+  let tag = document.head.querySelector(selector);
+  if (!tag) {
+    tag = document.createElement("meta");
+    if (property) {
+      tag.setAttribute("property", property);
+    } else {
+      tag.setAttribute("name", name);
+    }
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", value);
+}
+
+function applyArticleSeo(meta, item) {
+  const slug = String(meta?.slug || "").trim();
+  const url = slug ? `${DEFAULT_SITE_ORIGIN}/article.html?slug=${encodeURIComponent(slug)}` : `${DEFAULT_SITE_ORIGIN}/article.html`;
+  const cover = toAbsoluteUrl(meta?.cover || meta?.images?.[0] || "");
+  const seo = item?.seo || {};
+  const title = String(seo.og_title || meta?.title || "文章").trim();
+  const description = String(seo.og_description || meta?.summary || meta?.title || "").trim();
+  const image = String(seo.og_image || cover).trim();
+
+  setMetaTag({ property: "og:title", content: title });
+  setMetaTag({ property: "og:description", content: description });
+  setMetaTag({ property: "og:image", content: image });
+  setMetaTag({ property: "og:url", content: String(seo.og_url || url) });
+  setMetaTag({ property: "og:type", content: String(seo.og_type || "article") });
+  setMetaTag({ name: "twitter:card", content: String(seo.twitter_card || (image ? "summary_large_image" : "summary")) });
+  setMetaTag({ name: "twitter:title", content: String(seo.twitter_title || title) });
+  setMetaTag({ name: "twitter:description", content: String(seo.twitter_description || description) });
+  setMetaTag({ name: "twitter:image", content: String(seo.twitter_image || image) });
 }
 
 function getPlainText(richText = []) {
@@ -397,6 +449,7 @@ function renderArticle(meta, item) {
   const cover = meta.images[0] || "";
 
   document.title = `${meta.title} | HoraFeng`;
+  applyArticleSeo(meta, item);
   breadcrumb.textContent = meta.title;
 
   const metaBits = [

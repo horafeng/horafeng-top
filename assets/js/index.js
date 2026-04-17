@@ -31,6 +31,11 @@ let currentCommentWidget = null;
 let welcomeTypingTimer = null;
 
 const WELCOME_LINES = ["欢迎来到我的博客", "Welcome to my blog", "私のブログへようこそ"];
+const WELCOME_TYPE_DELAY_MS = 140;
+const WELCOME_DELETE_DELAY_MS = 80;
+const WELCOME_LINE_HOLD_MS = 5000;
+const NOTICE_STORAGE_KEY = "hf-latest-notice-token";
+const DEFAULT_SITE_ORIGIN = "https://horafeng.top";
 
 const FALLBACK_COVERS = [
   "assets/images/diary/cover-01.svg",
@@ -40,6 +45,56 @@ const FALLBACK_COVERS = [
 
 function escapeAttr(text) {
   return String(text).replaceAll('"', "&quot;");
+}
+
+function toAbsoluteUrl(url) {
+  const value = String(url || "").trim();
+  if (!value) {
+    return "";
+  }
+  if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) {
+    return value;
+  }
+  return `${DEFAULT_SITE_ORIGIN}/${value.replace(/^\/+/, "")}`;
+}
+
+function setMetaTag({ property = "", name = "", content = "" } = {}) {
+  const value = String(content || "").trim();
+  if (!value) {
+    return;
+  }
+
+  const selector = property ? `meta[property="${property}"]` : `meta[name="${name}"]`;
+  let tag = document.head.querySelector(selector);
+  if (!tag) {
+    tag = document.createElement("meta");
+    if (property) {
+      tag.setAttribute("property", property);
+    } else {
+      tag.setAttribute("name", name);
+    }
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", value);
+}
+
+function applyHomeSeo(config, entries) {
+  const profile = config?.profile || {};
+  const first = Array.isArray(entries) ? entries[0] : null;
+  const title = `${profile.name || "HoraFeng"} 的博客`;
+  const description = String(profile.signature || profile.bio || "欢迎来到我的博客。").trim();
+  const image = toAbsoluteUrl(profile.cover || profile.avatar || first?.images?.[0] || "");
+  const url = `${DEFAULT_SITE_ORIGIN}/`;
+
+  setMetaTag({ property: "og:title", content: title });
+  setMetaTag({ property: "og:description", content: description });
+  setMetaTag({ property: "og:image", content: image });
+  setMetaTag({ property: "og:url", content: url });
+  setMetaTag({ property: "og:type", content: "website" });
+  setMetaTag({ name: "twitter:card", content: image ? "summary_large_image" : "summary" });
+  setMetaTag({ name: "twitter:title", content: title });
+  setMetaTag({ name: "twitter:description", content: description });
+  setMetaTag({ name: "twitter:image", content: image });
 }
 
 function hashString(text) {
@@ -446,9 +501,9 @@ function setupWelcomeTyping() {
     const rotate = () => {
       idx = (idx + 1) % WELCOME_LINES.length;
       el.textContent = WELCOME_LINES[idx];
-      welcomeTypingTimer = window.setTimeout(rotate, 2600);
+      welcomeTypingTimer = window.setTimeout(rotate, 5000);
     };
-    welcomeTypingTimer = window.setTimeout(rotate, 2600);
+    welcomeTypingTimer = window.setTimeout(rotate, 5000);
     return;
   }
 
@@ -463,10 +518,10 @@ function setupWelcomeTyping() {
       el.textContent = line.slice(0, charIndex);
       if (charIndex >= line.length) {
         deleting = true;
-        welcomeTypingTimer = window.setTimeout(tick, 1250);
+        welcomeTypingTimer = window.setTimeout(tick, WELCOME_LINE_HOLD_MS);
         return;
       }
-      welcomeTypingTimer = window.setTimeout(tick, 90);
+      welcomeTypingTimer = window.setTimeout(tick, WELCOME_TYPE_DELAY_MS);
       return;
     }
 
@@ -478,7 +533,7 @@ function setupWelcomeTyping() {
       welcomeTypingTimer = window.setTimeout(tick, 180);
       return;
     }
-    welcomeTypingTimer = window.setTimeout(tick, 55);
+    welcomeTypingTimer = window.setTimeout(tick, WELCOME_DELETE_DELAY_MS);
   };
 
   tick();
@@ -499,6 +554,40 @@ function setupNoticeOverlay() {
     }
   };
 
+  const extractNoticeLines = (notice) => {
+    const direct = Array.isArray(notice?.content) ? notice.content.map((line) => String(line || "").trim()).filter(Boolean) : [];
+    if (direct.length) {
+      return direct;
+    }
+
+    const fromContentLines = Array.isArray(notice?.content_lines)
+      ? notice.content_lines.map((line) => String(line || "").trim()).filter(Boolean)
+      : [];
+    if (fromContentLines.length) {
+      return fromContentLines;
+    }
+
+    const fromBlocks = Array.isArray(notice?.blocks)
+      ? notice.blocks
+          .map((block) => {
+            if (typeof block?.text === "string" && block.text.trim()) {
+              return block.text.trim();
+            }
+            if (Array.isArray(block?.rich_text)) {
+              return block.rich_text.map((segment) => String(segment?.plain_text || "")).join("").trim();
+            }
+            return "";
+          })
+          .filter(Boolean)
+      : [];
+    if (fromBlocks.length) {
+      return fromBlocks;
+    }
+
+    const summary = String(notice?.summary || "").trim();
+    return summary ? [summary] : [];
+  };
+
   const openNotice = (notice) => {
     const title = document.getElementById("notice-title");
     const meta = document.getElementById("notice-meta");
@@ -509,8 +598,11 @@ function setupNoticeOverlay() {
 
     title.textContent = notice.title || "公告";
     meta.innerHTML = `<span>${escapeHtml(notice.date || "")}</span><span>阅读提醒</span>`;
-    const lines = Array.isArray(notice.content) && notice.content.length ? notice.content : ["本条公告暂无详细正文。"];
+    const lines = extractNoticeLines(notice);
     content.innerHTML = lines.map((line) => `<p>${linkify(line)}</p>`).join("");
+    if (!lines.length) {
+      content.innerHTML = "<p>本条公告暂无详细正文。</p>";
+    }
     overlay.hidden = false;
     overlay.classList.add("open");
     document.body.classList.add("no-scroll");
@@ -539,13 +631,18 @@ async function maybeShowLatestNotice(noticeController) {
     return;
   }
 
+  const navigation = performance.getEntriesByType("navigation")[0];
+  const navType = navigation?.type || "navigate";
+  if (navType === "reload") {
+    window.localStorage.removeItem(NOTICE_STORAGE_KEY);
+  }
+
   const token = `${latest.id}:${latest.date || ""}`;
-  const storageKey = "hf-latest-notice-token";
-  if (window.localStorage.getItem(storageKey) === token) {
+  if (window.localStorage.getItem(NOTICE_STORAGE_KEY) === token) {
     return;
   }
 
-  window.localStorage.setItem(storageKey, token);
+  window.localStorage.setItem(NOTICE_STORAGE_KEY, token);
   noticeController.open(latest);
 }
 
@@ -1617,6 +1714,7 @@ async function main() {
 
   renderProfile(config);
   visibleEntries = filterByParams(entries);
+  applyHomeSeo(config, visibleEntries);
   renderTimeline(visibleEntries);
   renderSidebar(entries, config);
 

@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { PROJECT_ROOT, resolveNotionConfig } from "./env.js";
 import { CONTENT_TYPES, isPublishedStatus, normalizeContentType } from "./content-model.js";
@@ -10,6 +10,8 @@ import { NotionClient, queryDatabasePages } from "./notion-client.js";
 const GENERATED_DIR = path.join(PROJECT_ROOT, "content", "generated");
 const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
 const MEDIA_DIR = path.join(GENERATED_DIR, "media", "notion");
+const SITE_CONFIG_PATH = path.join(PROJECT_ROOT, "content", "site.json");
+const SITE_ORIGIN = String(process.env.SITE_ORIGIN || "https://horafeng.top").replace(/\/+$/, "");
 const BOOKMARK_FETCH_TIMEOUT_MS = 8000;
 
 function log(message) {
@@ -18,6 +20,18 @@ function log(message) {
 
 function toDateOnly(value) {
   return String(value || "").slice(0, 10);
+}
+
+function toIsoDate(value) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return "";
+  }
+  const timestamp = Date.parse(text);
+  if (Number.isNaN(timestamp)) {
+    return "";
+  }
+  return new Date(timestamp).toISOString();
 }
 
 function safeSlug(value, fallback) {
@@ -40,6 +54,19 @@ function sanitizeSegment(value, fallback = "asset") {
     .replace(/^-|-$/g, "");
 
   return normalized || fallback;
+}
+
+function toAbsoluteSiteUrl(input) {
+  const value = String(input || "").trim();
+  if (!value) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) {
+    return value;
+  }
+
+  return `${SITE_ORIGIN}/${value.replace(/^\/+/, "")}`;
 }
 
 function isCacheableNotionAsset(url) {
@@ -426,6 +453,43 @@ async function writeJson(filePath, payload) {
   await writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 }
 
+async function readJson(filePath, fallback = {}) {
+  try {
+    const text = await readFile(filePath, "utf8");
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function buildSeoMeta({ title = "", description = "", image = "", url = "", type = "website" } = {}) {
+  return {
+    og_title: title,
+    og_description: description,
+    og_image: image,
+    og_url: url,
+    og_type: type,
+    twitter_card: image ? "summary_large_image" : "summary",
+    twitter_title: title,
+    twitter_description: description,
+    twitter_image: image,
+  };
+}
+
+function pickProfileValue(currentValue, ...candidates) {
+  if (currentValue) {
+    return currentValue;
+  }
+  for (const candidate of candidates) {
+    const value = String(candidate || "").trim();
+    if (value) {
+      return value;
+    }
+  }
+  return currentValue;
+}
+
 function partitionByType(items = []) {
   return {
     notes: items.filter((item) => normalizeContentType(item.type) === CONTENT_TYPES.NOTE),
@@ -462,6 +526,8 @@ export async function syncNotionContent() {
   const articleItems = [];
   const noticeItems = [];
   const compatNotes = [];
+  let latestProfileAvatar = "";
+  let latestProfileSignature = "";
 
   for (const [index, page] of pages.entries()) {
     const pageData = normalizeDatabasePage(page);
@@ -483,6 +549,8 @@ export async function syncNotionContent() {
     const assetMap = await cachePageAssets(client, builtRecord, enrichedBlocks);
     const indexRecord = localizeValue(builtRecord, assetMap);
     const localizedBlocks = localizeValue(enrichedBlocks, assetMap);
+    latestProfileAvatar = pickProfileValue(latestProfileAvatar, indexRecord.page_icon, pageData.properties.page_icon);
+    latestProfileSignature = pickProfileValue(latestProfileSignature, indexRecord.signature, pageData.properties.signature);
 
     indexItems.push(indexRecord);
 
@@ -494,6 +562,15 @@ export async function syncNotionContent() {
     }
 
     if (normalizeContentType(indexRecord.type) === CONTENT_TYPES.ARTICLE) {
+      const articleUrl = `${SITE_ORIGIN}/article.html?slug=${encodeURIComponent(indexRecord.slug)}`;
+      const articleImage = toAbsoluteSiteUrl(indexRecord.cover || indexRecord.images?.[0] || latestProfileAvatar);
+      const articleSeo = buildSeoMeta({
+        title: indexRecord.title || "文章",
+        description: indexRecord.summary || indexRecord.title || "",
+        image: articleImage,
+        url: articleUrl,
+        type: "article",
+      });
       const detail = buildArticleDetailRecord({
         indexRecord,
         blocks: localizedBlocks,
@@ -505,17 +582,22 @@ export async function syncNotionContent() {
       articleItems.push({
         ...indexRecord,
         detail_path: publicDetailPath,
+        seo: articleSeo,
       });
 
       await writeJson(detailPath, {
         generated_at: new Date().toISOString(),
-        item: detail,
+        item: {
+          ...detail,
+          seo: articleSeo,
+        },
       });
       continue;
     }
 
     noticeItems.push({
       ...indexRecord,
+      content_lines: extractTextLinesFromNormalizedBlocks(localizedBlocks),
       blocks: localizedBlocks,
     });
   }
@@ -537,6 +619,42 @@ export async function syncNotionContent() {
     articles: finalArticleItems.length,
     notices: finalNoticeItems.length,
   };
+
+  const currentSiteConfig = await readJson(SITE_CONFIG_PATH, {});
+  const nextProfile = {
+    ...(currentSiteConfig.profile || {}),
+  };
+  if (latestProfileAvatar) {
+    nextProfile.avatar = latestProfileAvatar;
+  }
+  if (latestProfileSignature) {
+    nextProfile.signature = latestProfileSignature;
+  }
+  const nextSiteConfig = {
+    ...currentSiteConfig,
+    profile: nextProfile,
+  };
+  await writeJson(SITE_CONFIG_PATH, nextSiteConfig);
+
+  const homeCover = toAbsoluteSiteUrl(nextProfile.cover || indexItems[0]?.cover || latestProfileAvatar);
+  const homeSeo = buildSeoMeta({
+    title: `${nextProfile.name || "HoraFeng"} 的博客`,
+    description: nextProfile.signature || nextProfile.bio || "欢迎来到我的博客。",
+    image: homeCover,
+    url: `${SITE_ORIGIN}/`,
+    type: "website",
+  });
+  const seoItems = finalArticleItems.map((article) => ({
+    slug: article.slug,
+    updated_at: toIsoDate(article.source_updated_at || article.published_at),
+    ...buildSeoMeta({
+      title: article.title || "文章",
+      description: article.summary || article.title || "",
+      image: toAbsoluteSiteUrl(article.cover || article.images?.[0] || latestProfileAvatar),
+      url: `${SITE_ORIGIN}/article.html?slug=${encodeURIComponent(article.slug)}`,
+      type: "article",
+    }),
+  }));
 
   await writeJson(path.join(GENERATED_DIR, "notion-index.json"), {
     generated_at: generatedAt,
@@ -582,6 +700,16 @@ export async function syncNotionContent() {
       compatibility_for: "content/diaries.json",
     },
     entries: finalCompatNotes,
+  });
+
+  await writeJson(path.join(GENERATED_DIR, "notion-seo.json"), {
+    generated_at: generatedAt,
+    source: {
+      database_id: notion.databaseId,
+      site_origin: SITE_ORIGIN,
+    },
+    home: homeSeo,
+    articles: seoItems,
   });
 
   log(`sync done: ${counts.notes} note, ${counts.articles} article, ${counts.notices} notice`);

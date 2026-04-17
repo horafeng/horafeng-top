@@ -198,8 +198,26 @@ function normalizeNoticeEntry(entry, source = "notion-notice") {
   const publishedAt = String(entry?.published_at ?? entry?.date ?? entry?.created_time ?? "").trim();
   const title = String(entry?.title ?? "").trim() || "\u516c\u544a";
   const summary = String(entry?.summary ?? "").trim();
-  const blocks = Array.isArray(entry?.content) ? entry.content.map((line) => String(line ?? "").trim()).filter(Boolean) : [];
-  const details = blocks.length ? blocks : summary ? [summary] : [];
+  const directLines = Array.isArray(entry?.content)
+    ? entry.content.map((line) => String(line ?? "").trim()).filter(Boolean)
+    : [];
+  const contentLines = Array.isArray(entry?.content_lines)
+    ? entry.content_lines.map((line) => String(line ?? "").trim()).filter(Boolean)
+    : [];
+  const blockLines = Array.isArray(entry?.blocks)
+    ? entry.blocks
+        .map((block) => {
+          if (typeof block?.text === "string" && block.text.trim()) {
+            return block.text.trim();
+          }
+          if (Array.isArray(block?.rich_text)) {
+            return block.rich_text.map((segment) => String(segment?.plain_text || "")).join("").trim();
+          }
+          return "";
+        })
+        .filter(Boolean)
+    : [];
+  const details = directLines.length ? directLines : contentLines.length ? contentLines : blockLines.length ? blockLines : summary ? [summary] : [];
 
   return {
     id: String(entry?.id ?? entry?.slug ?? title).trim(),

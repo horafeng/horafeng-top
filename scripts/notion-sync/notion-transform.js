@@ -104,6 +104,8 @@ export function buildContentIndexRecord({ pageId = "", properties = {}, blocks =
     published_at: properties.published_at || "",
     featured: Boolean(properties.featured),
     pin: Boolean(properties.pin),
+    signature: properties.signature || "",
+    page_icon: properties.page_icon || "",
     has_media: noteMedia.has_media,
     images: noteMedia.images,
     media: noteMedia.media,
