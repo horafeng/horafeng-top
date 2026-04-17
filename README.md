@@ -483,6 +483,22 @@ node scripts/notion-sync/sync-notion.js
 - `访问量` comes from `GET /api/site-stats?increment=1`, backed by D1 and auto-creating the `site_metrics` table on first use
 ## Friends Page
 
+## 20. Notion Profile / Notice / SEO Sync Rules (2026-04)
+
+- Profile source is now the Notion database page itself:
+  - `profile.avatar` <- database page `icon` (Page Icon)
+  - `profile.signature` <- database page `description`
+- Sync writes both values into `content/site.json.profile.*` each run.
+- Notice behavior:
+  - `?content=notice` can render full notice body directly
+  - popup priority prefers latest `pin=true` notice, then latest published notice
+- SEO output:
+  - generated file `content/generated/notion-seo.json`
+  - runtime pages maintain `og:title`, `og:description`, `og:image`, `twitter:card`, `twitter:image`
+- AI article cleanup:
+  - sync skips AI-marked/generated article rows
+  - stale detail files are removed from `content/generated/articles/`
+
 - 新增 `/friends/` 友链页，页面文件为 `friends/index.html`
 - 友链数据维护在 `content/friends.json`
 - 友链前端渲染逻辑在 `assets/js/friends.js`

@@ -53,6 +53,25 @@ function getCheckbox(properties, name) {
   return property?.type === "checkbox" ? Boolean(property.checkbox) : false;
 }
 
+function getCheckboxByNames(properties, names = []) {
+  for (const name of names) {
+    if (getCheckbox(properties, name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getSelectByNames(properties, names = []) {
+  for (const name of names) {
+    const value = getSelectName(properties, name);
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+}
+
 function getDate(properties, name) {
   const property = propertyByName(properties, name);
   return property?.type === "date" ? property.date?.start || "" : "";
@@ -141,6 +160,9 @@ export function normalizeDatabasePage(page) {
       mood: getRichText(properties, "mood") || getSelectName(properties, "mood"),
       signature,
       page_icon: pageIcon,
+      ai_generated:
+        getCheckboxByNames(properties, ["ai_generated", "AI Generated", "AIGC", "自动生成"]) ||
+        ["ai", "aigc", "auto", "自动生成"].includes(getSelectByNames(properties, ["author_type", "source", "origin"]).trim().toLowerCase()),
     },
   };
 }

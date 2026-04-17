@@ -1,11 +1,11 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { PROJECT_ROOT, resolveNotionConfig } from "./env.js";
 import { CONTENT_TYPES, isPublishedStatus, normalizeContentType } from "./content-model.js";
 import { buildArticleDetailRecord, buildContentIndexRecord } from "./notion-transform.js";
 import { fetchPageBlocksRecursively, extractTextLinesFromNormalizedBlocks, normalizeBlocks } from "./fetch-page-blocks.js";
 import { normalizeDatabasePage } from "./fetch-database.js";
-import { NotionClient, queryDatabasePages } from "./notion-client.js";
+import { NotionClient, queryDatabasePages, retrieveDatabase } from "./notion-client.js";
 
 const GENERATED_DIR = path.join(PROJECT_ROOT, "content", "generated");
 const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
@@ -20,6 +20,13 @@ function log(message) {
 
 function toDateOnly(value) {
   return String(value || "").slice(0, 10);
+}
+
+function richTextToPlainText(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => String(item?.plain_text || ""))
+    .join("")
+    .trim();
 }
 
 function toIsoDate(value) {
@@ -67,6 +74,39 @@ function toAbsoluteSiteUrl(input) {
   }
 
   return `${SITE_ORIGIN}/${value.replace(/^\/+/, "")}`;
+}
+
+function makeEmojiDataUrl(emoji) {
+  const value = String(emoji || "").trim();
+  if (!value) {
+    return "";
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" rx="80" fill="#f4f6fa"/><text x="50%" y="54%" font-size="92" text-anchor="middle" dominant-baseline="middle">${value}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function extractIconUrl(icon) {
+  if (!icon) {
+    return "";
+  }
+  if (icon.type === "external") {
+    return icon.external?.url || "";
+  }
+  if (icon.type === "file") {
+    return icon.file?.url || "";
+  }
+  if (icon.type === "emoji") {
+    return makeEmojiDataUrl(icon.emoji);
+  }
+  return "";
+}
+
+function resolveProfileFromDatabaseMeta(databaseMeta = {}) {
+  return {
+    avatar: extractIconUrl(databaseMeta.icon),
+    signature: richTextToPlainText(databaseMeta.description || []),
+  };
 }
 
 function isCacheableNotionAsset(url) {
@@ -477,20 +517,17 @@ function buildSeoMeta({ title = "", description = "", image = "", url = "", type
   };
 }
 
-function pickProfileValue(current, candidate, editedAt = 0) {
-  const value = String(candidate || "").trim();
-  if (!value) {
-    return current;
-  }
+function isLikelyAiArticle(record = {}) {
+  const title = String(record.title || "").toLowerCase();
+  const summary = String(record.summary || "").toLowerCase();
+  const tags = Array.isArray(record.tags) ? record.tags.map((tag) => String(tag || "").toLowerCase()) : [];
 
-  if (!current.value || editedAt >= current.editedAt) {
-    return {
-      value,
-      editedAt,
-    };
-  }
+  const keywordHit =
+    /(^|\s)\[?ai\]?($|\s)|aigc|ai生成|自动生成|notionnext/i.test(title) ||
+    /(^|\s)\[?ai\]?($|\s)|aigc|ai生成|自动生成|notionnext/i.test(summary) ||
+    tags.some((tag) => /(^|\s)\#?ai($|\s)|aigc|ai生成|自动生成/.test(tag));
 
-  return current;
+  return Boolean(record.ai_generated || keywordHit);
 }
 
 function partitionByType(items = []) {
@@ -507,20 +544,25 @@ export async function syncNotionContent() {
 
   log(`sync start for database ${notion.databaseId}`);
 
-  const pages = await queryDatabasePages(client, notion.databaseId, {
-    filter: {
-      property: "status",
-      select: {
-        equals: "published",
+  const [databaseMeta, pages] = await Promise.all([
+    retrieveDatabase(client, notion.databaseId).catch(() => ({})),
+    queryDatabasePages(client, notion.databaseId, {
+      filter: {
+        property: "status",
+        select: {
+          equals: "published",
+        },
       },
-    },
-    sorts: [
-      {
-        property: "published_at",
-        direction: "descending",
-      },
-    ],
-  });
+      sorts: [
+        {
+          property: "published_at",
+          direction: "descending",
+        },
+      ],
+    }),
+  ]);
+
+  const databaseProfile = resolveProfileFromDatabaseMeta(databaseMeta);
 
   log(`loaded ${pages.length} database rows`);
 
@@ -529,8 +571,6 @@ export async function syncNotionContent() {
   const articleItems = [];
   const noticeItems = [];
   const compatNotes = [];
-  let latestProfileAvatar = { value: "", editedAt: 0 };
-  let latestProfileSignature = { value: "", editedAt: 0 };
 
   for (const [index, page] of pages.entries()) {
     const pageData = normalizeDatabasePage(page);
@@ -549,12 +589,15 @@ export async function syncNotionContent() {
       blocks: rawBlocks,
       lastEditedTime: pageData.lastEditedTime,
     });
+
+    if (normalizeContentType(builtRecord.type) === CONTENT_TYPES.ARTICLE && isLikelyAiArticle({ ...builtRecord, ai_generated: pageData.properties.ai_generated })) {
+      log(`skip ai article: ${builtRecord.title || builtRecord.slug || builtRecord.id}`);
+      continue;
+    }
+
     const assetMap = await cachePageAssets(client, builtRecord, enrichedBlocks);
     const indexRecord = localizeValue(builtRecord, assetMap);
     const localizedBlocks = localizeValue(enrichedBlocks, assetMap);
-    const editedAt = Date.parse(pageData.lastEditedTime || indexRecord.source_updated_at || pageData.properties.published_at || "") || 0;
-    latestProfileAvatar = pickProfileValue(latestProfileAvatar, indexRecord.page_icon || pageData.properties.page_icon || "", editedAt);
-    latestProfileSignature = pickProfileValue(latestProfileSignature, indexRecord.signature || pageData.properties.signature || "", editedAt);
 
     indexItems.push(indexRecord);
 
@@ -567,7 +610,7 @@ export async function syncNotionContent() {
 
     if (normalizeContentType(indexRecord.type) === CONTENT_TYPES.ARTICLE) {
       const articleUrl = `${SITE_ORIGIN}/article.html?slug=${encodeURIComponent(indexRecord.slug)}`;
-      const articleImage = toAbsoluteSiteUrl(indexRecord.cover || indexRecord.images?.[0] || indexRecord.page_icon || latestProfileAvatar.value);
+      const articleImage = toAbsoluteSiteUrl(indexRecord.cover || indexRecord.images?.[0] || indexRecord.page_icon || databaseProfile.avatar);
       const articleSeo = buildSeoMeta({
         title: indexRecord.title || "文章",
         description: indexRecord.summary || indexRecord.title || "",
@@ -628,11 +671,13 @@ export async function syncNotionContent() {
   const nextProfile = {
     ...(currentSiteConfig.profile || {}),
   };
-  if (latestProfileAvatar.value) {
-    nextProfile.avatar = latestProfileAvatar.value;
+  const syncedProfileAvatar = databaseProfile.avatar;
+  const syncedProfileSignature = databaseProfile.signature;
+  if (syncedProfileAvatar) {
+    nextProfile.avatar = syncedProfileAvatar;
   }
-  if (latestProfileSignature.value) {
-    nextProfile.signature = latestProfileSignature.value;
+  if (syncedProfileSignature) {
+    nextProfile.signature = syncedProfileSignature;
   }
   const nextSiteConfig = {
     ...currentSiteConfig,
@@ -640,7 +685,7 @@ export async function syncNotionContent() {
   };
   await writeJson(SITE_CONFIG_PATH, nextSiteConfig);
 
-  const homeCover = toAbsoluteSiteUrl(nextProfile.cover || indexItems[0]?.cover || latestProfileAvatar.value);
+  const homeCover = toAbsoluteSiteUrl(nextProfile.cover || syncedProfileAvatar || indexItems[0]?.cover);
   const homeSeo = buildSeoMeta({
     title: `${nextProfile.name || "HoraFeng"} 的博客`,
     description: nextProfile.signature || nextProfile.bio || "欢迎来到我的博客。",
@@ -654,7 +699,7 @@ export async function syncNotionContent() {
     ...buildSeoMeta({
       title: article.title || "文章",
       description: article.summary || article.title || "",
-      image: toAbsoluteSiteUrl(article.cover || article.images?.[0] || article.page_icon || latestProfileAvatar.value),
+      image: toAbsoluteSiteUrl(article.cover || article.images?.[0] || article.page_icon || syncedProfileAvatar),
       url: `${SITE_ORIGIN}/article.html?slug=${encodeURIComponent(article.slug)}`,
       type: "article",
     }),
@@ -718,6 +763,18 @@ export async function syncNotionContent() {
 
   log(`sync done: ${counts.notes} note, ${counts.articles} article, ${counts.notices} notice`);
   log(`output dir: ${path.relative(PROJECT_ROOT, GENERATED_DIR)}`);
+
+  const keepDetails = new Set(finalArticleItems.map((item) => path.basename(String(item.detail_path || ""))).filter(Boolean));
+  try {
+    const currentFiles = await readdir(ARTICLE_DETAILS_DIR, { withFileTypes: true });
+    await Promise.all(
+      currentFiles
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".json") && !keepDetails.has(entry.name))
+        .map((entry) => rm(path.join(ARTICLE_DETAILS_DIR, entry.name), { force: true })),
+    );
+  } catch {
+    // ignore cleanup errors
+  }
 
   return {
     generatedAt,

@@ -63,6 +63,66 @@ const DEFAULTS = {
 let cachedConfigPromise = null;
 let turnstileScriptPromise = null;
 
+function eventToPoint(event, fallbackEl = null) {
+  if (event && Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+    return { x: event.clientX, y: event.clientY };
+  }
+  if (fallbackEl instanceof HTMLElement) {
+    const rect = fallbackEl.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+  return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+}
+
+function resolveDialogOrigin(origin) {
+  if (!origin || !Number.isFinite(origin.x) || !Number.isFinite(origin.y)) {
+    return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  }
+  return {
+    x: Math.max(0, Math.min(window.innerWidth, origin.x)),
+    y: Math.max(0, Math.min(window.innerHeight, origin.y)),
+  };
+}
+
+async function animateIdentityDialog(dialog, origin, reverse = false) {
+  if (!dialog) {
+    return;
+  }
+
+  const point = resolveDialogOrigin(origin);
+  const rect = dialog.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const deltaX = point.x - centerX;
+  const deltaY = point.y - centerY;
+  const startScale = window.matchMedia("(max-width: 767px)").matches ? 0.08 : 0.12;
+  const duration = reverse ? 280 : 360;
+  const easing = "cubic-bezier(0.2, 0.84, 0.24, 1)";
+
+  dialog.style.willChange = "transform, opacity";
+  dialog.style.transformOrigin = "50% 50%";
+
+  if (!reverse) {
+    dialog.style.transition = "none";
+    dialog.style.opacity = "0.24";
+    dialog.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${startScale})`;
+    dialog.getBoundingClientRect();
+    dialog.style.transition = `transform ${duration}ms ${easing}, opacity ${duration - 70}ms ease`;
+    dialog.style.opacity = "1";
+    dialog.style.transform = "translate3d(0, 0, 0) scale(1)";
+  } else {
+    dialog.style.transition = `transform ${duration}ms ${easing}, opacity ${duration - 80}ms ease`;
+    dialog.style.opacity = "0";
+    dialog.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${startScale})`;
+  }
+
+  await new Promise((resolve) => window.setTimeout(resolve, duration + 18));
+  dialog.style.willChange = "";
+  dialog.style.transition = "";
+  dialog.style.transform = "";
+  dialog.style.opacity = "";
+}
+
 function formatTime(isoString) {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) {
@@ -461,8 +521,9 @@ function mountContentComments(options = {}) {
     setFeedback("");
   };
 
-  const openIdentityModal = async (afterConfirm) => {
+  const openIdentityModal = async (afterConfirm, origin = null) => {
     const modal = ensureIdentityModal();
+    const dialog = modal.querySelector(".comment-identity-dialog");
     const form = modal.querySelector("[data-identity-form]");
     const nicknameInput = modal.querySelector("#comment-identity-nickname");
     const contactInput = modal.querySelector("#comment-identity-contact");
@@ -472,14 +533,13 @@ function mountContentComments(options = {}) {
     const turnstileHint = modal.querySelector("[data-identity-turnstile-hint]");
     const turnstileSlot = modal.querySelector("[data-identity-turnstile]");
 
-    const closeModal = () => {
+    const closeModal = async (closeOrigin = null) => {
       modal.classList.add("closing");
       modal.classList.remove("open");
-      window.setTimeout(() => {
-        modal.hidden = true;
-        modal.classList.remove("closing");
-        document.body.classList.remove("no-scroll");
-      }, 190);
+      await animateIdentityDialog(dialog, closeOrigin, true);
+      modal.hidden = true;
+      modal.classList.remove("closing");
+      document.body.classList.remove("no-scroll");
     };
 
     const identity = state.identity || getStoredCommentIdentity();
@@ -491,9 +551,12 @@ function mountContentComments(options = {}) {
     modal.classList.remove("closing");
     requestAnimationFrame(() => modal.classList.add("open"));
     document.body.classList.add("no-scroll");
+    await animateIdentityDialog(dialog, origin, false);
 
     modal.querySelectorAll("[data-close-identity]").forEach((button) => {
-      button.onclick = () => closeModal();
+      button.onclick = (event) => {
+        void closeModal(eventToPoint(event, button));
+      };
     });
 
     if (!state.loadingIdentityModal) {
@@ -569,7 +632,7 @@ function mountContentComments(options = {}) {
         };
         saveCommentIdentity(state.identity);
         applyIdentitySummary();
-        closeModal();
+        await closeModal();
         afterConfirm?.();
       } catch (error) {
         feedbackEl.textContent = error.message || TEXT.loadFailed;
@@ -674,12 +737,12 @@ function mountContentComments(options = {}) {
       if (state.identity) {
         openComposer();
       } else {
-        await openIdentityModal(() => openComposer());
+        await openIdentityModal(() => openComposer(), eventToPoint(event, target));
       }
       return;
     }
     if (action === "edit-identity" || action === "edit-identity-inline") {
-      await openIdentityModal(() => openComposer());
+      await openIdentityModal(() => openComposer(), eventToPoint(event, target));
       return;
     }
     if (action === "cancel-compose") {
@@ -696,7 +759,7 @@ function mountContentComments(options = {}) {
       if (state.identity) {
         openComposer();
       } else {
-        await openIdentityModal(() => openComposer());
+        await openIdentityModal(() => openComposer(), eventToPoint(event, target));
       }
     }
   });

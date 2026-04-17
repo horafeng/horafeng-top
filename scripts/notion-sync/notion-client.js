@@ -58,6 +58,10 @@ export class NotionClient {
     });
   }
 
+  async retrieveDatabase(databaseId) {
+    return this.request(`/databases/${databaseId}`);
+  }
+
   async listBlockChildren(blockId, payload = {}) {
     const search = new URLSearchParams();
     if (payload.start_cursor) {
@@ -98,6 +102,10 @@ export async function queryDatabasePages(client, databaseId, payload = {}) {
   } while (nextCursor);
 
   return results;
+}
+
+export async function retrieveDatabase(client, databaseId) {
+  return client.retrieveDatabase(databaseId);
 }
 
 export async function listAllBlockChildren(client, blockId) {

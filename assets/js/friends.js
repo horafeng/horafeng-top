@@ -138,9 +138,59 @@ function renderGuideContent(key) {
   return GUIDE_CONTENT.apply.html;
 }
 
-function openGuideModal(key) {
+function resolveOriginPoint(origin) {
+  if (!origin || !Number.isFinite(origin.x) || !Number.isFinite(origin.y)) {
+    return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  }
+  return {
+    x: Math.max(0, Math.min(window.innerWidth, origin.x)),
+    y: Math.max(0, Math.min(window.innerHeight, origin.y)),
+  };
+}
+
+async function animateGuideModal(modal, origin, reverse = false) {
+  if (!modal) {
+    return;
+  }
+
+  const point = resolveOriginPoint(origin);
+  const rect = modal.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const deltaX = point.x - centerX;
+  const deltaY = point.y - centerY;
+  const startScale = window.matchMedia("(max-width: 767px)").matches ? 0.08 : 0.12;
+  const duration = reverse ? 280 : 360;
+  const easing = "cubic-bezier(0.2, 0.84, 0.24, 1)";
+
+  modal.style.willChange = "transform, opacity";
+  modal.style.transformOrigin = "50% 50%";
+
+  if (!reverse) {
+    modal.style.transition = "none";
+    modal.style.opacity = "0.24";
+    modal.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${startScale})`;
+    modal.getBoundingClientRect();
+    modal.style.transition = `transform ${duration}ms ${easing}, opacity ${duration - 70}ms ease`;
+    modal.style.opacity = "1";
+    modal.style.transform = "translate3d(0, 0, 0) scale(1)";
+  } else {
+    modal.style.transition = `transform ${duration}ms ${easing}, opacity ${duration - 80}ms ease`;
+    modal.style.opacity = "0";
+    modal.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${startScale})`;
+  }
+
+  await new Promise((resolve) => window.setTimeout(resolve, duration + 18));
+  modal.style.willChange = "";
+  modal.style.transition = "";
+  modal.style.transform = "";
+  modal.style.opacity = "";
+}
+
+async function openGuideModal(key, origin = null) {
   const guide = GUIDE_CONTENT[key];
   const { overlay, title, kicker, content } = getGuideElements();
+  const modal = document.getElementById("friends-guide-modal");
   if (!guide || !overlay || !title || !kicker || !content) {
     return;
   }
@@ -153,21 +203,22 @@ function openGuideModal(key) {
   overlay.classList.remove("closing");
   requestAnimationFrame(() => overlay.classList.add("open"));
   document.body.classList.add("no-scroll");
+  await animateGuideModal(modal, origin, false);
 }
 
-function closeGuideModal() {
+async function closeGuideModal(origin = null) {
   const { overlay } = getGuideElements();
+  const modal = document.getElementById("friends-guide-modal");
   if (!overlay) {
     return;
   }
 
   overlay.classList.add("closing");
   overlay.classList.remove("open");
-  window.setTimeout(() => {
-    overlay.hidden = true;
-    overlay.classList.remove("closing");
-    document.body.classList.remove("no-scroll");
-  }, 190);
+  await animateGuideModal(modal, origin, true);
+  overlay.hidden = true;
+  overlay.classList.remove("closing");
+  document.body.classList.remove("no-scroll");
 }
 
 function setupGuideModal() {
@@ -177,22 +228,34 @@ function setupGuideModal() {
   }
 
   document.querySelectorAll("[data-guide-open]").forEach((button) => {
-    button.addEventListener("click", () => {
-      openGuideModal(button.getAttribute("data-guide-open"));
+    button.addEventListener("click", (event) => {
+      const point = {
+        x: event.clientX || button.getBoundingClientRect().left + button.getBoundingClientRect().width / 2,
+        y: event.clientY || button.getBoundingClientRect().top + button.getBoundingClientRect().height / 2,
+      };
+      openGuideModal(button.getAttribute("data-guide-open"), point);
     });
   });
 
-  document.getElementById("friends-guide-close")?.addEventListener("click", closeGuideModal);
+  document.getElementById("friends-guide-close")?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    if (button instanceof HTMLElement) {
+      const rect = button.getBoundingClientRect();
+      void closeGuideModal({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+      return;
+    }
+    void closeGuideModal();
+  });
   overlay.addEventListener("click", (event) => {
     const target = event.target;
     if (target instanceof HTMLElement && target.dataset.friendsGuideClose === "1") {
-      closeGuideModal();
+      void closeGuideModal({ x: event.clientX, y: event.clientY });
     }
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !overlay.hidden) {
-      closeGuideModal();
+      void closeGuideModal();
     }
   });
 }

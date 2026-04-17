@@ -1,4 +1,4 @@
-import { escapeHtml, loadArticleDetail, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import { escapeHtml, loadArticleDetail, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
 import { mountContentComments } from "./content-comments.js";
 
 const LABEL_EXTERNAL_LINK = "\u5916\u90e8\u94fe\u63a5";
@@ -51,13 +51,13 @@ function setMetaTag({ property = "", name = "", content = "" } = {}) {
   tag.setAttribute("content", value);
 }
 
-function applyArticleSeo(meta, item) {
+function applyArticleSeo(meta, item, profile = {}) {
   const slug = String(meta?.slug || "").trim();
   const url = slug ? `${DEFAULT_SITE_ORIGIN}/article.html?slug=${encodeURIComponent(slug)}` : `${DEFAULT_SITE_ORIGIN}/article.html`;
-  const cover = toAbsoluteUrl(meta?.cover || meta?.images?.[0] || "");
+  const cover = toAbsoluteUrl(meta?.cover || meta?.images?.[0] || profile?.avatar || "");
   const seo = item?.seo || {};
   const title = String(seo.og_title || meta?.title || "文章").trim();
-  const description = String(seo.og_description || meta?.summary || meta?.title || "").trim();
+  const description = String(seo.og_description || meta?.summary || profile?.signature || meta?.title || "").trim();
   const image = String(seo.og_image || cover).trim();
 
   setMetaTag({ property: "og:title", content: title });
@@ -442,14 +442,14 @@ function renderBlocks(blocks = []) {
   return html.filter(Boolean).join("");
 }
 
-function renderArticle(meta, item) {
+function renderArticle(meta, item, siteConfig = null) {
   const breadcrumb = document.getElementById("article-breadcrumb-current");
   const hero = document.getElementById("article-hero");
   const body = document.getElementById("article-body");
   const cover = meta.images[0] || "";
 
   document.title = `${meta.title} | HoraFeng`;
-  applyArticleSeo(meta, item);
+  applyArticleSeo(meta, item, siteConfig?.profile || {});
   breadcrumb.textContent = meta.title;
 
   const metaBits = [
@@ -487,8 +487,8 @@ async function main() {
 
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("slug");
-  const detail = await loadArticleDetail(slug);
-  renderArticle(detail.meta, detail.item);
+  const [detail, siteConfig] = await Promise.all([loadArticleDetail(slug), loadSiteConfig().catch(() => null)]);
+  renderArticle(detail.meta, detail.item, siteConfig);
 }
 
 main().catch((error) => {

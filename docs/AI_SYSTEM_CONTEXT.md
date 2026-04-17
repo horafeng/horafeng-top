@@ -1376,3 +1376,19 @@ Resend 的角色是：
 - The syncer now caches these assets into:
   - `content/generated/media/notion/`
 - Homepage note cards and article detail JSON should consume the generated local paths after each sync run.
+
+## Incremental Update: Notion Profile + Notice + SEO (2026-04)
+
+- Canonical profile sync source:
+  - Notion database page icon -> `content/site.json.profile.avatar`
+  - Notion database page description -> `content/site.json.profile.signature`
+- Do not select profile avatar/signature from content rows by `lastEditedTime`.
+- Notice behavior:
+  - homepage notice list supports full-body rendering (no modal click required)
+  - initial popup prioritizes latest pinned notice
+- SEO behavior:
+  - sync outputs `content/generated/notion-seo.json`
+  - home/article runtime updates OG + Twitter meta tags from synced data
+- AI generated article handling:
+  - sync stage skips AI-marked/generated article rows
+  - stale article detail JSON is cleaned from `content/generated/articles/`
