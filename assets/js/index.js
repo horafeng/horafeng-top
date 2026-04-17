@@ -416,34 +416,43 @@ async function renderRecentComments(entries) {
   renderRecentCommentsList(document.getElementById("mobile-recent-comments"), comments, entries);
 }
 
-async function renderHomeNoticeStrip() {
-  const list = document.getElementById("home-notice-list");
-  if (!list) {
+async function renderHomePinnedNotice() {
+  const host = document.getElementById("home-pinned-notice");
+  if (!host) {
     return;
   }
 
   const notices = await loadNoticeIndex();
-  if (!notices.length) {
-    list.innerHTML = '<p class="subtle">暂无公告。</p>';
+  const pinned = notices
+    .filter((item) => Boolean(item?.pin))
+    .sort((a, b) => {
+      const updatedDiff = new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      if (updatedDiff !== 0) {
+        return updatedDiff;
+      }
+      return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+    });
+
+  if (!pinned.length) {
+    host.hidden = true;
+    host.innerHTML = "";
     return;
   }
 
-  list.innerHTML = notices
-    .slice(0, 3)
-    .map((notice) => {
-      const summary = Array.isArray(notice.content) ? notice.content.find((line) => String(line || "").trim()) || "" : "";
-      return `
-        <article class="home-notice-item">
-          <div class="home-notice-item-meta">
-            <span>${escapeHtml(notice.date || "")}</span>
-            ${notice.pin ? '<span class="entry-type-badge">置顶</span>' : ""}
-          </div>
-          <h4 class="home-notice-item-title">${escapeHtml(notice.title || "公告")}</h4>
-          ${summary ? `<p class="home-notice-item-summary">${linkify(summary)}</p>` : ""}
-        </article>
-      `;
-    })
-    .join("");
+  const latestPinned = pinned[0];
+  const summary = Array.isArray(latestPinned.content) ? latestPinned.content.find((line) => String(line || "").trim()) || "" : "";
+  host.hidden = false;
+  host.innerHTML = `
+    <article class="home-pinned-notice-card">
+      <div class="home-pinned-notice-meta">
+        <span class="entry-type-badge">置顶公告</span>
+        <span>${escapeHtml(latestPinned.date || "")}</span>
+      </div>
+      <h3 class="home-pinned-notice-title">${escapeHtml(latestPinned.title || "公告")}</h3>
+      ${summary ? `<p class="home-pinned-notice-summary">${linkify(summary)}</p>` : ""}
+      <a class="chip" href="index.html?content=notice">查看公告列表</a>
+    </article>
+  `;
 }
 
 function renderProfileActionLinks(profile, options = {}) {
@@ -504,7 +513,7 @@ function renderProfile(config) {
   name.textContent = profile.name || "HoraFeng";
   handle.textContent = profile.handle || "@horafeng";
   signature.textContent = profile.signature || "把普通日子写成会发光的碎片。";
-  bio.textContent = profile.bio || "喜欢记录通勤、雨天、夜晚散步和慢节奏生活。";
+  bio.textContent = profile.bio || "";
   lastSeen.textContent = formatLastSeen(profile.lastSeenAt);
 
   if (actions) {
@@ -526,7 +535,7 @@ function renderProfile(config) {
       <h1>${profile.name || "HoraFeng"}</h1>
       <p class="profile-handle">${profile.handle || "@horafeng"}</p>
       <p class="subtle">${profile.signature || "把普通日子写成会发光的碎片。"}</p>
-      <p class="subtle">${profile.bio || "喜欢记录通勤、雨天、夜晚散步和慢节奏生活。"}</p>
+      <p class="subtle">${profile.bio || ""}</p>
       <p class="last-seen subtle">${formatLastSeen(profile.lastSeenAt)}</p>
     </div>
     <div class="profile-actions compact" aria-label="联系方式">
@@ -689,8 +698,17 @@ async function maybeShowLatestNotice(noticeController) {
 
   const pinned = notices
     .filter((item) => Boolean(item?.pin))
-    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
-  const latest = pinned[0] || notices[0];
+    .sort((a, b) => {
+      const updatedDiff = new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      if (updatedDiff !== 0) {
+        return updatedDiff;
+      }
+      return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+    });
+  const latest = pinned[0];
+  if (!latest) {
+    return;
+  }
 
   const navigation = performance.getEntriesByType("navigation")[0];
   const navType = navigation?.type || "navigate";
@@ -737,12 +755,13 @@ function filterByParams(entries) {
           : "\u6700\u8fd1\u5c0f\u8bb0";
   } else if (tag) {
     heading.textContent = `标签：#${tag}`;
-    list = list.filter((entry) => entry.tags.includes(tag));
+    list = list.filter((entry) => entry.contentType !== "notice" && entry.tags.includes(tag));
   } else if (archive) {
     heading.textContent = `归档：${archive}`;
-    list = list.filter((entry) => entry.date.startsWith(archive));
+    list = list.filter((entry) => entry.contentType !== "notice" && entry.date.startsWith(archive));
   } else {
-    heading.textContent = "\u6700\u8fd1\u5185\u5bb9";
+    heading.textContent = "首页内容";
+    list = list.filter((entry) => entry.contentType !== "notice");
   }
 
   return list;
@@ -1789,8 +1808,8 @@ async function main() {
   visibleEntries = filterByParams(entries);
   applyHomeSeo(config, visibleEntries);
   renderTimeline(visibleEntries);
-  renderSidebar(entries, config);
-  await renderHomeNoticeStrip();
+  renderSidebar(entries.filter((entry) => entry.contentType !== "notice"), config);
+  await renderHomePinnedNotice();
 
   setupSearch();
   setupDesktopSidebarLayout();

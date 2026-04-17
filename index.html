@@ -74,7 +74,7 @@
           <h1 id="profile-name">HoraFeng</h1>
           <p id="profile-handle" class="profile-handle">@horafeng</p>
           <p id="profile-signature" class="subtle">把普通日子写成会发光的碎片。</p>
-          <p id="profile-bio" class="subtle">喜欢记录通勤、雨天、夜晚散步和慢节奏生活。</p>
+          <p id="profile-bio" class="subtle"></p>
           <p id="profile-last-seen" class="last-seen subtle">博主最近来过</p>
         </div>
         <div class="profile-actions" aria-label="联系方式">
@@ -115,10 +115,7 @@
       </aside>
 
       <main class="panel flow-panel">
-        <header class="section-head">
-          <h2 id="timeline-heading">最近日记</h2>
-          <p class="subtle">文字、emoji、链接、图片小记</p>
-        </header>
+        <h2 id="timeline-heading" class="sr-only">首页内容</h2>
 
         <form id="search-form" class="search-bar" role="search">
           <input id="search-input" type="search" placeholder="搜索标题、正文或标签..." aria-label="搜索日记" />
@@ -126,12 +123,7 @@
         </form>
         <p id="search-hint" class="search-hint subtle"></p>
 
-        <section class="panel-lite home-notice-strip" aria-label="最近公告">
-          <div class="home-notice-head">
-            <h3>最近公告</h3>
-            <a class="chip" href="index.html?content=notice">查看全部</a>
-          </div>
-          <div id="home-notice-list" class="home-notice-list"></div>
+        <section id="home-pinned-notice" class="panel-lite home-pinned-notice" aria-label="置顶公告" hidden>
         </section>
 
         <section class="panel mobile-right-stack" id="mobile-right-stack">
