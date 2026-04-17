@@ -14,7 +14,6 @@ const TEXT = {
   applyTitle: "\u7533\u8bf7\u53cb\u60c5\u94fe\u63a5",
   siteKicker: "\u672c\u7ad9\u4fe1\u606f",
   siteTitle: "\u52a0\u5165\u672c\u7ad9\u5230\u8d35\u7ad9\u53cb\u94fe",
-  htmlFormat: "HTML",
 };
 
 const GUIDE_CONTENT = {
@@ -59,12 +58,6 @@ const GUIDE_CONTENT = {
   site: {
     kicker: TEXT.siteKicker,
     title: TEXT.siteTitle,
-    html: `
-      <section class="friends-guide-section">
-        <h3>HTML</h3>
-        <pre class="friends-code-block"><code>&lt;a target="_blank" rel="noopener external nofollow noreferrer" href="https://horafeng.top/"&gt;HoraFeng 的博客&lt;/a&gt;</code></pre>
-      </section>
-    `,
     yaml: `
       <section class="friends-guide-section">
         <h3>YAML</h3>
@@ -132,37 +125,30 @@ async function loadFriends() {
 function getGuideElements() {
   return {
     overlay: document.getElementById("friends-guide-overlay"),
-    modal: document.getElementById("friends-guide-modal"),
     title: document.getElementById("friends-guide-title"),
     kicker: document.getElementById("friends-guide-kicker"),
     content: document.getElementById("friends-guide-content"),
-    tabs: document.getElementById("friends-guide-format-tabs"),
   };
 }
 
-function renderGuideContent(key, format = "html") {
+function renderGuideContent(key) {
   if (key === "site") {
-    return format === "yaml" ? GUIDE_CONTENT.site.yaml : GUIDE_CONTENT.site.html;
+    return GUIDE_CONTENT.site.yaml;
   }
   return GUIDE_CONTENT.apply.html;
 }
 
 function openGuideModal(key) {
   const guide = GUIDE_CONTENT[key];
-  const { overlay, title, kicker, content, tabs } = getGuideElements();
-  if (!guide || !overlay || !title || !kicker || !content || !tabs) {
+  const { overlay, title, kicker, content } = getGuideElements();
+  if (!guide || !overlay || !title || !kicker || !content) {
     return;
   }
 
   overlay.dataset.activeGuide = key;
-  overlay.dataset.activeFormat = "html";
   title.textContent = guide.title;
   kicker.textContent = guide.kicker;
-  content.innerHTML = renderGuideContent(key, "html");
-  tabs.hidden = key !== "site";
-  tabs.querySelectorAll("[data-format]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.format === "html");
-  });
+  content.innerHTML = renderGuideContent(key);
   overlay.hidden = false;
   overlay.classList.add("open");
   document.body.classList.add("no-scroll");
@@ -180,8 +166,8 @@ function closeGuideModal() {
 }
 
 function setupGuideModal() {
-  const { overlay, tabs, content } = getGuideElements();
-  if (!overlay || !tabs || !content) {
+  const { overlay } = getGuideElements();
+  if (!overlay) {
     return;
   }
 
@@ -203,18 +189,6 @@ function setupGuideModal() {
     if (event.key === "Escape" && !overlay.hidden) {
       closeGuideModal();
     }
-  });
-
-  tabs.querySelectorAll("[data-format]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const activeGuide = overlay.dataset.activeGuide || "site";
-      const nextFormat = button.dataset.format || "html";
-      overlay.dataset.activeFormat = nextFormat;
-      content.innerHTML = renderGuideContent(activeGuide, nextFormat);
-      tabs.querySelectorAll("[data-format]").forEach((item) => {
-        item.classList.toggle("active", item === button);
-      });
-    });
   });
 }
 
@@ -261,12 +235,6 @@ async function main() {
       ? new URL(String(profile.avatar).replace(/^\/+/, ""), siteUrl).toString()
       : "https://horafeng.top/assets/images/Profile.png";
 
-    GUIDE_CONTENT.site.html = `
-      <section class="friends-guide-section">
-        <h3>${TEXT.htmlFormat}</h3>
-        <pre class="friends-code-block"><code>&lt;a target="_blank" rel="noopener external nofollow noreferrer" href="${escapeHtml(siteUrl)}"&gt;${escapeHtml(profile.name || "HoraFeng 的博客")}&lt;/a&gt;</code></pre>
-      </section>
-    `;
     GUIDE_CONTENT.site.yaml = `
       <section class="friends-guide-section">
         <h3>YAML</h3>

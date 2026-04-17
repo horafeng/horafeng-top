@@ -51,6 +51,10 @@
       <button id="mobile-home-search" class="mobile-home-icon-btn" type="button" aria-label="聚焦搜索">⌕</button>
     </div>
 
+    <section class="home-welcome-banner" aria-label="欢迎语">
+      <p id="home-welcome-typing" class="home-welcome-typing" aria-live="polite"></p>
+    </section>
+
     <div class="app-shell home-shell">
       <button id="mobile-drawer-trigger" class="mobile-drawer-trigger" type="button">☰ 个人页</button>
 
@@ -178,6 +182,19 @@
             </section>
           </section>
         </div>
+      </article>
+    </div>
+
+    <div id="notice-overlay" class="post-overlay notice-overlay" hidden>
+      <div class="post-backdrop" data-close-notice="1"></div>
+      <article id="notice-modal" class="post-modal notice-modal" role="dialog" aria-modal="true" aria-labelledby="notice-title">
+        <button id="notice-close" class="post-close" type="button">×</button>
+        <section class="notice-body">
+          <p class="notice-kicker">站内公告</p>
+          <h3 id="notice-title">公告</h3>
+          <p id="notice-meta" class="entry-meta"></p>
+          <div id="notice-content" class="entry-detail"></div>
+        </section>
       </article>
     </div>
 

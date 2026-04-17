@@ -194,6 +194,23 @@ function normalizeArticleEntry(entry, source = "notion-article") {
   };
 }
 
+function normalizeNoticeEntry(entry, source = "notion-notice") {
+  const publishedAt = String(entry?.published_at ?? entry?.date ?? entry?.created_time ?? "").trim();
+  const title = String(entry?.title ?? "").trim() || "\u516c\u544a";
+  const summary = String(entry?.summary ?? "").trim();
+  const blocks = Array.isArray(entry?.content) ? entry.content.map((line) => String(line ?? "").trim()).filter(Boolean) : [];
+  const details = blocks.length ? blocks : summary ? [summary] : [];
+
+  return {
+    id: String(entry?.id ?? entry?.slug ?? title).trim(),
+    title,
+    date: publishedAt,
+    content: details,
+    source,
+    status: String(entry?.status ?? "").trim().toLowerCase(),
+  };
+}
+
 function getEntryDedupKey(entry) {
   if (entry.contentType === "article" && entry.slug) {
     return `article:${entry.slug}`;
@@ -313,6 +330,14 @@ export async function loadArticleIndex() {
   return items
     .filter((item) => String(item?.status ?? "").trim().toLowerCase() === "published")
     .map((item) => normalizeArticleEntry(item));
+}
+
+export async function loadNoticeIndex() {
+  const items = await fetchOptionalItems("content/generated/notion-notices.json");
+  return items
+    .map((item) => normalizeNoticeEntry(item))
+    .filter((item) => !item.status || item.status === "published")
+    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
 }
 
 export async function loadArticleDetail(slug) {
@@ -495,6 +520,16 @@ export function setupPageTransition() {
 }
 
 export function setupSiteChrome(options = {}) {
+  const userAgent = navigator.userAgent || "";
+  const androidMatch = userAgent.match(/Android\s+(\d+)/i);
+  const chromeMatch = userAgent.match(/Chrome\/(\d+)/i);
+  const androidMajor = androidMatch ? Number.parseInt(androidMatch[1], 10) : null;
+  const chromeMajor = chromeMatch ? Number.parseInt(chromeMatch[1], 10) : null;
+  const isLegacyBrowser = (androidMajor !== null && androidMajor <= 5) || (chromeMajor !== null && chromeMajor <= 88);
+  if (isLegacyBrowser) {
+    document.body.classList.add("legacy-compat");
+  }
+
   const nav = document.querySelector("[data-site-nav]");
   if (!nav) {
     return;

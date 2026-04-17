@@ -5,6 +5,7 @@
   linkify,
   loadHomeFeed,
   loadRecentComments,
+  loadNoticeIndex,
   loadSiteConfig,
   searchEntries,
   setupSiteChrome,
@@ -27,6 +28,9 @@ let dragState = null;
 let dismissDragState = null;
 let lastOpenOrigin = null;
 let currentCommentWidget = null;
+let welcomeTypingTimer = null;
+
+const WELCOME_LINES = ["欢迎来到我的博客", "Welcome to my blog", "私のブログへようこそ"];
 
 const FALLBACK_COVERS = [
   "assets/images/diary/cover-01.svg",
@@ -422,6 +426,127 @@ function renderProfile(config) {
       <a href="guestbook.html">留言板</a>
     </nav>
   `;
+}
+
+function setupWelcomeTyping() {
+  const el = document.getElementById("home-welcome-typing");
+  if (!el) {
+    return;
+  }
+
+  if (welcomeTypingTimer) {
+    window.clearTimeout(welcomeTypingTimer);
+    welcomeTypingTimer = null;
+  }
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    let idx = 0;
+    el.textContent = WELCOME_LINES[idx];
+    const rotate = () => {
+      idx = (idx + 1) % WELCOME_LINES.length;
+      el.textContent = WELCOME_LINES[idx];
+      welcomeTypingTimer = window.setTimeout(rotate, 2600);
+    };
+    welcomeTypingTimer = window.setTimeout(rotate, 2600);
+    return;
+  }
+
+  let lineIndex = 0;
+  let charIndex = 0;
+  let deleting = false;
+
+  const tick = () => {
+    const line = WELCOME_LINES[lineIndex];
+    if (!deleting) {
+      charIndex = Math.min(line.length, charIndex + 1);
+      el.textContent = line.slice(0, charIndex);
+      if (charIndex >= line.length) {
+        deleting = true;
+        welcomeTypingTimer = window.setTimeout(tick, 1250);
+        return;
+      }
+      welcomeTypingTimer = window.setTimeout(tick, 90);
+      return;
+    }
+
+    charIndex = Math.max(0, charIndex - 1);
+    el.textContent = line.slice(0, charIndex);
+    if (charIndex <= 0) {
+      deleting = false;
+      lineIndex = (lineIndex + 1) % WELCOME_LINES.length;
+      welcomeTypingTimer = window.setTimeout(tick, 180);
+      return;
+    }
+    welcomeTypingTimer = window.setTimeout(tick, 55);
+  };
+
+  tick();
+}
+
+function setupNoticeOverlay() {
+  const overlay = document.getElementById("notice-overlay");
+  const close = document.getElementById("notice-close");
+  if (!overlay) {
+    return { open: () => {}, close: () => {} };
+  }
+
+  const closeNotice = () => {
+    overlay.classList.remove("open");
+    overlay.hidden = true;
+    if (document.getElementById("post-overlay")?.hidden !== false) {
+      document.body.classList.remove("no-scroll");
+    }
+  };
+
+  const openNotice = (notice) => {
+    const title = document.getElementById("notice-title");
+    const meta = document.getElementById("notice-meta");
+    const content = document.getElementById("notice-content");
+    if (!title || !meta || !content) {
+      return;
+    }
+
+    title.textContent = notice.title || "公告";
+    meta.innerHTML = `<span>${escapeHtml(notice.date || "")}</span><span>阅读提醒</span>`;
+    const lines = Array.isArray(notice.content) && notice.content.length ? notice.content : ["本条公告暂无详细正文。"];
+    content.innerHTML = lines.map((line) => `<p>${linkify(line)}</p>`).join("");
+    overlay.hidden = false;
+    overlay.classList.add("open");
+    document.body.classList.add("no-scroll");
+  };
+
+  close?.addEventListener("click", closeNotice);
+  overlay.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.dataset.closeNotice === "1") {
+      closeNotice();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !overlay.hidden) {
+      closeNotice();
+    }
+  });
+
+  return { open: openNotice, close: closeNotice };
+}
+
+async function maybeShowLatestNotice(noticeController) {
+  const notices = await loadNoticeIndex();
+  const latest = notices[0];
+  if (!latest) {
+    return;
+  }
+
+  const token = `${latest.id}:${latest.date || ""}`;
+  const storageKey = "hf-latest-notice-token";
+  if (window.localStorage.getItem(storageKey) === token) {
+    return;
+  }
+
+  window.localStorage.setItem(storageKey, token);
+  noticeController.open(latest);
 }
 
 function filterByParams(entries) {
@@ -1487,6 +1612,9 @@ async function main() {
   allEntries = entries;
   siteConfig = config;
 
+  setupWelcomeTyping();
+  const noticeController = setupNoticeOverlay();
+
   renderProfile(config);
   visibleEntries = filterByParams(entries);
   renderTimeline(visibleEntries);
@@ -1503,6 +1631,10 @@ async function main() {
   const postId = params.get("post");
   if (postId) {
     await openPostById(postId, false);
+  }
+
+  if (!postId) {
+    await maybeShowLatestNotice(noticeController);
   }
 }
 
