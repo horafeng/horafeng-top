@@ -5,7 +5,7 @@ import { CONTENT_TYPES, isPublishedStatus, normalizeContentType } from "./conten
 import { buildArticleDetailRecord, buildContentIndexRecord } from "./notion-transform.js";
 import { fetchPageBlocksRecursively, extractTextLinesFromNormalizedBlocks, normalizeBlocks } from "./fetch-page-blocks.js";
 import { normalizeDatabasePage } from "./fetch-database.js";
-import { NotionClient, queryDatabasePages, retrieveDatabase, retrievePage } from "./notion-client.js";
+import { NotionClient, queryDatabasePages, retrieveDatabase, retrievePage, searchPages } from "./notion-client.js";
 
 const GENERATED_DIR = path.join(PROJECT_ROOT, "content", "generated");
 const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
@@ -129,6 +129,16 @@ function resolveProfileFromDatabaseMeta(databaseMeta = {}, pageMeta = {}) {
   };
 }
 
+function extractTitleFromSearchPage(page = {}) {
+  const properties = page?.properties || {};
+  for (const value of Object.values(properties)) {
+    if (value?.type === "title") {
+      return richTextToPlainText(value.title || []);
+    }
+  }
+  return "";
+}
+
 function parseAllNotionIds(input) {
   const value = String(input || "").trim();
   if (!value) {
@@ -157,6 +167,30 @@ async function retrieveSiteShellPage(client, notion, databaseMeta = {}) {
       }
     } catch (_error) {
       // Ignore and continue to the next candidate.
+    }
+  }
+
+  const targetTitle = richTextToPlainText(databaseMeta?.title || []).trim();
+  if (targetTitle) {
+    try {
+      const pages = await searchPages(client, {
+        query: targetTitle,
+        filter: {
+          property: "object",
+          value: "page",
+        },
+      });
+
+      const matched =
+        pages.find((page) => extractTitleFromSearchPage(page) === targetTitle) ||
+        pages.find((page) => extractTitleFromSearchPage(page).includes(targetTitle)) ||
+        pages[0];
+
+      if (matched?.id) {
+        return matched;
+      }
+    } catch (_error) {
+      // Ignore search fallback errors.
     }
   }
 

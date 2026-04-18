@@ -66,6 +66,13 @@ export class NotionClient {
     return this.request(`/pages/${pageId}`);
   }
 
+  async search(payload = {}) {
+    return this.request("/search", {
+      method: "POST",
+      body: payload,
+    });
+  }
+
   async listBlockChildren(blockId, payload = {}) {
     const search = new URLSearchParams();
     if (payload.start_cursor) {
@@ -114,6 +121,24 @@ export async function retrieveDatabase(client, databaseId) {
 
 export async function retrievePage(client, pageId) {
   return client.retrievePage(pageId);
+}
+
+export async function searchPages(client, payload = {}) {
+  const results = [];
+  let nextCursor = null;
+
+  do {
+    const page = await client.search({
+      page_size: 100,
+      ...payload,
+      start_cursor: nextCursor || undefined,
+    });
+
+    results.push(...(page.results || []));
+    nextCursor = page.has_more ? page.next_cursor : null;
+  } while (nextCursor);
+
+  return results;
 }
 
 export async function listAllBlockChildren(client, blockId) {
