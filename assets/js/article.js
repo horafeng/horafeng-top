@@ -446,7 +446,6 @@ function renderArticle(meta, item, siteConfig = null) {
   const breadcrumb = document.getElementById("article-breadcrumb-current");
   const hero = document.getElementById("article-hero");
   const body = document.getElementById("article-body");
-  const cover = meta.cover || meta.images?.[0] || "";
 
   document.title = `${meta.title} | HoraFeng`;
   applyArticleSeo(meta, item, siteConfig?.profile || {});
@@ -465,7 +464,6 @@ function renderArticle(meta, item, siteConfig = null) {
       <div class="article-meta-line">${metaBits.map((bit) => `<span>${bit}</span>`).join("")}</div>
       <div class="chips">${meta.tags.map((tag) => `<a class="chip" href="index.html?tag=${encodeURIComponent(tag)}">#${escapeHtml(tag)}</a>`).join("")}</div>
     </div>
-    ${cover ? `<aside class="article-cover-aside"><img class="article-cover" src="${escapeAttr(cover)}" alt="${escapeAttr(meta.title)}" loading="lazy" /></aside>` : ""}
   `;
 
   const renderedBody = renderBlocks(item.blocks || []);

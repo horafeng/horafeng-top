@@ -168,7 +168,7 @@ function setupGlobalFooter() {
 
 function normalizeArticleEntry(entry, source = "notion-article") {
   const summary = String(entry?.summary ?? "").trim();
-  const cover = String(entry?.cover ?? "").trim();
+  const cover = String(entry?.cover ?? entry?.page_cover ?? entry?.seo?.og_image ?? "").trim();
   const publishedAt = String(entry?.published_at ?? entry?.date ?? "").trim();
   const title = String(entry?.title ?? "").trim() || "\u672a\u547d\u540d\u6587\u7ae0";
 
@@ -188,6 +188,7 @@ function normalizeArticleEntry(entry, source = "notion-article") {
     summary,
     category: String(entry?.category ?? "").trim(),
     detailPath: String(entry?.detail_path ?? "").trim(),
+    cover,
     contentType: "article",
     source,
     hasCover: Boolean(cover),

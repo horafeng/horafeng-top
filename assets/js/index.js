@@ -141,7 +141,8 @@ function renderTimeline(entries) {
       const preview = entry.content.join(" ");
       const safePreview = escapeHtml(isArticle && !preview ? "\u70b9\u51fb\u9605\u8bfb\u5168\u6587\u3002" : preview);
       const tags = entry.tags.slice(0, 4).map((tag) => `#${tag}`).join(" ");
-      const hasImage = entry.images.length > 0;
+      const coverImage = entry.cover || entry.images[0] || "";
+      const hasImage = Boolean(coverImage);
       const fallback = getFallbackCover(entry.id);
 
       if (isArticle) {
@@ -182,7 +183,7 @@ function renderTimeline(entries) {
                   <p class="entry-meta entry-tags">${tags}</p>
                 </div>
                 <div class="entry-visual">
-                  <img class="entry-cover" src="${escapeAttr(entry.images[0])}" data-fallback="${escapeAttr(fallback)}" alt="${escapeAttr(entry.title)}" loading="lazy" />
+                  <img class="entry-cover" src="${escapeAttr(coverImage)}" data-fallback="${escapeAttr(fallback)}" alt="${escapeAttr(entry.title)}" loading="lazy" />
                 </div>
                 <span class="entry-fusion" aria-hidden="true"></span>
               </div>
@@ -1791,11 +1792,6 @@ function setupMobileHomeChrome() {
 async function main() {
   setupSplash();
   setupPageTransition();
-  setupSiteChrome({
-    scrollContainerSelector: ".flow-panel",
-    searchTargetSelector: "#search-input",
-    useWindowScroll: true,
-  });
 
   const [entries, config] = await Promise.all([loadHomeFeed(), loadSiteConfig()]);
   allEntries = entries;
