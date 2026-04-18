@@ -1,11 +1,11 @@
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { PROJECT_ROOT, resolveNotionConfig } from "./env.js";
+import { PROJECT_ROOT, parseDatabaseIdFromUrl, resolveNotionConfig } from "./env.js";
 import { CONTENT_TYPES, isPublishedStatus, normalizeContentType } from "./content-model.js";
 import { buildArticleDetailRecord, buildContentIndexRecord } from "./notion-transform.js";
 import { fetchPageBlocksRecursively, extractTextLinesFromNormalizedBlocks, normalizeBlocks } from "./fetch-page-blocks.js";
 import { normalizeDatabasePage } from "./fetch-database.js";
-import { NotionClient, queryDatabasePages, retrieveDatabase } from "./notion-client.js";
+import { NotionClient, queryDatabasePages, retrieveDatabase, retrievePage } from "./notion-client.js";
 
 const GENERATED_DIR = path.join(PROJECT_ROOT, "content", "generated");
 const ARTICLE_DETAILS_DIR = path.join(GENERATED_DIR, "articles");
@@ -105,17 +105,46 @@ function extractIconUrl(icon) {
   return "";
 }
 
-function resolveProfileFromDatabaseMeta(databaseMeta = {}) {
+function extractCoverUrl(cover) {
+  if (!cover) {
+    return "";
+  }
+
+  if (cover.type === "external") {
+    return cover.external?.url || "";
+  }
+
+  if (cover.type === "file") {
+    return cover.file?.url || "";
+  }
+
+  return "";
+}
+
+function resolveProfileFromDatabaseMeta(databaseMeta = {}, pageMeta = {}) {
   return {
-    avatar: extractIconUrl(databaseMeta.icon),
+    avatar: extractIconUrl(pageMeta.icon) || extractIconUrl(databaseMeta.icon),
     signature: richTextToPlainText(databaseMeta.description || []),
-    cover:
-      databaseMeta?.cover?.type === "external"
-        ? databaseMeta.cover.external?.url || ""
-        : databaseMeta?.cover?.type === "file"
-          ? databaseMeta.cover.file?.url || ""
-          : "",
+    cover: extractCoverUrl(pageMeta.cover) || extractCoverUrl(databaseMeta.cover),
   };
+}
+
+async function retrieveSiteShellPage(client, notion) {
+  const candidates = [notion.databaseId, parseDatabaseIdFromUrl(notion.databaseUrl)].filter(Boolean);
+  const uniqueCandidates = [...new Set(candidates)];
+
+  for (const pageId of uniqueCandidates) {
+    try {
+      const pageMeta = await retrievePage(client, pageId);
+      if (pageMeta?.id) {
+        return pageMeta;
+      }
+    } catch (_error) {
+      // Ignore and continue to the next candidate.
+    }
+  }
+
+  return {};
 }
 
 async function persistProfileAvatar(client, avatarUrl) {
@@ -614,8 +643,9 @@ export async function syncNotionContent() {
 
   log(`sync start for database ${notion.databaseId}`);
 
-  const [databaseMeta, pages] = await Promise.all([
+  const [databaseMeta, siteShellPage, pages] = await Promise.all([
     retrieveDatabase(client, notion.databaseId).catch(() => ({})),
+    retrieveSiteShellPage(client, notion),
     queryDatabasePages(client, notion.databaseId, {
       filter: {
         property: "status",
@@ -632,7 +662,7 @@ export async function syncNotionContent() {
     }),
   ]);
 
-  const databaseProfile = resolveProfileFromDatabaseMeta(databaseMeta);
+  const databaseProfile = resolveProfileFromDatabaseMeta(databaseMeta, siteShellPage);
 
   log(`loaded ${pages.length} database rows`);
 

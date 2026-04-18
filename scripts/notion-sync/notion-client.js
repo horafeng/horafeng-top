@@ -62,6 +62,10 @@ export class NotionClient {
     return this.request(`/databases/${databaseId}`);
   }
 
+  async retrievePage(pageId) {
+    return this.request(`/pages/${pageId}`);
+  }
+
   async listBlockChildren(blockId, payload = {}) {
     const search = new URLSearchParams();
     if (payload.start_cursor) {
@@ -106,6 +110,10 @@ export async function queryDatabasePages(client, databaseId, payload = {}) {
 
 export async function retrieveDatabase(client, databaseId) {
   return client.retrieveDatabase(databaseId);
+}
+
+export async function retrievePage(client, pageId) {
+  return client.retrievePage(pageId);
 }
 
 export async function listAllBlockChildren(client, blockId) {
