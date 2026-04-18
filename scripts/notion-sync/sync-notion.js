@@ -129,8 +129,24 @@ function resolveProfileFromDatabaseMeta(databaseMeta = {}, pageMeta = {}) {
   };
 }
 
-async function retrieveSiteShellPage(client, notion) {
-  const candidates = [notion.databaseId, parseDatabaseIdFromUrl(notion.databaseUrl)].filter(Boolean);
+function parseAllNotionIds(input) {
+  const value = String(input || "").trim();
+  if (!value) {
+    return [];
+  }
+
+  const matches = value.match(/[0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g) || [];
+  const normalized = matches.map((item) => parseDatabaseIdFromUrl(item)).filter(Boolean);
+  return [...new Set(normalized)];
+}
+
+async function retrieveSiteShellPage(client, notion, databaseMeta = {}) {
+  const candidates = [
+    databaseMeta?.parent?.page_id || "",
+    ...parseAllNotionIds(notion.databaseUrl),
+    notion.databaseId,
+    parseDatabaseIdFromUrl(notion.databaseUrl),
+  ].filter(Boolean);
   const uniqueCandidates = [...new Set(candidates)];
 
   for (const pageId of uniqueCandidates) {
@@ -643,9 +659,9 @@ export async function syncNotionContent() {
 
   log(`sync start for database ${notion.databaseId}`);
 
-  const [databaseMeta, siteShellPage, pages] = await Promise.all([
-    retrieveDatabase(client, notion.databaseId).catch(() => ({})),
-    retrieveSiteShellPage(client, notion),
+  const databaseMetaPromise = retrieveDatabase(client, notion.databaseId).catch(() => ({}));
+  const [databaseMeta, pages] = await Promise.all([
+    databaseMetaPromise,
     queryDatabasePages(client, notion.databaseId, {
       filter: {
         property: "status",
@@ -662,6 +678,7 @@ export async function syncNotionContent() {
     }),
   ]);
 
+  const siteShellPage = await retrieveSiteShellPage(client, notion, databaseMeta);
   const databaseProfile = resolveProfileFromDatabaseMeta(databaseMeta, siteShellPage);
 
   log(`loaded ${pages.length} database rows`);
