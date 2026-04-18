@@ -172,6 +172,7 @@ export function getNotionSyncConfig(env) {
     pagesProjectName: sanitizeSingleLine(env.CLOUDFLARE_PAGES_PROJECT_NAME || "", 160),
     pagesApiToken: sanitizeSingleLine(env.CLOUDFLARE_PAGES_API_TOKEN || "", 500),
     notionToken: sanitizeSingleLine(env.NOTION_TOKEN || "", 500),
+    notionDatabaseUrl: sanitizeSingleLine(env.NOTION_DATABASE_URL || "", 500),
     notionDatabaseId:
       parseDatabaseId(env.NOTION_DATABASE_ID || "") || parseDatabaseId(env.NOTION_DATABASE_URL || ""),
   };
@@ -301,28 +302,156 @@ async function requestNotionDatabaseQuery(config, body) {
   return payload;
 }
 
-export async function getNotionFingerprint(env) {
-  const config = getNotionSyncConfig(env);
-  const result = await requestNotionDatabaseQuery(config, {
-    page_size: 10,
-    filter: {
-      property: "status",
-      select: {
-        equals: "published",
-      },
+async function requestNotion(config, pathname, { method = "GET", body } = {}) {
+  if (!config.notionToken) {
+    throw new Error("Notion API config is incomplete.");
+  }
+
+  const response = await fetch(`${NOTION_API_BASE}${pathname}`, {
+    method,
+    headers: {
+      authorization: `Bearer ${config.notionToken}`,
+      "Notion-Version": NOTION_API_VERSION,
+      "content-type": "application/json",
     },
-    sorts: [
-      {
-        timestamp: "last_edited_time",
-        direction: "descending",
-      },
-    ],
+    body: body ? JSON.stringify(body) : undefined,
   });
 
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.message || `Notion API request failed with HTTP ${response.status}.`);
+  }
+
+  return payload;
+}
+
+function extractNotionCoverUrl(cover) {
+  if (!cover) {
+    return "";
+  }
+
+  if (cover.type === "external") {
+    return sanitizeSingleLine(cover.external?.url || "", 500);
+  }
+
+  if (cover.type === "file") {
+    return sanitizeSingleLine(cover.file?.url || "", 500);
+  }
+
+  return "";
+}
+
+function parseAllNotionIds(input) {
+  const value = sanitizeSingleLine(input || "", 500);
+  if (!value) {
+    return [];
+  }
+
+  const matches = value.match(/[0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g) || [];
+  return [...new Set(matches.map((item) => parseDatabaseId(item)).filter(Boolean))];
+}
+
+function notionRichTextToPlainText(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => String(item?.plain_text || ""))
+    .join("")
+    .trim();
+}
+
+function extractNotionTitleFromSearchPage(page = {}) {
+  const properties = page?.properties || {};
+  for (const value of Object.values(properties)) {
+    if (value?.type === "title") {
+      return notionRichTextToPlainText(value.title || []);
+    }
+  }
+  return "";
+}
+
+async function retrieveNotionSiteShellPage(config, databaseMeta = {}) {
+  const candidateIds = [
+    sanitizeSingleLine(databaseMeta?.parent?.page_id || "", 120),
+    ...parseAllNotionIds(config.notionDatabaseUrl),
+    config.notionDatabaseId,
+  ].filter(Boolean);
+  const uniqueCandidateIds = [...new Set(candidateIds)];
+
+  for (const pageId of uniqueCandidateIds) {
+    try {
+      const pageMeta = await requestNotion(config, `/pages/${encodeURIComponent(pageId)}`);
+      if (pageMeta?.id) {
+        return pageMeta;
+      }
+    } catch {
+      // Ignore and continue to the next candidate.
+    }
+  }
+
+  const title = notionRichTextToPlainText(databaseMeta?.title || []);
+  if (!title) {
+    return {};
+  }
+
+  try {
+    const payload = await requestNotion(config, "/search", {
+      method: "POST",
+      body: {
+        query: title,
+        filter: {
+          property: "object",
+          value: "page",
+        },
+      },
+    });
+
+    const results = Array.isArray(payload?.results) ? payload.results : [];
+    const matched =
+      results.find((page) => extractNotionTitleFromSearchPage(page) === title) ||
+      results.find((page) => extractNotionTitleFromSearchPage(page).includes(title)) ||
+      results[0];
+
+    return matched?.id ? matched : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function getNotionFingerprint(env) {
+  const config = getNotionSyncConfig(env);
+  const [result, databaseMeta] = await Promise.all([
+    requestNotionDatabaseQuery(config, {
+      page_size: 10,
+      filter: {
+        property: "status",
+        select: {
+          equals: "published",
+        },
+      },
+      sorts: [
+        {
+          timestamp: "last_edited_time",
+          direction: "descending",
+        },
+      ],
+    }),
+    requestNotion(config, `/databases/${encodeURIComponent(config.notionDatabaseId)}`).catch(() => ({})),
+  ]);
+
   const rows = Array.isArray(result?.results) ? result.results : [];
+  const siteShellPage = await retrieveNotionSiteShellPage(config, databaseMeta);
+  const coverFingerprint = [
+    sanitizeSingleLine(databaseMeta?.id || "", 120),
+    sanitizeSingleLine(databaseMeta?.last_edited_time || "", 80),
+    extractNotionCoverUrl(databaseMeta?.cover),
+    sanitizeSingleLine(siteShellPage?.id || "", 120),
+    sanitizeSingleLine(siteShellPage?.last_edited_time || "", 80),
+    extractNotionCoverUrl(siteShellPage?.cover),
+  ]
+    .filter(Boolean)
+    .join(":");
   const signatures = rows.map((item) => `${item.id}:${item.last_edited_time || ""}`);
   const latestEditedAt = rows[0]?.last_edited_time || "";
-  const fingerprint = signatures.join("|");
+  const fingerprint = [...signatures, coverFingerprint].filter(Boolean).join("|");
 
   return {
     fingerprint,
