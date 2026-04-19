@@ -91,6 +91,7 @@ export function resolveNotionConfig() {
   const token = String(process.env.NOTION_TOKEN || "").trim();
   const explicitDatabaseId = String(process.env.NOTION_DATABASE_ID || "").trim();
   const databaseUrl = String(process.env.NOTION_DATABASE_URL || "").trim();
+  const sitePageUrl = String(process.env.NOTION_SITE_PAGE_URL || process.env.NOTION_DATABASE_PUBLIC_URL || "").trim();
   const databaseId = parseDatabaseIdFromUrl(explicitDatabaseId) || parseDatabaseIdFromUrl(databaseUrl);
 
   if (!token) {
@@ -105,5 +106,6 @@ export function resolveNotionConfig() {
     token,
     databaseId,
     databaseUrl,
+    sitePageUrl,
   };
 }

@@ -173,6 +173,7 @@ export function getNotionSyncConfig(env) {
     pagesApiToken: sanitizeSingleLine(env.CLOUDFLARE_PAGES_API_TOKEN || "", 500),
     notionToken: sanitizeSingleLine(env.NOTION_TOKEN || "", 500),
     notionDatabaseUrl: sanitizeSingleLine(env.NOTION_DATABASE_URL || "", 500),
+    notionSitePageUrl: sanitizeSingleLine(env.NOTION_SITE_PAGE_URL || env.NOTION_DATABASE_PUBLIC_URL || "", 500),
     notionDatabaseId:
       parseDatabaseId(env.NOTION_DATABASE_ID || "") || parseDatabaseId(env.NOTION_DATABASE_URL || ""),
   };
@@ -368,6 +369,38 @@ function extractNotionTitleFromSearchPage(page = {}) {
   return "";
 }
 
+async function fetchPublicNotionCover(config, url) {
+  const href = sanitizeSingleLine(url || "", 500);
+  if (!href || !/^https?:\/\//i.test(href)) {
+    return "";
+  }
+
+  try {
+    const response = await fetch(href, {
+      headers: {
+        "user-agent": "HoraFeng-NotionSyncCheck/1.0 (+https://horafeng.top)",
+        accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+    });
+
+    if (!response.ok) {
+      return "";
+    }
+
+    const html = await response.text();
+    const matched =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["'][^>]*>/i) ||
+      html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["'][^>]*>/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["'][^>]*>/i);
+
+    return sanitizeSingleLine(matched?.[1] || "", 500);
+  } catch {
+    return "";
+  }
+}
+
 async function retrieveNotionSiteShellPage(config, databaseMeta = {}) {
   const candidateIds = [
     sanitizeSingleLine(databaseMeta?.parent?.page_id || "", 120),
@@ -416,6 +449,28 @@ async function retrieveNotionSiteShellPage(config, databaseMeta = {}) {
   }
 }
 
+async function resolveNotionSiteShellCover(config, databaseMeta = {}, siteShellPage = {}) {
+  const apiCover = extractNotionCoverUrl(siteShellPage?.cover) || extractNotionCoverUrl(databaseMeta?.cover);
+  if (apiCover) {
+    return apiCover;
+  }
+
+  const candidates = [
+    config.notionSitePageUrl,
+    sanitizeSingleLine(databaseMeta?.public_url || "", 500),
+    sanitizeSingleLine(siteShellPage?.public_url || "", 500),
+  ].filter(Boolean);
+
+  for (const url of [...new Set(candidates)]) {
+    const cover = await fetchPublicNotionCover(config, url);
+    if (cover) {
+      return cover;
+    }
+  }
+
+  return "";
+}
+
 export async function getNotionFingerprint(env) {
   const config = getNotionSyncConfig(env);
   const [result, databaseMeta] = await Promise.all([
@@ -439,6 +494,7 @@ export async function getNotionFingerprint(env) {
 
   const rows = Array.isArray(result?.results) ? result.results : [];
   const siteShellPage = await retrieveNotionSiteShellPage(config, databaseMeta);
+  const siteShellCover = await resolveNotionSiteShellCover(config, databaseMeta, siteShellPage);
   const coverFingerprint = [
     sanitizeSingleLine(databaseMeta?.id || "", 120),
     sanitizeSingleLine(databaseMeta?.last_edited_time || "", 80),
@@ -446,6 +502,7 @@ export async function getNotionFingerprint(env) {
     sanitizeSingleLine(siteShellPage?.id || "", 120),
     sanitizeSingleLine(siteShellPage?.last_edited_time || "", 80),
     extractNotionCoverUrl(siteShellPage?.cover),
+    siteShellCover,
   ]
     .filter(Boolean)
     .join(":");

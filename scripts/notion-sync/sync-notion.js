@@ -139,6 +139,35 @@ function extractTitleFromSearchPage(page = {}) {
   return "";
 }
 
+async function fetchPublicPageCover(url) {
+  const href = String(url || "").trim();
+  if (!href || !/^https?:\/\//i.test(href)) {
+    return "";
+  }
+
+  try {
+    const response = await withTimeout(
+      fetch(href, {
+        headers: {
+          "user-agent": "HoraFeng-NotionSync/1.0 (+https://horafeng.top)",
+          accept: "text/html,application/xhtml+xml",
+        },
+        redirect: "follow",
+      }),
+      BOOKMARK_FETCH_TIMEOUT_MS,
+    );
+
+    if (!response.ok) {
+      return "";
+    }
+
+    const html = await response.text();
+    return resolveUrl(readMetaContent(html, ["og:image", "twitter:image", "twitter:image:src"]), response.url || href) || "";
+  } catch {
+    return "";
+  }
+}
+
 function parseAllNotionIds(input) {
   const value = String(input || "").trim();
   if (!value) {
@@ -195,6 +224,28 @@ async function retrieveSiteShellPage(client, notion, databaseMeta = {}) {
   }
 
   return {};
+}
+
+async function resolveProfileCover(notion, databaseMeta = {}, siteShellPage = {}) {
+  const apiCover = extractCoverUrl(siteShellPage.cover) || extractCoverUrl(databaseMeta.cover);
+  if (apiCover) {
+    return apiCover;
+  }
+
+  const publicCandidates = [
+    String(notion.sitePageUrl || "").trim(),
+    String(databaseMeta?.public_url || "").trim(),
+    String(siteShellPage?.public_url || "").trim(),
+  ].filter(Boolean);
+
+  for (const url of [...new Set(publicCandidates)]) {
+    const publicCover = await fetchPublicPageCover(url);
+    if (publicCover) {
+      return publicCover;
+    }
+  }
+
+  return "";
 }
 
 async function persistProfileAvatar(client, avatarUrl) {
@@ -714,6 +765,7 @@ export async function syncNotionContent() {
 
   const siteShellPage = await retrieveSiteShellPage(client, notion, databaseMeta);
   const databaseProfile = resolveProfileFromDatabaseMeta(databaseMeta, siteShellPage);
+  databaseProfile.cover = (await resolveProfileCover(notion, databaseMeta, siteShellPage)) || databaseProfile.cover;
 
   log(`loaded ${pages.length} database rows`);
 

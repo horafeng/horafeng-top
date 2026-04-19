@@ -4,20 +4,31 @@
       "id": "2026-04-12-rainy-bookstore",
       "date": "2026-04-12",
       "mood": "",
-      "title": "下雨天躲进书店",
-      "tags": ["阅读", "慢生活", "雨天"],
+      "title": "雨天躲进书店",
+      "tags": [
+        "阅读",
+        "慢生活",
+        "雨天"
+      ],
       "images": [
         "content/generated/media/notion/rainy-bookstore/01.png",
-        "content/generated/media/notion/rainy-bookstore/02.png"
+        "content/generated/media/notion/rainy-bookstore/02.png",
+        "content/generated/media/notion/rainy-bookstore/03.png",
+        "content/generated/media/notion/rainy-bookstore/04.jpeg"
       ],
-      "content": ["看看有没有图片"]
+      "content": [
+        "看看有没有图片，增加文字呢？14:19         16刷新？"
+      ]
     },
     {
       "id": "2026-04-12-coffee-corner",
       "date": "2026-04-12",
       "mood": "",
       "title": "咖啡店角落的两小时",
-      "tags": ["阅读", "慢生活"],
+      "tags": [
+        "阅读",
+        "慢生活"
+      ],
       "images": [],
       "content": [
         "测试：",
