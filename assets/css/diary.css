@@ -3080,7 +3080,7 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
     radial-gradient(circle at 16% 18%, rgba(248, 245, 240, 0.28), transparent 38%),
     radial-gradient(circle at 82% 10%, rgba(224, 236, 250, 0.22), transparent 34%),
     linear-gradient(160deg, rgba(245, 244, 240, 0.28) 0%, rgba(235, 242, 250, 0.2) 56%, rgba(245, 240, 248, 0.18) 100%),
-    var(--season-bg-image, url("https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=2200&q=80"));
+    var(--season-bg-image, url("/assets/images/back.png"));
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   background-position:
     center top,

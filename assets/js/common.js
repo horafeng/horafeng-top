@@ -39,6 +39,7 @@ function sitePath(path) {
 
 const SITE_START_AT = "2025-01-14T00:00:00+09:24";
 const COPYRIGHT_START_YEAR = 2026;
+const DEFAULT_SITE_BACKGROUND = "/assets/images/back.png";
 let footerTimerId = null;
 let footerStatsPromise = null;
 
@@ -643,14 +644,8 @@ export function setupSiteChrome(options = {}) {
     const hour = now.getHours();
     const season = month >= 3 && month <= 5 ? "spring" : month >= 6 && month <= 8 ? "summer" : month >= 9 && month <= 11 ? "autumn" : "winter";
     const dayPeriod = hour >= 6 && hour < 18 ? "day" : "night";
-    const seasonImages = {
-      spring: "https://source.unsplash.com/2200x1400/?aerial,river,trees,spring&sig=11",
-      summer: "https://source.unsplash.com/2200x1400/?aerial,lake,forest,summer&sig=21",
-      autumn: "https://source.unsplash.com/2200x1400/?aerial,forest,river,autumn&sig=31",
-      winter: "https://source.unsplash.com/2200x1400/?aerial,river,forest,winter,snow&sig=41",
-    };
     const configuredCover = String(options.profileCoverUrl || "").trim();
-    const backgroundImage = configuredCover || seasonImages[season];
+    const backgroundImage = configuredCover || DEFAULT_SITE_BACKGROUND;
 
     document.body.dataset.season = season;
     document.body.dataset.dayPeriod = dayPeriod;
