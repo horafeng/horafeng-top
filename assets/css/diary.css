@@ -56,11 +56,10 @@ p {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background-image:
-    radial-gradient(circle at 18% 20%, rgba(250, 247, 242, 0.95), transparent 40%),
-    radial-gradient(circle at 82% 8%, rgba(231, 240, 252, 0.92), transparent 38%),
-    radial-gradient(circle at 76% 85%, rgba(244, 236, 252, 0.65), transparent 35%),
-    linear-gradient(164deg, #f7f6f3 0%, #ecf3ff 58%, #f5efff 100%);
+  background-image: var(--season-bg-image, url("/assets/images/back.png"));
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
 }
 
 .splash-screen {
@@ -3075,25 +3074,10 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
 
 /* ===== Site Frame Upgrade (Home + Guestbook) ===== */
 .bg-layer {
-  background-image:
-    linear-gradient(to bottom, rgba(9, 21, 31, 0.18) 0, rgba(9, 21, 31, 0.06) 220px, rgba(9, 21, 31, 0) 420px),
-    radial-gradient(circle at 16% 18%, rgba(248, 245, 240, 0.28), transparent 38%),
-    radial-gradient(circle at 82% 10%, rgba(224, 236, 250, 0.22), transparent 34%),
-    linear-gradient(160deg, rgba(245, 244, 240, 0.28) 0%, rgba(235, 242, 250, 0.2) 56%, rgba(245, 240, 248, 0.18) 100%),
-    var(--season-bg-image, url("/assets/images/back.png"));
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  background-position:
-    center top,
-    center top,
-    center top,
-    center top,
-    center top;
-  background-size:
-    100% 420px,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    cover;
+  background-image: var(--season-bg-image, url("/assets/images/back.png"));
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
   isolation: isolate;
 }
 
@@ -3107,17 +3091,11 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
 
 .bg-layer::before {
   z-index: 0;
-  background: transparent;
-  transition: background 360ms ease;
+  display: none;
 }
 
 .bg-layer::after {
-  z-index: 1;
-  opacity: 0.22;
-  mix-blend-mode: screen;
-  background:
-    radial-gradient(circle at 82% 18%, rgba(255, 245, 190, 0.48), transparent 26%),
-    radial-gradient(circle at 42% 74%, rgba(190, 225, 255, 0.25), transparent 32%);
+  display: none;
 }
 
 body[data-day-period="night"] .bg-layer::after {
