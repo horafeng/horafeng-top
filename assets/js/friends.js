@@ -5,7 +5,6 @@ const TEXT = {
   fallbackInitial: "\u53cb",
   fallbackName: "\u672a\u547d\u540d\u53cb\u94fe",
   fallbackIntro: "\u8fd9\u4e2a\u7ad9\u70b9\u8fd8\u6ca1\u6709\u586b\u5199\u4ecb\u7ecd\u3002",
-  visitLink: "\u8bbf\u95ee\u7f51\u7ad9",
   loadError: "\u53cb\u94fe\u6570\u636e\u6682\u65f6\u52a0\u8f7d\u5931\u8d25\u3002",
   pageError: "\u53cb\u94fe\u9875\u9762\u52a0\u8f7d\u5931\u8d25\u3002",
   title: "\u53cb\u94fe",
@@ -85,32 +84,27 @@ function getInitial(name) {
 }
 
 function renderFriendCard(item) {
-  const name = String(item?.name || "").trim() || TEXT.fallbackName;
+  const name = String(item?.siteName || item?.title || item?.name || "").trim() || TEXT.fallbackName;
   const url = String(item?.url || "").trim();
-  const intro = String(item?.intro || item?.description || "").trim();
+  const intro = String(item?.signature || item?.intro || item?.description || "").trim() || TEXT.fallbackIntro;
   const avatar = String(item?.avatar || "").trim();
   const domain = formatDomain(url);
-  const signature = String(item?.signature || "").trim();
 
   const avatarMarkup = avatar
     ? `<img class="friend-avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(name)} \u7684\u5934\u50cf" loading="lazy" />`
     : `<div class="friend-avatar friend-avatar-fallback" aria-hidden="true">${escapeHtml(getInitial(name))}</div>`;
 
   return `
-    <article class="panel-lite friend-card">
+    <a class="panel-lite friend-card" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="\u6253\u5f00 ${escapeHtml(name)}">
       <div class="friend-card-head">
         ${avatarMarkup}
         <div class="friend-card-meta">
           <h2>${escapeHtml(name)}</h2>
-          <a class="friend-domain" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(domain)}</a>
+          <span class="friend-domain">${escapeHtml(domain)}</span>
         </div>
       </div>
-      ${signature ? `<p class="friend-signature">${escapeHtml(signature)}</p>` : ""}
-      <p class="friend-intro">${escapeHtml(intro || TEXT.fallbackIntro)}</p>
-      <div class="friend-card-foot">
-        <a class="friend-visit-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${TEXT.visitLink}</a>
-      </div>
-    </article>
+      <p class="friend-signature">${escapeHtml(intro)}</p>
+    </a>
   `;
 }
 
