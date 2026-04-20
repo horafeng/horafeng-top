@@ -109,13 +109,27 @@ function renderFriendCard(item) {
 }
 
 async function loadFriends() {
+  const fallBackValue = {
+    title: TEXT.title,
+    intro: TEXT.intro,
+    items: [],
+  };
+
+  try {
+    const apiResponse = await fetch("/api/friends", { credentials: "same-origin" });
+    if (apiResponse.ok) {
+      const payload = await apiResponse.json();
+      if (Array.isArray(payload?.items)) {
+        return payload;
+      }
+    }
+  } catch {
+    // fall back to generated JSON below
+  }
+
   const response = await fetch("/content/generated/notion-friends.json");
   if (!response.ok) {
-    return {
-      title: TEXT.title,
-      intro: TEXT.intro,
-      items: [],
-    };
+    return fallBackValue;
   }
   return response.json();
 }
