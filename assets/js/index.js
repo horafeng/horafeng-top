@@ -733,6 +733,12 @@ function filterByParams(entries) {
   const contentType = params.get("content");
   const heading = document.getElementById("timeline-heading");
 
+  if (contentType === "article") {
+    document.body.dataset.homeLayout = "article-list";
+  } else {
+    delete document.body.dataset.homeLayout;
+  }
+
   let list = entries;
   if (contentType) {
     list = list.filter((entry) => entry.contentType === contentType);

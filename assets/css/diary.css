@@ -221,8 +221,8 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   font-family: "STKaiti", "KaiTi", "Noto Serif SC", serif;
   font-size: clamp(1.25rem, 2.7vw, 2rem);
   letter-spacing: 0.05em;
-  color: #314a67;
-  text-shadow: 0 6px 18px rgba(30, 46, 69, 0.14);
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 8px 22px rgba(11, 20, 33, 0.55);
   position: relative;
   padding-right: 0.22em;
 }
@@ -234,7 +234,7 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   top: 12%;
   width: 2px;
   height: 76%;
-  background: rgba(54, 81, 118, 0.75);
+  background: rgba(255, 255, 255, 0.92);
   animation: homeTypingCaret 880ms step-end infinite;
 }
 
@@ -1673,6 +1673,14 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
 }
 
 @media (min-width: 1024px) {
+  body[data-page="home"][data-home-layout="article-list"] .home-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  body[data-page="home"][data-home-layout="article-list"] #desktop-side-panel {
+    display: none !important;
+  }
+
   .home-shell {
     grid-template-columns: 220px minmax(0, 1fr) 250px;
     gap: 10px;
@@ -3356,6 +3364,10 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     width: min(1180px, calc(100vw - 34px));
   }
 
+  body[data-page="home"][data-home-layout="article-list"].with-site-nav .app-shell {
+    width: min(1120px, calc(100vw - 34px));
+  }
+
   body.with-site-nav .site-footer {
     width: min(1180px, calc(100vw - 34px));
     margin-bottom: 32px;
@@ -3365,6 +3377,10 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     grid-template-columns: 220px minmax(0, 1fr) 244px;
     gap: 14px;
     align-items: start;
+  }
+
+  body[data-page="home"][data-home-layout="article-list"].with-site-nav .home-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
   }
 
   body.with-site-nav #desktop-profile-panel,
@@ -3445,6 +3461,10 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
   body[data-page="home"].with-site-nav #desktop-side-panel {
     overflow: visible;
     max-height: calc(100vh - var(--site-sticky-top) - 16px);
+  }
+
+  body[data-page="home"][data-home-layout="article-list"].with-site-nav #desktop-side-panel {
+    display: none !important;
   }
 }
 
