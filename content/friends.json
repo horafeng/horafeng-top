@@ -1,5 +1,19 @@
 {
   "title": "友链",
   "intro": "把喜欢的博客与长期想回访的网站整理在这里，留住那些认真写字的人。",
-  "items": []
+  "items": [
+    {
+      "name": "夏的博客 Xia's blog",
+      "url": "https://xiau.net",
+      "avatar": "https://storage.549900.xyz/d/server/bk-tx.png",
+      "description": "我叫夏，是个笨蛋"
+    },
+    {
+      "name": "泯轲的小站",
+      "url": "https://520524.xyz",
+      "avatar": "https://s2.loli.net/2025/10/05/Gxufqrsk4mV5wbT.jpg",
+      "description": "咬咬稻草做动作，生活一点没烦恼",
+      "signature": "站长：泯轲"
+    }
+  ]
 }
