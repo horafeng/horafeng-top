@@ -2,6 +2,7 @@ export const CONTENT_TYPES = Object.freeze({
   NOTE: "note",
   ARTICLE: "article",
   NOTICE: "notice",
+  FRIENDS: "friends",
 });
 
 export const CONTENT_STATUS = Object.freeze({

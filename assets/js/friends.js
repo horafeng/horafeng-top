@@ -109,9 +109,13 @@ function renderFriendCard(item) {
 }
 
 async function loadFriends() {
-  const response = await fetch("/content/friends.json");
+  const response = await fetch("/content/generated/notion-friends.json");
   if (!response.ok) {
-    throw new Error(TEXT.loadError);
+    return {
+      title: TEXT.title,
+      intro: TEXT.intro,
+      items: [],
+    };
   }
   return response.json();
 }

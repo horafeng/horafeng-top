@@ -452,6 +452,133 @@ function inferSiteNameFromUrl(url) {
   }
 }
 
+function normalizeExternalUrl(value) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return "";
+  }
+
+  if (/^(https?:)?\/\//i.test(text) || /^data:/i.test(text)) {
+    return text.startsWith("//") ? `https:${text}` : text;
+  }
+
+  if (/^[\w.-]+\.[a-z]{2,}(?:[/?#].*)?$/i.test(text)) {
+    return `https://${text}`;
+  }
+
+  return text;
+}
+
+function normalizeFriendFieldLabel(label) {
+  return String(label || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function mapFriendField(label) {
+  const normalized = normalizeFriendFieldLabel(label);
+  if (!normalized) {
+    return "";
+  }
+
+  if (["博客名称", "网站名称", "网页名称", "名称", "name", "title", "sitename"].includes(normalized)) {
+    return "name";
+  }
+
+  if (["博客url", "网站url", "网页url", "链接", "网址", "url", "link"].includes(normalized)) {
+    return "url";
+  }
+
+  if (["博客logo", "网站logo", "网页logo", "头像", "图标", "logo", "avatar", "icon"].includes(normalized)) {
+    return "avatar";
+  }
+
+  if (["博客简介", "网站简介", "网页简介", "简介", "描述", "签名", "summary", "description", "intro", "signature", "descr"].includes(normalized)) {
+    return "signature";
+  }
+
+  return "";
+}
+
+function hasFriendDraftContent(draft = {}) {
+  return ["name", "url", "avatar", "signature"].some((key) => String(draft?.[key] || "").trim());
+}
+
+function finalizeFriendDraft(draft = {}) {
+  const url = normalizeExternalUrl(draft.url);
+  if (!url) {
+    return null;
+  }
+
+  const name = String(draft.name || "").trim() || inferSiteNameFromUrl(url) || url;
+  const avatar = normalizeExternalUrl(draft.avatar);
+  const signature = String(draft.signature || "").trim();
+
+  return {
+    name,
+    siteName: name,
+    url,
+    avatar,
+    signature,
+    description: signature,
+  };
+}
+
+function unwrapMarkdownLink(value) {
+  const text = String(value || "").trim();
+  const matched = text.match(/^\[(.+)\]\((https?:\/\/[^)]+)\)$/i);
+  if (!matched) {
+    return text;
+  }
+  return matched[2].trim() || matched[1].trim();
+}
+
+function parseFriendsFromBlocks(blocks = [], { title = "", intro = "" } = {}) {
+  const lines = extractTextLinesFromNormalizedBlocks(blocks)
+    .flatMap((line) => String(line || "").split(/\r?\n/))
+    .map((line) => String(line || "").trim())
+    .filter(Boolean);
+
+  const items = [];
+  let draft = {};
+
+  for (const line of lines) {
+    const matched = line.match(/^([^:：]+)[:：]\s*(.*)$/);
+    if (!matched) {
+      continue;
+    }
+
+    const field = mapFriendField(matched[1]);
+    if (!field) {
+      continue;
+    }
+
+    if (field === "name" && hasFriendDraftContent(draft)) {
+      const item = finalizeFriendDraft(draft);
+      if (item) {
+        items.push(item);
+      }
+      draft = {};
+    }
+
+    draft[field] = unwrapMarkdownLink(matched[2].trim());
+  }
+
+  if (hasFriendDraftContent(draft)) {
+    const item = finalizeFriendDraft(draft);
+    if (item) {
+      items.push(item);
+    }
+  }
+
+  return {
+    title: String(title || "").trim() || "友链",
+    intro: String(intro || "").trim() || "把喜欢的博客与长期想回访的网站整理在这里。",
+    items,
+  };
+}
+
 async function fetchBookmarkMetadata(url) {
   const href = String(url || "").trim();
   if (!href) {
@@ -774,6 +901,12 @@ export async function syncNotionContent() {
   const articleItems = [];
   const noticeItems = [];
   const compatNotes = [];
+  let friendsPage = {
+    title: "友链",
+    intro: "把喜欢的博客与长期想回访的网站整理在这里。",
+    items: [],
+    source_page_id: "",
+  };
 
   for (const [index, page] of pages.entries()) {
     const pageData = normalizeDatabasePage(page);
@@ -801,6 +934,18 @@ export async function syncNotionContent() {
     const assetMap = await cachePageAssets(client, builtRecord, enrichedBlocks);
     const indexRecord = localizeValue(builtRecord, assetMap);
     const localizedBlocks = localizeValue(enrichedBlocks, assetMap);
+
+    if (normalizeContentType(indexRecord.type) === CONTENT_TYPES.FRIENDS) {
+      const parsedFriends = parseFriendsFromBlocks(localizedBlocks, {
+        title: indexRecord.title,
+        intro: indexRecord.summary || indexRecord.signature,
+      });
+      friendsPage = {
+        ...parsedFriends,
+        source_page_id: indexRecord.notion_page_id || indexRecord.id,
+      };
+      continue;
+    }
 
     indexItems.push(indexRecord);
 
@@ -959,6 +1104,18 @@ export async function syncNotionContent() {
     items: finalNoticeItems,
   });
 
+  await writeJson(path.join(GENERATED_DIR, "notion-friends.json"), {
+    generated_at: generatedAt,
+    source: {
+      database_id: notion.databaseId,
+      page_id: friendsPage.source_page_id || "",
+    },
+    total: friendsPage.items.length,
+    title: friendsPage.title,
+    intro: friendsPage.intro,
+    items: friendsPage.items,
+  });
+
   await writeJson(path.join(GENERATED_DIR, "notion-diaries-compat.json"), {
     generated_at: generatedAt,
     source: {
@@ -982,7 +1139,7 @@ export async function syncNotionContent() {
     articles: seoItems,
   });
 
-  log(`sync done: ${counts.notes} note, ${counts.articles} article, ${counts.notices} notice`);
+  log(`sync done: ${counts.notes} note, ${counts.articles} article, ${counts.notices} notice, ${friendsPage.items.length} friends`);
   log(`output dir: ${path.relative(PROJECT_ROOT, GENERATED_DIR)}`);
 
   const keepDetails = new Set(finalArticleItems.map((item) => path.basename(String(item.detail_path || ""))).filter(Boolean));

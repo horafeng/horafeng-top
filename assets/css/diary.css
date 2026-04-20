@@ -4934,6 +4934,51 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   margin-top: 10px !important;
 }
 
+:where(
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .profile-action-btn
+):not(:disabled) {
+  transition:
+    scale 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    opacity 180ms ease;
+  transform-origin: center;
+}
+
+:where(
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .profile-action-btn
+):not(:disabled):hover,
+:where(
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .profile-action-btn
+):not(:disabled):focus-visible {
+  scale: 1.03;
+}
+
+:where(
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .profile-action-btn
+):not(:disabled):active {
+  scale: 0.985;
+}
+
 
 
 
