@@ -303,6 +303,24 @@ async function requestNotionDatabaseQuery(config, body) {
   return payload;
 }
 
+async function queryAllPublishedNotionPages(config, body = {}) {
+  const results = [];
+  let nextCursor = "";
+
+  do {
+    const payload = await requestNotionDatabaseQuery(config, {
+      page_size: 100,
+      ...body,
+      start_cursor: nextCursor || undefined,
+    });
+
+    results.push(...(Array.isArray(payload?.results) ? payload.results : []));
+    nextCursor = payload?.has_more ? String(payload?.next_cursor || "") : "";
+  } while (nextCursor);
+
+  return results;
+}
+
 async function requestNotion(config, pathname, { method = "GET", body } = {}) {
   if (!config.notionToken) {
     throw new Error("Notion API config is incomplete.");
@@ -473,8 +491,8 @@ async function resolveNotionSiteShellCover(config, databaseMeta = {}, siteShellP
 
 export async function getNotionFingerprint(env) {
   const config = getNotionSyncConfig(env);
-  const [result, databaseMeta] = await Promise.all([
-    requestNotionDatabaseQuery(config, {
+  const [rows, databaseMeta] = await Promise.all([
+    queryAllPublishedNotionPages(config, {
       page_size: 10,
       filter: {
         property: "status",
@@ -492,7 +510,6 @@ export async function getNotionFingerprint(env) {
     requestNotion(config, `/databases/${encodeURIComponent(config.notionDatabaseId)}`).catch(() => ({})),
   ]);
 
-  const rows = Array.isArray(result?.results) ? result.results : [];
   const siteShellPage = await retrieveNotionSiteShellPage(config, databaseMeta);
   const siteShellCover = await resolveNotionSiteShellCover(config, databaseMeta, siteShellPage);
   const coverFingerprint = [
@@ -508,7 +525,7 @@ export async function getNotionFingerprint(env) {
     .join(":");
   const signatures = rows.map((item) => `${item.id}:${item.last_edited_time || ""}`);
   const latestEditedAt = rows[0]?.last_edited_time || "";
-  const fingerprint = [...signatures, coverFingerprint].filter(Boolean).join("|");
+  const fingerprint = [`count:${rows.length}`, ...signatures, coverFingerprint].filter(Boolean).join("|");
 
   return {
     fingerprint,
