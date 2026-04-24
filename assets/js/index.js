@@ -502,22 +502,6 @@ function getMobileDrawerNavItems() {
   ];
 }
 
-function renderMobileDrawerSecondary() {
-  return `
-    <section class="mobile-drawer-card mobile-drawer-secondary" aria-label="更多入口">
-      <div class="mobile-drawer-section-head">
-        <span class="mobile-drawer-section-kicker">更多</span>
-      </div>
-      <div class="mobile-drawer-secondary-list">
-        <a class="mobile-drawer-secondary-link" href="index.html?content=notice">公告</a>
-        <a class="mobile-drawer-secondary-link" href="guestbook.html">留言板</a>
-        <a class="mobile-drawer-secondary-link" href="friends/">友链</a>
-        <button class="mobile-drawer-secondary-link" type="button" data-mobile-search-trigger="1">搜索</button>
-      </div>
-    </section>
-  `;
-}
-
 function renderMobileDrawerNav() {
   const navItems = getMobileDrawerNavItems();
   return `
@@ -535,6 +519,13 @@ function renderMobileDrawerNav() {
             `,
           )
           .join("")}
+        <div class="mobile-drawer-section-head">
+          <span class="mobile-drawer-section-kicker">更多</span>
+        </div>
+        <a class="mobile-drawer-secondary-link" href="index.html?content=notice">公告</a>
+        <a class="mobile-drawer-secondary-link" href="guestbook.html">留言板</a>
+        <a class="mobile-drawer-secondary-link" href="friends/">友链</a>
+        <button class="mobile-drawer-secondary-link" type="button" data-mobile-search-trigger="1">搜索</button>
       </div>
     </nav>
   `;
@@ -599,7 +590,6 @@ function renderProfile(config) {
       </div>
     </section>
     ${renderMobileDrawerNav()}
-    ${renderMobileDrawerSecondary()}
   `;
 }
 
