@@ -51,6 +51,7 @@
 
     <div class="mobile-home-topbar" aria-label="手机端首页顶部导航">
       <button id="mobile-home-profile" class="mobile-home-icon-btn" type="button" aria-label="打开侧栏菜单">☰</button>
+      <div class="mobile-home-brand" aria-label="博客标题">HoraFeng的博客</div>
       <button id="mobile-home-search" class="mobile-home-icon-btn" type="button" aria-label="聚焦搜索">⌕</button>
     </div>
 
@@ -159,6 +160,28 @@
         <button id="mobile-drawer-close" class="drawer-close" type="button" aria-label="关闭侧栏">关闭</button>
         <div id="mobile-profile-slot"></div>
       </aside>
+    </div>
+
+    <div id="mobile-search-overlay" class="mobile-search-overlay" hidden>
+      <div class="mobile-search-backdrop" data-close-mobile-search="1"></div>
+      <section class="mobile-search-sheet" role="dialog" aria-modal="true" aria-labelledby="mobile-search-title">
+        <div class="mobile-search-head">
+          <h2 id="mobile-search-title">搜索</h2>
+          <button id="mobile-search-close" class="mobile-search-close" type="button" aria-label="关闭搜索">×</button>
+        </div>
+        <form id="mobile-search-form" class="mobile-search-form" role="search">
+          <input id="mobile-search-input" type="search" placeholder="搜索什么..." aria-label="搜索站内内容" />
+          <button type="submit">搜索</button>
+        </form>
+        <div class="mobile-search-shortcuts" aria-label="快捷跳转">
+          <a href="index.html">首页</a>
+          <a href="index.html?content=article">文章</a>
+          <a href="index.html?content=note">小记</a>
+          <a href="index.html?content=notice">公告</a>
+          <a href="guestbook.html">留言板</a>
+          <a href="friends/">友链</a>
+        </div>
+      </section>
     </div>
 
     <div id="post-overlay" class="post-overlay" hidden>

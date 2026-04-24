@@ -498,36 +498,22 @@ function getMobileDrawerNavItems() {
     { href: "index.html", label: "首页", active: !content },
     { href: "index.html?content=article", label: "文章", active: content === "article" },
     { href: "index.html?content=note", label: "小记", active: content === "note" },
-    { href: "index.html?content=notice", label: "公告", active: content === "notice" },
     { href: "archive.html", label: "归档", active: window.location.pathname.endsWith("/archive.html") },
-    { href: "guestbook.html", label: "留言板", active: window.location.pathname.endsWith("/guestbook.html") },
-    { href: "friends/", label: "友链", active: /\/friends\/?$/.test(window.location.pathname) },
   ];
 }
 
-function renderMobileDrawerNotice(notice) {
-  if (!notice) {
-    return `
-      <section class="mobile-drawer-card mobile-drawer-notice" aria-label="公告区域">
-        <div class="mobile-drawer-section-head">
-          <span class="mobile-drawer-section-kicker">公告</span>
-          <a class="mobile-drawer-section-link" href="index.html?content=notice">全部公告</a>
-        </div>
-        <p class="mobile-drawer-notice-empty">目前还没有置顶公告。</p>
-      </section>
-    `;
-  }
-
-  const summary = Array.isArray(notice.content) ? notice.content.find((line) => String(line || "").trim()) || "" : "";
+function renderMobileDrawerSecondary() {
   return `
-    <section class="mobile-drawer-card mobile-drawer-notice" aria-label="公告区域">
+    <section class="mobile-drawer-card mobile-drawer-secondary" aria-label="更多入口">
       <div class="mobile-drawer-section-head">
-        <span class="mobile-drawer-section-kicker">公告</span>
-        <a class="mobile-drawer-section-link" href="index.html?content=notice">全部公告</a>
+        <span class="mobile-drawer-section-kicker">更多</span>
       </div>
-      <p class="mobile-drawer-notice-date">${escapeHtml(notice.date || "")}</p>
-      <h2 class="mobile-drawer-notice-title">${escapeHtml(notice.title || "公告")}</h2>
-      ${summary ? `<p class="mobile-drawer-notice-summary">${linkify(summary)}</p>` : ""}
+      <div class="mobile-drawer-secondary-list">
+        <a class="mobile-drawer-secondary-link" href="index.html?content=notice">公告</a>
+        <a class="mobile-drawer-secondary-link" href="guestbook.html">留言板</a>
+        <a class="mobile-drawer-secondary-link" href="friends/">友链</a>
+        <button class="mobile-drawer-secondary-link" type="button" data-mobile-search-trigger="1">搜索</button>
+      </div>
     </section>
   `;
 }
@@ -549,9 +535,6 @@ function renderMobileDrawerNav() {
             `,
           )
           .join("")}
-        <button class="mobile-drawer-nav-link mobile-drawer-search-link" type="button" data-mobile-search-trigger="1">
-          <span>搜索</span>
-        </button>
       </div>
     </nav>
   `;
@@ -600,21 +583,7 @@ function renderProfile(config) {
     return;
   }
 
-  const mobileNotice = allEntries
-    .filter((entry) => entry.contentType === "notice")
-    .sort((a, b) => {
-      if (Boolean(a.pin) !== Boolean(b.pin)) {
-        return a.pin ? -1 : 1;
-      }
-      const updatedDiff = new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
-      if (updatedDiff !== 0) {
-        return updatedDiff;
-      }
-      return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
-    })[0];
-
   mobileSlot.innerHTML = `
-    ${renderMobileDrawerNotice(mobileNotice)}
     <section class="mobile-drawer-card mobile-drawer-profile" aria-label="博主信息">
       <div class="profile-cover" style="background-image:url(${profile.cover || ""});background-size:cover;background-position:center;"></div>
       <div class="profile-main compact">
@@ -630,6 +599,7 @@ function renderProfile(config) {
       </div>
     </section>
     ${renderMobileDrawerNav()}
+    ${renderMobileDrawerSecondary()}
   `;
 }
 
@@ -738,6 +708,17 @@ function setupNoticeOverlay() {
     return summary ? [summary] : [];
   };
 
+  const buildNoticeExcerpt = (lines, limit = 120) => {
+    const joined = lines.join(" ").replace(/\s+/g, " ").trim();
+    if (!joined) {
+      return "";
+    }
+    if (joined.length <= limit) {
+      return joined;
+    }
+    return `${joined.slice(0, Math.max(0, limit - 3)).trimEnd()}...`;
+  };
+
   const openNotice = (notice) => {
     const title = document.getElementById("notice-title");
     const meta = document.getElementById("notice-meta");
@@ -749,9 +730,13 @@ function setupNoticeOverlay() {
     title.textContent = notice.title || "公告";
     meta.innerHTML = `<span>${escapeHtml(notice.date || "")}</span><span>阅读提醒</span>`;
     const lines = extractNoticeLines(notice);
-    content.innerHTML = lines.map((line) => `<p>${linkify(line)}</p>`).join("");
+    const mobileMode = window.matchMedia("(max-width: 767px)").matches;
     if (!lines.length) {
       content.innerHTML = "<p>本条公告暂无详细正文。</p>";
+    } else if (mobileMode) {
+      content.innerHTML = `<p class="notice-content-clamped">${linkify(buildNoticeExcerpt(lines))}</p>`;
+    } else {
+      content.innerHTML = lines.map((line) => `<p>${linkify(line)}</p>`).join("");
     }
     overlay.hidden = false;
     overlay.classList.add("open");
@@ -861,6 +846,10 @@ function setupSearch() {
   const form = document.getElementById("search-form");
   const input = document.getElementById("search-input");
   const hint = document.getElementById("search-hint");
+  const mobileOverlay = document.getElementById("mobile-search-overlay");
+  const mobileForm = document.getElementById("mobile-search-form");
+  const mobileInput = document.getElementById("mobile-search-input");
+  const mobileClose = document.getElementById("mobile-search-close");
 
   const applyQuery = (rawQuery) => {
     const query = String(rawQuery || "");
@@ -879,6 +868,72 @@ function setupSearch() {
   input.addEventListener("input", () => {
     applyQuery(input.value);
   });
+
+  const closeMobileSearch = () => {
+    if (!mobileOverlay) {
+      return;
+    }
+    mobileOverlay.classList.remove("open");
+    document.body.classList.remove("mobile-search-open");
+    window.setTimeout(() => {
+      if (!mobileOverlay.classList.contains("open")) {
+        mobileOverlay.hidden = true;
+      }
+    }, 220);
+  };
+
+  const openMobileSearch = () => {
+    if (!mobileOverlay) {
+      return;
+    }
+    mobileOverlay.hidden = false;
+    requestAnimationFrame(() => {
+      mobileOverlay.classList.add("open");
+      document.body.classList.add("mobile-search-open");
+      if (mobileInput) {
+        mobileInput.value = input?.value || "";
+        window.setTimeout(() => mobileInput.focus(), 120);
+      }
+    });
+  };
+
+  mobileForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (input && mobileInput) {
+      input.value = mobileInput.value;
+      applyQuery(mobileInput.value);
+    }
+    closeMobileSearch();
+  });
+
+  mobileInput?.addEventListener("input", () => {
+    if (input) {
+      input.value = mobileInput.value;
+      applyQuery(mobileInput.value);
+    }
+  });
+
+  mobileClose?.addEventListener("click", closeMobileSearch);
+  mobileOverlay?.querySelectorAll("a[href]").forEach((link) => {
+    link.addEventListener("click", closeMobileSearch);
+  });
+  mobileOverlay?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.dataset.closeMobileSearch === "1") {
+      closeMobileSearch();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && mobileOverlay && !mobileOverlay.hidden) {
+      closeMobileSearch();
+    }
+  });
+
+  return {
+    openMobileSearch,
+    closeMobileSearch,
+    applyQuery,
+  };
 }
 
 function setupDesktopSidebarLayout() {
@@ -1742,23 +1797,11 @@ function bindTimelineClicks() {
   });
 }
 
-function setupMobileDrawer() {
+function setupMobileDrawer(searchController) {
   const trigger = document.getElementById("mobile-drawer-trigger");
   const overlay = document.getElementById("mobile-drawer-overlay");
   const closeButton = document.getElementById("mobile-drawer-close");
   const topProfileButton = document.getElementById("mobile-home-profile");
-  const focusSearch = () => {
-    const searchInput = document.getElementById("search-input");
-    if (!searchInput) {
-      return;
-    }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    window.setTimeout(() => {
-      searchInput.focus();
-    }, 180);
-  };
-
   const openDrawer = () => {
     document.body.classList.add("mobile-home-drawer-open");
     overlay.hidden = false;
@@ -1784,7 +1827,7 @@ function setupMobileDrawer() {
   overlay.querySelectorAll("[data-mobile-search-trigger]").forEach((button) => {
     button.addEventListener("click", () => {
       closeDrawer();
-      focusSearch();
+      searchController?.openMobileSearch?.();
     });
   });
   overlay.addEventListener("click", (event) => {
@@ -1794,23 +1837,11 @@ function setupMobileDrawer() {
   });
 }
 
-function setupMobileHomeChrome() {
+function setupMobileHomeChrome(searchController) {
   const searchButton = document.getElementById("mobile-home-search");
-  const searchInput = document.getElementById("search-input");
   let lastScrollY = window.scrollY;
   let ticking = false;
   let lastTouchY = null;
-
-  const focusSearch = () => {
-    if (!searchInput) {
-      return;
-    }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    window.setTimeout(() => {
-      searchInput.focus();
-    }, 180);
-  };
 
   const showTopbar = () => {
     document.body.classList.remove("mobile-home-nav-hidden");
@@ -1819,7 +1850,8 @@ function setupMobileHomeChrome() {
   const hideTopbar = () => {
     if (
       document.body.classList.contains("mobile-post-open") ||
-      document.body.classList.contains("mobile-home-drawer-open")
+      document.body.classList.contains("mobile-home-drawer-open") ||
+      document.body.classList.contains("mobile-search-open")
     ) {
       return;
     }
@@ -1889,7 +1921,7 @@ function setupMobileHomeChrome() {
     syncMobileTopbar();
   };
 
-  searchButton?.addEventListener("click", focusSearch);
+  searchButton?.addEventListener("click", () => searchController?.openMobileSearch?.());
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", syncMobileTopbar);
   window.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -1922,11 +1954,11 @@ async function main() {
   renderSidebar(entries.filter((entry) => entry.contentType !== "notice"), config);
   await renderHomePinnedNotice();
 
-  setupSearch();
+  const searchController = setupSearch();
   setupDesktopSidebarLayout();
   setupOverlayControls();
-  setupMobileDrawer();
-  setupMobileHomeChrome();
+  setupMobileDrawer(searchController);
+  setupMobileHomeChrome(searchController);
   bindTimelineClicks();
 
   const params = new URLSearchParams(window.location.search);
