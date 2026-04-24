@@ -505,7 +505,7 @@ function getMobileDrawerNavItems() {
 function renderMobileDrawerNav() {
   const navItems = getMobileDrawerNavItems();
   return `
-    <nav class="mobile-drawer-card mobile-drawer-nav" aria-label="手机端侧栏导航">
+    <nav class="mobile-drawer-nav" aria-label="手机端侧栏导航">
       <div class="mobile-drawer-section-head">
         <span class="mobile-drawer-section-kicker">页面</span>
       </div>
@@ -575,9 +575,9 @@ function renderProfile(config) {
   }
 
   mobileSlot.innerHTML = `
-    <section class="mobile-drawer-card mobile-drawer-profile" aria-label="博主信息">
+    <section class="mobile-drawer-card mobile-drawer-combined" aria-label="手机端侧边栏">
       <div class="profile-cover" style="background-image:url(${profile.cover || ""});background-size:cover;background-position:center;"></div>
-      <div class="profile-main compact">
+      <div class="profile-main compact mobile-drawer-profile" aria-label="博主信息">
         <img class="profile-avatar" src="${profile.avatar || avatar.src}" alt="博主头像" />
         <h1>${profile.name || "HoraFeng"}</h1>
         <p class="profile-handle">${profile.handle || "@horafeng"}</p>
@@ -588,8 +588,9 @@ function renderProfile(config) {
       <div class="profile-actions compact" aria-label="联系方式">
         ${renderProfileActionLinks(profile)}
       </div>
+      <div class="mobile-drawer-divider" aria-hidden="true"></div>
+      ${renderMobileDrawerNav()}
     </section>
-    ${renderMobileDrawerNav()}
   `;
 }
 

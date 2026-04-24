@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "notion:sync": "node scripts/notion-sync/sync-notion.js"
+    "notion:sync": "node scripts/notion-sync/sync-notion.js",
+    "assets:version": "node scripts/version-assets.js"
   },
   "engines": {
     "node": ">=18"
