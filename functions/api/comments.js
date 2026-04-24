@@ -15,7 +15,7 @@ import {
   validateContact,
   verifyTurnstile,
 } from "../_lib/comments-utils.js";
-import { buildNotifyPreference, triggerReplyNotification } from "../_lib/comment-notify.js";
+import { buildNotifyPreference, notifyAdminForModeration, triggerReplyNotification } from "../_lib/comment-notify.js";
 import { hasValidCommentIdentityCookie } from "../_lib/comment-identity.js";
 
 function queryInt(params, key, fallback, min, max) {
@@ -236,6 +236,26 @@ export async function onRequestPost(context) {
       .run();
 
     const insertedId = Number(result.meta?.last_row_id || 0);
+    if (insertedId > 0) {
+      const adminNotifyResult = await notifyAdminForModeration({
+        env,
+        request,
+        comment: {
+          id: insertedId,
+          pageKey,
+          parentId,
+          nickname,
+          contact: contactResult.value,
+          content,
+          status,
+          createdAt: now,
+        },
+      });
+      if (!adminNotifyResult.ok) {
+        console.error("admin review notify failed after user post:", adminNotifyResult);
+      }
+    }
+
     if (status === "approved" && parentId && insertedId > 0) {
       const notifyResult = await triggerReplyNotification({
         db,

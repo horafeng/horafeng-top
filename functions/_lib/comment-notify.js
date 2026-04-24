@@ -175,6 +175,106 @@ function buildMailContent({ pageTitle, pageLink, unsubscribeLink, replyNickname,
   return { subject, html, text };
 }
 
+function getAdminReviewRecipient(env) {
+  const configured = sanitizeSingleLine(env.ADMIN_REVIEW_NOTIFY_TO || "", 180).toLowerCase();
+  if (configured) {
+    return configured;
+  }
+  return "horafeng@outlook.com";
+}
+
+function resolveAdminReviewMeta(pageKey, env, requestUrl) {
+  const normalized = normalizePageKey(pageKey || "guestbook");
+  const baseUrl = getBaseUrl(env, requestUrl);
+  const adminLink = `${baseUrl}/admin/comments/`;
+
+  if (normalized === "guestbook") {
+    return {
+      pageLabel: "留言板",
+      pageLink: `${baseUrl}/guestbook.html`,
+      adminLink,
+    };
+  }
+
+  if (normalized.startsWith("article:")) {
+    const slug = sanitizeSingleLine(normalized.slice("article:".length), 160);
+    return {
+      pageLabel: `文章 / ${slug || "unknown"}`,
+      pageLink: `${baseUrl}/article.html?slug=${encodeURIComponent(slug)}`,
+      adminLink,
+    };
+  }
+
+  if (normalized.startsWith("note:")) {
+    const noteId = sanitizeSingleLine(normalized.slice("note:".length), 160);
+    return {
+      pageLabel: `小记 / ${noteId || "unknown"}`,
+      pageLink: `${baseUrl}/index.html?post=${encodeURIComponent(noteId)}`,
+      adminLink,
+    };
+  }
+
+  return {
+    pageLabel: normalized,
+    pageLink: `${baseUrl}/index.html`,
+    adminLink,
+  };
+}
+
+function buildAdminReviewMail({ pageLabel, pageLink, adminLink, comment }) {
+  const nickname = sanitizeSingleLine(comment.nickname || "访客", 40) || "访客";
+  const contact = sanitizeSingleLine(comment.contact || "未填写", 120) || "未填写";
+  const status = sanitizeSingleLine(comment.status || "pending", 24) || "pending";
+  const commentId = asInt(comment.id, 0);
+  const createdAt = sanitizeSingleLine(comment.createdAt || "", 40);
+  const content = escapeHtml(shorten(comment.content || "", 1000)).replaceAll("\n", "<br />");
+  const safePageLabel = escapeHtml(pageLabel || "站内页面");
+  const safeNickname = escapeHtml(nickname);
+  const safeContact = escapeHtml(contact);
+  const safeStatus = escapeHtml(status);
+  const safeCreatedAt = escapeHtml(createdAt);
+  const subject = `站内有新评论待处理：${pageLabel || "站内页面"}`;
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; color:#2f3e54; line-height:1.7; max-width:680px; margin:0 auto;">
+      <h2 style="font-size:20px; margin:0 0 14px;">站内有新评论需要查看</h2>
+      <div style="background:#f7f9fc; border:1px solid #dde6f2; border-radius:14px; padding:14px 16px; margin:0 0 16px;">
+        <p style="margin:0 0 6px;"><strong>页面：</strong>${safePageLabel}</p>
+        <p style="margin:0 0 6px;"><strong>评论 ID：</strong>${commentId || "-"}</p>
+        <p style="margin:0 0 6px;"><strong>昵称：</strong>${safeNickname}</p>
+        <p style="margin:0 0 6px;"><strong>联系方式：</strong>${safeContact}</p>
+        <p style="margin:0 0 6px;"><strong>当前状态：</strong>${safeStatus}</p>
+        <p style="margin:0;"><strong>提交时间：</strong>${safeCreatedAt || "-"}</p>
+      </div>
+      <div style="background:#ffffff; border:1px solid #dde6f2; border-radius:14px; padding:14px 16px; margin:0 0 16px;">
+        ${content || "<p style='margin:0;'>（无正文）</p>"}
+      </div>
+      <p style="margin:0 0 14px;">
+        <a href="${escapeHtml(adminLink)}" style="display:inline-block; background:#657d9f; color:#fff; text-decoration:none; border-radius:10px; padding:8px 14px; margin-right:10px;">打开审核后台</a>
+        <a href="${escapeHtml(pageLink)}" style="display:inline-block; background:#eef3fb; color:#4d6485; text-decoration:none; border-radius:10px; padding:8px 14px;">查看评论页面</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    "站内有新评论需要查看",
+    "",
+    `页面：${pageLabel || "站内页面"}`,
+    `评论 ID：${commentId || "-"}`,
+    `昵称：${nickname}`,
+    `联系方式：${contact}`,
+    `当前状态：${status}`,
+    `提交时间：${createdAt || "-"}`,
+    "",
+    shorten(comment.content || "", 1000) || "（无正文）",
+    "",
+    `审核后台：${adminLink}`,
+    `评论页面：${pageLink}`,
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
 async function ensureParentNotifyFields(db, parent, now) {
   const currentEmail = sanitizeSingleLine(parent.parent_contact_email_resolved, 180).toLowerCase();
   const currentToken = sanitizeSingleLine(parent.parent_unsubscribe_token, 120);
@@ -351,6 +451,36 @@ export async function triggerReplyNotification({ db, env, request, replyCommentI
     return { ok: true, sent: true };
   } catch (error) {
     console.error("triggerReplyNotification failed:", error);
+    return { ok: false, skipped: "internal_error", error: sanitizeSingleLine(error?.message || "internal_error", 320) };
+  }
+}
+
+export async function notifyAdminForModeration({ env, request, comment }) {
+  try {
+    const recipient = getAdminReviewRecipient(env);
+    if (!recipient) {
+      return { ok: true, skipped: "no_admin_recipient" };
+    }
+
+    const meta = resolveAdminReviewMeta(comment?.pageKey || "guestbook", env, request.url);
+    const mail = buildAdminReviewMail({
+      ...meta,
+      comment,
+    });
+
+    const sent = await sendTransactionalMail(env, {
+      to: recipient,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    });
+
+    if (!sent.ok) {
+      return { ok: false, skipped: "send_failed", error: sent.error || "mail_send_failed" };
+    }
+
+    return { ok: true, sent: true };
+  } catch (error) {
     return { ok: false, skipped: "internal_error", error: sanitizeSingleLine(error?.message || "internal_error", 320) };
   }
 }

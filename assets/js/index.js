@@ -490,6 +490,73 @@ function renderProfileActionLinks(profile, options = {}) {
   `;
 }
 
+function getMobileDrawerNavItems() {
+  const params = new URLSearchParams(window.location.search);
+  const content = String(params.get("content") || "").trim().toLowerCase();
+
+  return [
+    { href: "index.html", label: "首页", active: !content },
+    { href: "index.html?content=article", label: "文章", active: content === "article" },
+    { href: "index.html?content=note", label: "小记", active: content === "note" },
+    { href: "index.html?content=notice", label: "公告", active: content === "notice" },
+    { href: "archive.html", label: "归档", active: window.location.pathname.endsWith("/archive.html") },
+    { href: "guestbook.html", label: "留言板", active: window.location.pathname.endsWith("/guestbook.html") },
+    { href: "friends/", label: "友链", active: /\/friends\/?$/.test(window.location.pathname) },
+  ];
+}
+
+function renderMobileDrawerNotice(notice) {
+  if (!notice) {
+    return `
+      <section class="mobile-drawer-card mobile-drawer-notice" aria-label="公告区域">
+        <div class="mobile-drawer-section-head">
+          <span class="mobile-drawer-section-kicker">公告</span>
+          <a class="mobile-drawer-section-link" href="index.html?content=notice">全部公告</a>
+        </div>
+        <p class="mobile-drawer-notice-empty">目前还没有置顶公告。</p>
+      </section>
+    `;
+  }
+
+  const summary = Array.isArray(notice.content) ? notice.content.find((line) => String(line || "").trim()) || "" : "";
+  return `
+    <section class="mobile-drawer-card mobile-drawer-notice" aria-label="公告区域">
+      <div class="mobile-drawer-section-head">
+        <span class="mobile-drawer-section-kicker">公告</span>
+        <a class="mobile-drawer-section-link" href="index.html?content=notice">全部公告</a>
+      </div>
+      <p class="mobile-drawer-notice-date">${escapeHtml(notice.date || "")}</p>
+      <h2 class="mobile-drawer-notice-title">${escapeHtml(notice.title || "公告")}</h2>
+      ${summary ? `<p class="mobile-drawer-notice-summary">${linkify(summary)}</p>` : ""}
+    </section>
+  `;
+}
+
+function renderMobileDrawerNav() {
+  const navItems = getMobileDrawerNavItems();
+  return `
+    <nav class="mobile-drawer-card mobile-drawer-nav" aria-label="手机端侧栏导航">
+      <div class="mobile-drawer-section-head">
+        <span class="mobile-drawer-section-kicker">页面</span>
+      </div>
+      <div class="mobile-drawer-nav-list">
+        ${navItems
+          .map(
+            (item) => `
+              <a class="mobile-drawer-nav-link${item.active ? " active" : ""}" href="${escapeAttr(item.href)}">
+                <span>${escapeHtml(item.label)}</span>
+              </a>
+            `,
+          )
+          .join("")}
+        <button class="mobile-drawer-nav-link mobile-drawer-search-link" type="button" data-mobile-search-trigger="1">
+          <span>搜索</span>
+        </button>
+      </div>
+    </nav>
+  `;
+}
+
 function renderProfile(config) {
   const profile = config.profile || {};
 
@@ -529,24 +596,40 @@ function renderProfile(config) {
   }
 
   const mobileSlot = document.getElementById("mobile-profile-slot");
+  if (!mobileSlot) {
+    return;
+  }
+
+  const mobileNotice = allEntries
+    .filter((entry) => entry.contentType === "notice")
+    .sort((a, b) => {
+      if (Boolean(a.pin) !== Boolean(b.pin)) {
+        return a.pin ? -1 : 1;
+      }
+      const updatedDiff = new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      if (updatedDiff !== 0) {
+        return updatedDiff;
+      }
+      return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+    })[0];
+
   mobileSlot.innerHTML = `
-    <div class="profile-cover" style="background-image:url(${profile.cover || ""});background-size:cover;background-position:center;"></div>
-    <div class="profile-main compact">
-      <img class="profile-avatar" src="${profile.avatar || avatar.src}" alt="博主头像" />
-      <h1>${profile.name || "HoraFeng"}</h1>
-      <p class="profile-handle">${profile.handle || "@horafeng"}</p>
-      <p class="subtle">${profile.signature || ""}</p>
-      <p class="subtle">${profile.bio || ""}</p>
-      <p class="last-seen subtle">${formatLastSeen(profile.lastSeenAt)}</p>
-    </div>
-    <div class="profile-actions compact" aria-label="联系方式">
-      ${renderProfileActionLinks(profile)}
-    </div>
-    <nav class="soft-nav">
-      <a class="active" href="index.html">日记流</a>
-      <a href="archive.html">归档</a>
-      <a href="guestbook.html">留言板</a>
-    </nav>
+    ${renderMobileDrawerNotice(mobileNotice)}
+    <section class="mobile-drawer-card mobile-drawer-profile" aria-label="博主信息">
+      <div class="profile-cover" style="background-image:url(${profile.cover || ""});background-size:cover;background-position:center;"></div>
+      <div class="profile-main compact">
+        <img class="profile-avatar" src="${profile.avatar || avatar.src}" alt="博主头像" />
+        <h1>${profile.name || "HoraFeng"}</h1>
+        <p class="profile-handle">${profile.handle || "@horafeng"}</p>
+        <p class="subtle">${profile.signature || ""}</p>
+        <p class="subtle">${profile.bio || ""}</p>
+        <p class="last-seen subtle">${formatLastSeen(profile.lastSeenAt)}</p>
+      </div>
+      <div class="profile-actions compact" aria-label="联系方式">
+        ${renderProfileActionLinks(profile)}
+      </div>
+    </section>
+    ${renderMobileDrawerNav()}
   `;
 }
 
@@ -1664,6 +1747,17 @@ function setupMobileDrawer() {
   const overlay = document.getElementById("mobile-drawer-overlay");
   const closeButton = document.getElementById("mobile-drawer-close");
   const topProfileButton = document.getElementById("mobile-home-profile");
+  const focusSearch = () => {
+    const searchInput = document.getElementById("search-input");
+    if (!searchInput) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.setTimeout(() => {
+      searchInput.focus();
+    }, 180);
+  };
 
   const openDrawer = () => {
     document.body.classList.add("mobile-home-drawer-open");
@@ -1684,6 +1778,15 @@ function setupMobileDrawer() {
   trigger.addEventListener("click", openDrawer);
   topProfileButton?.addEventListener("click", openDrawer);
   closeButton.addEventListener("click", closeDrawer);
+  overlay.querySelectorAll("a[href]").forEach((link) => {
+    link.addEventListener("click", closeDrawer);
+  });
+  overlay.querySelectorAll("[data-mobile-search-trigger]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closeDrawer();
+      focusSearch();
+    });
+  });
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) {
       closeDrawer();
@@ -1704,10 +1807,10 @@ function setupMobileHomeChrome() {
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-      window.setTimeout(() => {
-        searchInput.focus();
-      }, 180);
-    };
+    window.setTimeout(() => {
+      searchInput.focus();
+    }, 180);
+  };
 
   const showTopbar = () => {
     document.body.classList.remove("mobile-home-nav-hidden");

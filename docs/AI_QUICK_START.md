@@ -164,6 +164,7 @@
 - `MAIL_API_KEY`
 - `MAIL_FROM`
 - `MAIL_REPLY_TO`
+- `ADMIN_REVIEW_NOTIFY_TO` (optional, defaults to `horafeng@outlook.com`)
 - `SITE_BASE_URL`
   - 回复邮件提醒相关
 - `DEFAULT_AVATAR_URL`

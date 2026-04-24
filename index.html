@@ -50,13 +50,7 @@
     </header>
 
     <div class="mobile-home-topbar" aria-label="手机端首页顶部导航">
-      <button id="mobile-home-profile" class="mobile-home-icon-btn" type="button" aria-label="打开个人页">☰</button>
-      <nav class="mobile-home-tabs" aria-label="手机端主导航">
-        <a class="active" href="index.html">日记流</a>
-        <a href="archive.html">归档</a>
-        <a href="guestbook.html">留言板</a>
-        <a href="friends/">友链</a>
-      </nav>
+      <button id="mobile-home-profile" class="mobile-home-icon-btn" type="button" aria-label="打开侧栏菜单">☰</button>
       <button id="mobile-home-search" class="mobile-home-icon-btn" type="button" aria-label="聚焦搜索">⌕</button>
     </div>
 
@@ -65,7 +59,7 @@
     </section>
 
     <div class="app-shell home-shell">
-      <button id="mobile-drawer-trigger" class="mobile-drawer-trigger" type="button">☰ 个人页</button>
+      <button id="mobile-drawer-trigger" class="mobile-drawer-trigger" type="button">☰ 菜单</button>
 
       <aside class="panel profile-panel" id="desktop-profile-panel">
         <div class="profile-cover" id="profile-cover"></div>
@@ -162,7 +156,7 @@
 
     <div id="mobile-drawer-overlay" class="mobile-drawer-overlay" hidden>
       <aside id="mobile-drawer" class="mobile-drawer panel" aria-label="个人资料侧边栏">
-        <button id="mobile-drawer-close" class="drawer-close" type="button">关闭</button>
+        <button id="mobile-drawer-close" class="drawer-close" type="button" aria-label="关闭侧栏">关闭</button>
         <div id="mobile-profile-slot"></div>
       </aside>
     </div>
@@ -197,7 +191,7 @@
     <div id="notice-overlay" class="post-overlay notice-overlay" hidden>
       <div class="post-backdrop" data-close-notice="1"></div>
       <article id="notice-modal" class="post-modal notice-modal" role="dialog" aria-modal="true" aria-labelledby="notice-title">
-        <button id="notice-close" class="post-close" type="button">×</button>
+        <button id="notice-close" class="post-close" type="button" aria-label="关闭公告">×</button>
         <section class="notice-body">
           <p class="notice-kicker">站内公告</p>
           <h3 id="notice-title">公告</h3>

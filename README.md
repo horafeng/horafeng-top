@@ -219,6 +219,7 @@
 - `MAIL_API_KEY`（启用邮件必填）
 - `MAIL_FROM`（启用邮件必填）
 - `MAIL_REPLY_TO`（可选）
+- `ADMIN_REVIEW_NOTIFY_TO`（可选，默认 `horafeng@outlook.com`，用于新评论审核提醒）
 - `ADMIN_EMAIL_NAME`（可选）
 
 ---
@@ -500,6 +501,14 @@ node scripts/notion-sync/sync-notion.js
 - AI article cleanup:
   - sync skips AI-marked/generated article rows
   - stale detail files are removed from `content/generated/articles/`
+
+## 21. 2026-04 Mobile + Comment Notify Update
+
+- homepage mobile topbar now keeps only the left drawer trigger and the right search button
+- homepage mobile drawer now contains notice, profile, and a vertical page navigation list
+- mobile notice popup now keeps a visible close button and uses a smaller dialog footprint
+- `POST /api/comments` now also sends an admin review reminder email for every public comment
+- configure `ADMIN_REVIEW_NOTIFY_TO` to override the default recipient `horafeng@outlook.com`
 
 - 新增 `/friends/` 友链页，页面文件为 `friends/index.html`
 - 友链数据维护在 `content/friends.json`
