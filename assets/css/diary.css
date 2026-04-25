@@ -801,10 +801,6 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   box-shadow: 0 14px 28px rgba(29, 47, 72, 0.1);
 }
 
-.mobile-drawer-combined {
-  display: grid;
-}
-
 .mobile-drawer-section-head {
   display: flex;
   align-items: center;
@@ -830,10 +826,12 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   margin-top: -18px;
 }
 
-.mobile-drawer-divider {
-  height: 1px;
-  margin: 14px 0 12px;
-  background: linear-gradient(90deg, rgba(104, 123, 154, 0), rgba(104, 123, 154, 0.22), rgba(104, 123, 154, 0));
+.mobile-drawer-profile-card {
+  display: grid;
+}
+
+.mobile-drawer-nav-card {
+  display: grid;
 }
 
 .mobile-drawer-nav {
@@ -850,46 +848,47 @@ body[data-page="home"].with-site-nav .home-welcome-banner + .app-shell {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 48px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(103, 124, 157, 0.14);
-  background: rgba(244, 247, 252, 0.92);
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 6px 0;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
   color: #334a66;
   text-decoration: none;
   font-family: inherit;
   font-size: 0.96rem;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.66);
+  box-shadow: none;
 }
 
 .mobile-drawer-nav-link.active {
-  background: rgba(101, 125, 159, 0.12);
-  border-color: rgba(101, 125, 159, 0.28);
+  background: transparent;
   color: #48617f;
+  font-weight: 600;
 }
 
 .mobile-drawer-secondary-list {
-  margin-top: 10px;
+  margin-top: 12px;
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .mobile-drawer-secondary-link {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 46px;
-  padding: 11px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(103, 124, 157, 0.14);
-  background: rgba(249, 250, 253, 0.96);
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 6px 0;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
   color: #506784;
   text-decoration: none;
   font-family: inherit;
   font-size: 0.94rem;
   cursor: pointer;
+  text-align: left;
 }
 
 .notice-content-clamped {

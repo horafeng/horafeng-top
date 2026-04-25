@@ -493,7 +493,6 @@ export async function getNotionFingerprint(env) {
   const config = getNotionSyncConfig(env);
   const [rows, databaseMeta] = await Promise.all([
     queryAllPublishedNotionPages(config, {
-      page_size: 10,
       filter: {
         property: "status",
         select: {

@@ -505,29 +505,30 @@ function getMobileDrawerNavItems() {
 function renderMobileDrawerNav() {
   const navItems = getMobileDrawerNavItems();
   return `
-    <nav class="mobile-drawer-nav" aria-label="手机端侧栏导航">
-      <div class="mobile-drawer-section-head">
-        <span class="mobile-drawer-section-kicker">页面</span>
-      </div>
-      <div class="mobile-drawer-nav-list">
-        ${navItems
-          .map(
-            (item) => `
-              <a class="mobile-drawer-nav-link${item.active ? " active" : ""}" href="${escapeAttr(item.href)}">
-                <span>${escapeHtml(item.label)}</span>
-              </a>
-            `,
-          )
-          .join("")}
+    <section class="mobile-drawer-card mobile-drawer-nav-card" aria-label="手机端导航">
+      <nav class="mobile-drawer-nav" aria-label="手机端侧栏导航">
         <div class="mobile-drawer-section-head">
-          <span class="mobile-drawer-section-kicker">更多</span>
+          <span class="mobile-drawer-section-kicker">页面</span>
         </div>
-        <a class="mobile-drawer-secondary-link" href="index.html?content=notice">公告</a>
-        <a class="mobile-drawer-secondary-link" href="guestbook.html">留言板</a>
-        <a class="mobile-drawer-secondary-link" href="friends/">友链</a>
-        <button class="mobile-drawer-secondary-link" type="button" data-mobile-search-trigger="1">搜索</button>
-      </div>
-    </nav>
+        <div class="mobile-drawer-nav-list">
+          ${navItems
+            .map(
+              (item) => `
+                <a class="mobile-drawer-nav-link${item.active ? " active" : ""}" href="${escapeAttr(item.href)}">
+                  <span>${escapeHtml(item.label)}</span>
+                </a>
+              `,
+            )
+            .join("")}
+        </div>
+        <div class="mobile-drawer-secondary-list">
+          <a class="mobile-drawer-secondary-link" href="index.html?content=notice">公告</a>
+          <a class="mobile-drawer-secondary-link" href="guestbook.html">留言板</a>
+          <a class="mobile-drawer-secondary-link" href="friends/">友链</a>
+          <button class="mobile-drawer-secondary-link" type="button" data-mobile-search-trigger="1">搜索</button>
+        </div>
+      </nav>
+    </section>
   `;
 }
 
@@ -575,7 +576,7 @@ function renderProfile(config) {
   }
 
   mobileSlot.innerHTML = `
-    <section class="mobile-drawer-card mobile-drawer-combined" aria-label="手机端侧边栏">
+    <section class="mobile-drawer-card mobile-drawer-profile-card" aria-label="博主信息">
       <div class="profile-cover" style="background-image:url(${profile.cover || ""});background-size:cover;background-position:center;"></div>
       <div class="profile-main compact mobile-drawer-profile" aria-label="博主信息">
         <img class="profile-avatar" src="${profile.avatar || avatar.src}" alt="博主头像" />
@@ -588,9 +589,8 @@ function renderProfile(config) {
       <div class="profile-actions compact" aria-label="联系方式">
         ${renderProfileActionLinks(profile)}
       </div>
-      <div class="mobile-drawer-divider" aria-hidden="true"></div>
-      ${renderMobileDrawerNav()}
     </section>
+    ${renderMobileDrawerNav()}
   `;
 }
 
