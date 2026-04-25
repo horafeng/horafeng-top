@@ -637,6 +637,279 @@ export function setupPageTransition() {
   });
 }
 
+function getMobileChromeNavItems() {
+  const params = new URLSearchParams(window.location.search);
+  const content = String(params.get("content") || "").trim().toLowerCase();
+  const page = String(document.body.dataset.page || "").trim().toLowerCase();
+
+  return [
+    { href: sitePath("index.html"), label: "首页", active: page === "home" && !content },
+    { href: `${sitePath("index.html")}?content=article`, label: "文章", active: (page === "home" && content === "article") || page === "article" },
+    { href: `${sitePath("index.html")}?content=note`, label: "小记", active: page === "home" && content === "note" },
+    { href: sitePath("archive.html"), label: "归档", active: page === "archive" },
+    { href: `${sitePath("index.html")}?content=notice`, label: "公告", active: page === "home" && content === "notice" },
+    { href: sitePath("guestbook.html"), label: "留言板", active: page === "guestbook" },
+    { href: sitePath("friends/"), label: "友链", active: page === "friends" },
+  ];
+}
+
+function renderMobileChromeProfile(profile = {}) {
+  const name = profile.name || "HoraFeng";
+  const handle = profile.handle || "@horafeng";
+  const signature = profile.signature || "";
+  const bio = profile.bio || "";
+  const lastSeen = formatLastSeen(profile.lastSeenAt);
+  const normalizeUrl = (value, fallback = "") => {
+    const text = String(value || fallback || "").trim();
+    if (!text) {
+      return "";
+    }
+    if (/^(https?:)?\/\//i.test(text) || /^data:/i.test(text) || text.startsWith("/")) {
+      return text;
+    }
+    return sitePath(text);
+  };
+
+  const avatar = normalizeUrl(profile.avatar, "assets/images/Profile.png");
+  const cover = normalizeUrl(profile.cover);
+  const github = profile.github || "https://github.com/horafeng";
+  const email = profile.email || "horafeng@outlook.com";
+  const navItems = getMobileChromeNavItems();
+
+  return `
+    <section class="mobile-drawer-card mobile-drawer-profile-card" aria-label="博主信息">
+      <div class="profile-cover" style="background-image:url(${cover});background-size:cover;background-position:center;"></div>
+      <div class="profile-main compact mobile-drawer-profile" aria-label="博主信息">
+        <img class="profile-avatar" src="${avatar}" alt="博主头像" />
+        <h1>${escapeHtml(name)}</h1>
+        <p class="profile-handle">${escapeHtml(handle)}</p>
+        <p class="subtle">${escapeHtml(signature)}</p>
+        <p class="subtle">${escapeHtml(bio)}</p>
+        <p class="last-seen subtle">${escapeHtml(lastSeen)}</p>
+      </div>
+      <div class="profile-actions compact" aria-label="联系方式">
+        <a class="profile-action-btn profile-action-icon" href="${github}" target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.58 2 12.22c0 4.5 2.87 8.32 6.84 9.66.5.09.68-.22.68-.49 0-.24-.01-1.04-.01-1.88-2.78.62-3.37-1.2-3.37-1.2-.46-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .08 1.53 1.05 1.53 1.05.9 1.56 2.36 1.11 2.94.85.09-.67.35-1.11.63-1.37-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.72 0 0 .84-.28 2.75 1.05A9.35 9.35 0 0 1 12 6.84c.85 0 1.71.12 2.51.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.46.1 2.72.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.69.95.69 1.93 0 1.39-.01 2.5-.01 2.84 0 .27.18.59.69.49A10.24 10.24 0 0 0 22 12.22C22 6.58 17.52 2 12 2Z" />
+          </svg>
+        </a>
+        <a class="profile-action-btn profile-action-icon" href="mailto:${email}" aria-label="邮箱" title="邮箱">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5.5h16A1.5 1.5 0 0 1 21.5 7v10A1.5 1.5 0 0 1 20 18.5H4A1.5 1.5 0 0 1 2.5 17V7A1.5 1.5 0 0 1 4 5.5Zm0 1.5v.18l8 5.34 8-5.34V7H4Zm16 10V8.96l-7.58 5.06a.75.75 0 0 1-.84 0L4 8.96V17h16Z" />
+          </svg>
+        </a>
+      </div>
+    </section>
+    <section class="mobile-drawer-card mobile-drawer-nav-card" aria-label="手机端导航">
+      <nav class="mobile-drawer-nav" aria-label="手机端侧栏导航">
+        <div class="mobile-drawer-section-head">
+          <span class="mobile-drawer-section-kicker">页面</span>
+        </div>
+        <div class="mobile-drawer-nav-list">
+          ${navItems
+            .slice(0, 4)
+            .map(
+              (item) => `
+                <a class="mobile-drawer-nav-link${item.active ? " active" : ""}" href="${item.href}">
+                  <span>${escapeHtml(item.label)}</span>
+                </a>
+              `,
+            )
+            .join("")}
+        </div>
+        <div class="mobile-drawer-secondary-list">
+          ${navItems
+            .slice(4)
+            .map(
+              (item) => `
+                <a class="mobile-drawer-secondary-link${item.active ? " active" : ""}" href="${item.href}">
+                  ${escapeHtml(item.label)}
+                </a>
+              `,
+            )
+            .join("")}
+          <button class="mobile-drawer-secondary-link" type="button" data-mobile-search-trigger="1">搜索</button>
+        </div>
+      </nav>
+    </section>
+  `;
+}
+
+function ensureStandaloneMobileChrome(options = {}) {
+  if (document.body.dataset.page === "home") {
+    return null;
+  }
+
+  const nav = document.querySelector("[data-site-nav]");
+  if (!nav) {
+    return null;
+  }
+
+  let drawerOverlay = document.getElementById("mobile-drawer-overlay");
+  if (!drawerOverlay) {
+    drawerOverlay = document.createElement("div");
+    drawerOverlay.id = "mobile-drawer-overlay";
+    drawerOverlay.className = "mobile-drawer-overlay";
+    drawerOverlay.hidden = true;
+    drawerOverlay.innerHTML = `
+      <aside id="mobile-drawer" class="mobile-drawer panel" aria-label="个人资料侧边栏">
+        <button id="mobile-drawer-close" class="drawer-close" type="button" aria-label="关闭侧栏">关闭</button>
+        <div id="mobile-profile-slot"></div>
+      </aside>
+    `;
+    document.body.appendChild(drawerOverlay);
+  }
+
+  let searchOverlay = document.getElementById("mobile-search-overlay");
+  if (!searchOverlay) {
+    searchOverlay = document.createElement("div");
+    searchOverlay.id = "mobile-search-overlay";
+    searchOverlay.className = "mobile-search-overlay";
+    searchOverlay.hidden = true;
+    searchOverlay.innerHTML = `
+      <div class="mobile-search-backdrop" data-close-mobile-search="1"></div>
+      <section class="mobile-search-sheet" role="dialog" aria-modal="true" aria-labelledby="mobile-search-title">
+        <div class="mobile-search-head">
+          <h2 id="mobile-search-title">搜索</h2>
+          <button id="mobile-search-close" class="mobile-search-close" type="button" aria-label="关闭搜索">×</button>
+        </div>
+        <form id="mobile-search-form" class="mobile-search-form" role="search">
+          <input id="mobile-search-input" type="search" placeholder="搜索什么..." aria-label="搜索站内内容" />
+          <button type="submit">搜索</button>
+        </form>
+        <div class="mobile-search-shortcuts" aria-label="快捷跳转">
+          <a href="${sitePath("index.html")}">首页</a>
+          <a href="${sitePath("index.html")}?content=article">文章</a>
+          <a href="${sitePath("index.html")}?content=note">小记</a>
+          <a href="${sitePath("index.html")}?content=notice">公告</a>
+          <a href="${sitePath("guestbook.html")}">留言板</a>
+          <a href="${sitePath("friends/")}">友链</a>
+        </div>
+      </section>
+    `;
+    document.body.appendChild(searchOverlay);
+  }
+
+  const mobileSlot = document.getElementById("mobile-profile-slot");
+  const profile = options.profile || {};
+  if (mobileSlot) {
+    mobileSlot.innerHTML = renderMobileChromeProfile(profile);
+  }
+
+  const leftButton = nav.querySelector(".site-nav-left");
+  const brandMini = nav.querySelector("[data-nav-brand-center]");
+  const searchButton = nav.querySelector("[data-nav-backtop]");
+  if (brandMini) {
+    brandMini.textContent = "HoraFeng的博客";
+  }
+
+  const closeDrawer = () => {
+    drawerOverlay.hidden = true;
+    document.body.classList.remove("mobile-home-drawer-open");
+  };
+
+  const openDrawer = () => {
+    drawerOverlay.hidden = false;
+    document.body.classList.add("mobile-home-drawer-open");
+    closeSearch();
+  };
+
+  const closeSearch = () => {
+    searchOverlay.classList.remove("open");
+    document.body.classList.remove("mobile-search-open");
+    window.setTimeout(() => {
+      if (!searchOverlay.classList.contains("open")) {
+        searchOverlay.hidden = true;
+      }
+    }, 220);
+  };
+
+  const openSearch = () => {
+    searchOverlay.hidden = false;
+    requestAnimationFrame(() => {
+      searchOverlay.classList.add("open");
+      document.body.classList.add("mobile-search-open");
+      document.getElementById("mobile-search-input")?.focus();
+    });
+    closeDrawer();
+  };
+
+  leftButton?.addEventListener("click", (event) => {
+    if (!window.matchMedia("(max-width: 767px)").matches) {
+      return;
+    }
+    event.preventDefault();
+    openDrawer();
+  });
+
+  searchButton?.addEventListener("click", (event) => {
+    if (!window.matchMedia("(max-width: 767px)").matches) {
+      return;
+    }
+    event.preventDefault();
+    openSearch();
+  });
+
+  document.getElementById("mobile-drawer-close")?.addEventListener("click", closeDrawer);
+  drawerOverlay.addEventListener("click", (event) => {
+    if (event.target === drawerOverlay) {
+      closeDrawer();
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    if (target.closest("[data-mobile-search-trigger]")) {
+      event.preventDefault();
+      openSearch();
+      return;
+    }
+
+    if (target.closest("a[href]")) {
+      closeDrawer();
+    }
+  });
+
+  document.getElementById("mobile-search-close")?.addEventListener("click", closeSearch);
+  searchOverlay.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.dataset.closeMobileSearch === "1") {
+      closeSearch();
+    }
+  });
+  searchOverlay.querySelectorAll("a[href]").forEach((link) => {
+    link.addEventListener("click", closeSearch);
+  });
+
+  document.getElementById("mobile-search-form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const query = String(document.getElementById("mobile-search-input")?.value || "").trim();
+    const nextUrl = new URL(sitePath("index.html"), window.location.origin);
+    if (query) {
+      nextUrl.searchParams.set("q", query);
+    }
+    window.location.assign(nextUrl.toString());
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeDrawer();
+      closeSearch();
+    }
+  });
+
+  return {
+    updateProfile(nextProfile = {}) {
+      if (mobileSlot) {
+        mobileSlot.innerHTML = renderMobileChromeProfile(nextProfile);
+      }
+    },
+  };
+}
+
 export function setupSiteChrome(options = {}) {
   const setupSeasonalBackground = () => {
     const now = new Date();
@@ -653,6 +926,7 @@ export function setupSiteChrome(options = {}) {
   };
 
   setupSeasonalBackground();
+  const mobileChrome = ensureStandaloneMobileChrome({ profile: options.profile || null });
   if (!String(options.profileCoverUrl || "").trim()) {
     void loadSiteConfig()
       .then((config) => {
@@ -661,6 +935,7 @@ export function setupSiteChrome(options = {}) {
           return;
         }
         document.body.style.setProperty("--season-bg-image", `url("${profileCoverUrl}")`);
+        mobileChrome?.updateProfile(config?.profile || {});
       })
       .catch(() => {});
   }

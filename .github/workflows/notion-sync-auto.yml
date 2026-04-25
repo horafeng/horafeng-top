@@ -16,9 +16,14 @@ jobs:
         run: |
           test -n "$SITE_BASE_URL"
           test -n "$NOTION_SYNC_RUN_TOKEN"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            PAYLOAD='{"source":"manual"}'
+          else
+            PAYLOAD='{"source":"auto"}'
+          fi
           curl --fail --show-error --silent \
             -X POST \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${NOTION_SYNC_RUN_TOKEN}" \
-            -d '{"source":"auto"}' \
+            -d "${PAYLOAD}" \
             "${SITE_BASE_URL%/}/api/notion-sync/run"

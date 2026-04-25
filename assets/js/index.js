@@ -920,6 +920,17 @@ function setupSearch() {
     }
   });
 
+  const initialQuery = String(new URLSearchParams(window.location.search).get("q") || "").trim();
+  if (initialQuery) {
+    if (input) {
+      input.value = initialQuery;
+    }
+    if (mobileInput) {
+      mobileInput.value = initialQuery;
+    }
+    applyQuery(initialQuery);
+  }
+
   return {
     openMobileSearch,
     closeMobileSearch,

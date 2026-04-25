@@ -3955,8 +3955,8 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
   }
 
   body.with-site-nav:not([data-page="home"]) .site-nav-left::before {
-    content: "⌂";
-    font-size: 1.08rem;
+    content: "☰";
+    font-size: 1.14rem;
     color: rgba(56, 76, 102, 0.94);
   }
 
@@ -3989,8 +3989,8 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
   }
 
   body.with-site-nav:not([data-page="home"]) .site-nav-backtop::before {
-    content: "↑";
-    font-size: 1.05rem;
+    content: "⌕";
+    font-size: 1.12rem;
     color: rgba(56, 76, 102, 0.94);
   }
 
