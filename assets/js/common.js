@@ -598,6 +598,10 @@ export function setupPageTransition() {
   window.addEventListener("pagehide", resetPageState);
 
   document.addEventListener("click", (event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+
     const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
     if (!link) {
       return;
@@ -799,6 +803,9 @@ function ensureStandaloneMobileChrome(options = {}) {
   const leftButton = nav.querySelector(".site-nav-left");
   const brandMini = nav.querySelector("[data-nav-brand-center]");
   const searchButton = nav.querySelector("[data-nav-backtop]");
+  if (leftButton) {
+    leftButton.dataset.noTransition = "1";
+  }
   if (brandMini) {
     brandMini.textContent = "HoraFeng的博客";
   }
