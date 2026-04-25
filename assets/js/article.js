@@ -378,18 +378,51 @@ function renderParagraph(block) {
   return `${text ? `<p>${text}</p>` : ""}${children}`;
 }
 
+function renderHeadingBlock(block, level = 2) {
+  const text = getBlockHtmlText(block);
+  const children = renderBlocks(block.children || []);
+  const safeLevel = Math.min(4, Math.max(2, Number(level) || 2));
+  const tagName = `h${safeLevel}`;
+  const headingClass = `article-heading article-heading-${safeLevel - 1}`;
+
+  if (block?.is_toggleable) {
+    const summary = text || "折叠标题";
+    return `
+      <details class="article-toggle-block article-toggle-heading">
+        <summary><${tagName} class="${headingClass}">${summary}</${tagName}></summary>
+        <div class="article-toggle-content">${children}</div>
+      </details>
+    `;
+  }
+
+  return `${text ? `<${tagName} class="${headingClass}">${text}</${tagName}>` : ""}${children}`;
+}
+
+function renderToggleBlock(block) {
+  const text = getBlockHtmlText(block);
+  const children = renderBlocks(block.children || []);
+  return `
+    <details class="article-toggle-block">
+      <summary>${text || "展开内容"}</summary>
+      <div class="article-toggle-content">${children}</div>
+    </details>
+  `;
+}
+
 function renderBlock(block) {
   const text = getBlockHtmlText(block);
 
   switch (block?.type) {
     case "heading_1":
-      return text ? `<h2 class="article-heading article-heading-1">${text}</h2>` : "";
+      return renderHeadingBlock(block, 2);
     case "heading_2":
-      return text ? `<h3 class="article-heading article-heading-2">${text}</h3>` : "";
+      return renderHeadingBlock(block, 3);
     case "heading_3":
-      return text ? `<h4 class="article-heading article-heading-3">${text}</h4>` : "";
+      return renderHeadingBlock(block, 4);
     case "paragraph":
       return renderParagraph(block);
+    case "toggle":
+      return renderToggleBlock(block);
     case "quote":
       return `<blockquote>${text ? `<p>${text}</p>` : ""}${renderBlocks(block.children || [])}</blockquote>`;
     case "callout":

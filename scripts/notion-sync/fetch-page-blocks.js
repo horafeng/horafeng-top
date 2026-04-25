@@ -126,6 +126,7 @@ export function normalizeBlock(block) {
       ...base,
       text: richTextToPlainText(payload.rich_text),
       rich_text: normalizeRichText(payload.rich_text),
+      is_toggleable: Boolean(payload.is_toggleable),
       language: payload.language || "",
       checked: payload.checked ?? null,
       caption: normalizeCaption(payload),

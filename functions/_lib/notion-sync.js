@@ -8,6 +8,7 @@ const SYNC_RESULT_TRIGGERED = "triggered";
 const SYNC_RESULT_SUCCESS = "success";
 const SYNC_RESULT_FAILED = "failed";
 const SYNC_RESULT_SKIPPED = "skipped";
+const STALE_SYNC_TIMEOUT_MS = 45 * 60 * 1000;
 
 const NOTION_API_BASE = "https://api.notion.com/v1";
 const NOTION_API_VERSION = "2022-06-28";
@@ -205,6 +206,14 @@ async function requestPagesApi(config, pathname) {
 function parseIsoTime(value) {
   const timestamp = Date.parse(String(value || ""));
   return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function isSyncStateStale(state) {
+  const startedAt = parseIsoTime(state?.last_started_at || state?.last_requested_at || "");
+  if (!startedAt) {
+    return false;
+  }
+  return Date.now() - startedAt >= STALE_SYNC_TIMEOUT_MS;
 }
 
 function extractDeploymentStatus(deployment) {
@@ -541,11 +550,27 @@ export async function reconcileNotionSyncState(db, env, existingState = null) {
 
   const config = getNotionSyncConfig(env);
   if (!canQueryPagesStatus(config)) {
+    if (isSyncStateStale(state)) {
+      return markNotionSyncFinished(db, {
+        runId: state.active_run_id,
+        status: SYNC_RESULT_FAILED,
+        message: "Previous sync timed out while waiting for Cloudflare deployment status.",
+        checkedAt: nowIso(),
+      });
+    }
     return state;
   }
 
   const deployment = await findMatchingDeployment(config, state);
   if (!deployment) {
+    if (isSyncStateStale(state)) {
+      return markNotionSyncFinished(db, {
+        runId: state.active_run_id,
+        status: SYNC_RESULT_FAILED,
+        message: "Previous sync timed out before a matching Cloudflare deployment was found.",
+        checkedAt: nowIso(),
+      });
+    }
     return state;
   }
 
@@ -565,6 +590,17 @@ export async function reconcileNotionSyncState(db, env, existingState = null) {
   }
 
   if (!deploymentInfo.terminal) {
+    if (isSyncStateStale(state)) {
+      return markNotionSyncFinished(db, {
+        runId: state.active_run_id,
+        status: SYNC_RESULT_FAILED,
+        message: `Previous sync timed out while Cloudflare deployment remained ${deploymentInfo.status || "in_progress"}.`,
+        checkedAt: nowIso(),
+        deploymentUrl,
+        deploymentId,
+        deploymentStatus: deploymentInfo.status,
+      });
+    }
     return nextState;
   }
 
