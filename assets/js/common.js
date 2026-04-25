@@ -811,13 +811,19 @@ function ensureStandaloneMobileChrome(options = {}) {
   }
 
   const closeDrawer = () => {
-    drawerOverlay.hidden = true;
     document.body.classList.remove("mobile-home-drawer-open");
+    drawerOverlay.classList.remove("open");
+    window.setTimeout(() => {
+      if (!drawerOverlay.classList.contains("open")) {
+        drawerOverlay.hidden = true;
+      }
+    }, 220);
   };
 
   const openDrawer = () => {
-    drawerOverlay.hidden = false;
     document.body.classList.add("mobile-home-drawer-open");
+    drawerOverlay.hidden = false;
+    requestAnimationFrame(() => drawerOverlay.classList.add("open"));
     closeSearch();
   };
 
