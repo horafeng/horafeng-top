@@ -258,6 +258,18 @@ function renderTimeline(entries) {
     .join("");
 
   bindImageFallbacks(timeline);
+  window.dispatchEvent(new CustomEvent("home:timeline-rendered"));
+}
+
+function notifyHomeRendered() {
+  window.dispatchEvent(
+    new CustomEvent("home:rendered", {
+      detail: {
+        config: siteConfig,
+        entries: visibleEntries,
+      },
+    }),
+  );
 }
 
 function renderSidebar(entries, config) {
@@ -636,11 +648,12 @@ function setupWelcomeTyping() {
       return;
     }
 
-    charIndex = Math.max(0, charIndex - 1);
+    charIndex = Math.max(1, charIndex - 1);
     el.textContent = line.slice(0, charIndex);
-    if (charIndex <= 0) {
+    if (charIndex <= 1) {
       deleting = false;
       lineIndex = (lineIndex + 1) % WELCOME_LINES.length;
+      charIndex = 0;
       welcomeTypingTimer = window.setTimeout(tick, 180);
       return;
     }
@@ -1954,6 +1967,7 @@ async function main() {
   applyHomeSeo(config, visibleEntries);
   renderTimeline(visibleEntries);
   renderSidebar(entries.filter((entry) => entry.contentType !== "notice"), config);
+  notifyHomeRendered();
   await renderHomePinnedNotice();
 
   const searchController = setupSearch();

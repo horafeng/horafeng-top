@@ -575,6 +575,7 @@ export function setupSplash() {
 export function setupPageTransition() {
   const markerKey = "horafeng-page-transition";
   const enterFlag = sessionStorage.getItem(markerKey) === "1";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const resetPageState = () => {
     document.body.classList.remove("page-entering", "page-enter-active", "page-leaving", "no-scroll");
   };
@@ -624,12 +625,23 @@ export function setupPageTransition() {
     if (nextUrl.origin !== window.location.origin) {
       return;
     }
+    if (nextUrl.hash && nextUrl.pathname === window.location.pathname && nextUrl.search === window.location.search) {
+      return;
+    }
     if (nextUrl.pathname === window.location.pathname && nextUrl.search === window.location.search) {
       return;
     }
 
     event.preventDefault();
     if (document.body.classList.contains("page-leaving")) {
+      return;
+    }
+
+    if (document.startViewTransition && !reduceMotion) {
+      sessionStorage.setItem(markerKey, "1");
+      document.startViewTransition(() => {
+        window.location.assign(nextUrl.toString());
+      });
       return;
     }
 
