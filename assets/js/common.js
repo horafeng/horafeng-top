@@ -891,6 +891,7 @@ function ensureStandaloneMobileChrome(options = {}) {
 
   const menuButton = chrome.querySelector(".hf-mobile-menu-btn");
   const mobileMenu = chrome.querySelector("#hf-mobile-menu");
+  const mobileBrand = chrome.querySelector(".hf-mobile-brand");
   const mobileViewport = window.matchMedia("(max-width: 767px)");
   let lastMobileScrollY = window.scrollY || document.documentElement.scrollTop || 0;
   let mobileScrollTicking = false;
@@ -904,16 +905,25 @@ function ensureStandaloneMobileChrome(options = {}) {
     );
   };
 
-  const closeMobileSubmenus = () => {
-    mobileMenu?.querySelectorAll(".hf-mobile-nav-group.is-open").forEach((group) => {
-      group.classList.remove("is-open");
-      group.querySelector("[data-mobile-nav-toggle]")?.setAttribute("aria-expanded", "false");
+  const setMobileSubmenus = (open) => {
+    mobileMenu?.querySelectorAll(".hf-mobile-nav-group").forEach((group) => {
+      group.classList.toggle("is-open", open);
+      group.querySelector("[data-mobile-nav-toggle]")?.setAttribute("aria-expanded", open ? "true" : "false");
     });
+  };
+
+  const resetMobileBrandBacktop = () => {
+    document.body.classList.remove("hf-mobile-brand-backtop-ready");
+    if (mobileBrand instanceof HTMLElement) {
+      mobileBrand.textContent = "HoraFeng";
+      mobileBrand.setAttribute("aria-label", "HoraFeng");
+    }
   };
 
   const syncMobileScrollChrome = () => {
     if (!mobileViewport.matches) {
-      document.body.classList.remove("hf-mobile-topbar-condensed");
+      document.body.classList.remove("hf-mobile-topbar-condensed", "hf-mobile-brand-backtop-ready");
+      resetMobileBrandBacktop();
       mobileScrollTicking = false;
       return;
     }
@@ -927,10 +937,12 @@ function ensureStandaloneMobileChrome(options = {}) {
 
     if (hasOpenLayer || currentY <= 16) {
       document.body.classList.remove("hf-mobile-topbar-condensed");
+      resetMobileBrandBacktop();
     } else if (delta > 7) {
       document.body.classList.add("hf-mobile-topbar-condensed");
     } else if (delta < -7) {
       document.body.classList.remove("hf-mobile-topbar-condensed");
+      resetMobileBrandBacktop();
     }
 
     lastMobileScrollY = currentY;
@@ -946,6 +958,7 @@ function ensureStandaloneMobileChrome(options = {}) {
 
   const closeMenu = () => {
     document.body.classList.remove("hf-mobile-menu-open", "mobile-home-drawer-open");
+    setMobileSubmenus(false);
     menuButton?.setAttribute("aria-expanded", "false");
     menuButton?.setAttribute("aria-label", "打开菜单");
     setBodyLock();
@@ -955,6 +968,8 @@ function ensureStandaloneMobileChrome(options = {}) {
     closeSearch();
     closeIdentity();
     document.body.classList.remove("hf-mobile-topbar-condensed");
+    resetMobileBrandBacktop();
+    setMobileSubmenus(true);
     document.body.classList.add("hf-mobile-menu-open", "mobile-home-drawer-open");
     menuButton?.setAttribute("aria-expanded", "true");
     menuButton?.setAttribute("aria-label", "关闭菜单");
@@ -1031,6 +1046,25 @@ function ensureStandaloneMobileChrome(options = {}) {
   if (chrome.dataset.mobileChromeBound !== "1") {
     chrome.dataset.mobileChromeBound = "1";
     menuButton?.addEventListener("click", toggleMenu);
+    mobileBrand?.addEventListener("click", (event) => {
+      if (!mobileViewport.matches || !document.body.classList.contains("hf-mobile-topbar-condensed")) {
+        return;
+      }
+
+      event.preventDefault();
+      if (!document.body.classList.contains("hf-mobile-brand-backtop-ready")) {
+        document.body.classList.add("hf-mobile-brand-backtop-ready");
+        if (mobileBrand instanceof HTMLElement) {
+          mobileBrand.textContent = "返回顶部";
+          mobileBrand.setAttribute("aria-label", "返回顶部");
+        }
+        return;
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.body.classList.remove("hf-mobile-topbar-condensed");
+      resetMobileBrandBacktop();
+    });
     chrome.querySelector("[data-hf-mobile-search-open]")?.addEventListener("click", openSearch);
     chrome.querySelector("[data-hf-mobile-identity-open]")?.addEventListener("click", openIdentity);
     mobileMenu?.addEventListener("click", (event) => {
@@ -1061,20 +1095,19 @@ function ensureStandaloneMobileChrome(options = {}) {
       if (!(target instanceof Node)) {
         return;
       }
-      if (!mobileMenu?.contains(target) && !menuButton?.contains(target)) {
-        closeMobileSubmenus();
+      const topbar = chrome.querySelector(".hf-mobile-topbar");
+      if (topbar?.contains(target)) {
+        return;
+      }
+      if (!mobileMenu?.contains(target)) {
+        closeMenu();
       }
     });
     window.addEventListener("scroll", requestMobileScrollSync, { passive: true });
     window.addEventListener("resize", syncMobileScrollChrome);
   }
 
-  mobileMenu?.querySelectorAll(".hf-mobile-nav-group").forEach((group) => {
-    const toggle = group.querySelector("[data-mobile-nav-toggle]");
-    const shouldOpen = group.classList.contains("active");
-    group.classList.toggle("is-open", shouldOpen);
-    toggle?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
-  });
+  setMobileSubmenus(false);
 
   const homeLegacyMenuButton = document.getElementById("mobile-home-profile");
   const homeLegacySearchButton = document.getElementById("mobile-home-search");
