@@ -507,6 +507,13 @@ function mountContentComments(options = {}) {
     editIdentityButton.hidden = false;
   };
 
+  const handleStoredIdentityUpdate = (event) => {
+    const identity = event?.detail || getStoredCommentIdentity();
+    state.identity = identity?.nickname && identity?.contact ? identity : getStoredCommentIdentity();
+    applyIdentitySummary();
+  };
+  window.addEventListener("hf-comment-identity-updated", handleStoredIdentityUpdate);
+
   const openComposer = () => {
     composer.hidden = false;
     contentInput.focus();
@@ -794,6 +801,7 @@ function mountContentComments(options = {}) {
     },
     destroy() {
       state.active = false;
+      window.removeEventListener("hf-comment-identity-updated", handleStoredIdentityUpdate);
       container.innerHTML = "";
     },
     clearIdentity() {

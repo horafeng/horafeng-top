@@ -513,15 +513,17 @@ function renderArticle(meta, item, siteConfig = null) {
 async function main() {
   setupSplash();
   setupPageTransition();
+  setupSiteChrome({
+    scrollContainerSelector: ".flow-panel",
+    useWindowScroll: true,
+  });
 
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("slug");
   const [detail, siteConfig] = await Promise.all([loadArticleDetail(slug), loadSiteConfig().catch(() => null)]);
-  setupSiteChrome({
-    profileCoverUrl: siteConfig?.profile?.cover || "",
-    scrollContainerSelector: ".flow-panel",
-    useWindowScroll: true,
-  });
+  if (siteConfig?.profile?.cover) {
+    document.body.style.setProperty("--season-bg-image", `url("${siteConfig.profile.cover}")`);
+  }
   renderArticle(detail.meta, detail.item, siteConfig);
 }
 

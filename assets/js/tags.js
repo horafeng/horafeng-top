@@ -1,4 +1,4 @@
-﻿import { getStats, linkify, loadEntries, setupSplash } from "./common.js";
+import { getStats, linkify, loadEntries, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
 
 function renderTags(tagsMap) {
   const tagList = document.getElementById("tag-list");
@@ -63,6 +63,10 @@ function renderFilterResults(entries) {
 
 async function main() {
   setupSplash();
+  setupPageTransition();
+  setupSiteChrome({
+    scrollContainerSelector: ".flow-panel",
+  });
 
   const entries = await loadEntries();
   const { tags, archives } = getStats(entries);

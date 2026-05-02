@@ -4,13 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>日记详情 | HoraFeng</title>
-    <link rel="stylesheet" href="assets/css/diary.css?v=841ad7e5a9" />
+    <link rel="stylesheet" href="assets/css/diary.css?v=1b25ade3ee" />
   </head>
   <body data-page="entry">
     <div class="bg-layer"></div>
     <div id="splash-screen" class="splash-screen" aria-hidden="true">
       <span class="splash-logo">HoraFeng</span>
     </div>
+
+    <header class="site-nav" data-site-nav>
+      <div class="site-nav-inner">
+        <a class="site-nav-left" href="index.html">HoraFeng 的博客</a>
+
+        <nav class="site-nav-center" aria-label="主导航">
+          <a class="site-nav-link" href="index.html">首页</a>
+          <div class="site-nav-dropdown" data-nav-dropdown>
+            <button class="site-nav-link site-nav-dropdown-toggle" type="button" data-nav-dropdown-toggle>
+              内容
+              <span class="site-nav-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="site-nav-dropdown-menu">
+              <a href="index.html?content=article">文章</a>
+              <a href="index.html?content=note">小记</a>
+              <a href="archive.html">归档</a>
+              <a href="index.html?content=notice">公告</a>
+            </div>
+          </div>
+          <a class="site-nav-link" href="archive.html">归档</a>
+          <a class="site-nav-link" href="guestbook.html">留言板</a>
+          <a class="site-nav-link" href="friends/">友链</a>
+        </nav>
+
+        <button class="site-nav-brand-mini" type="button" data-nav-brand-center>HoraFeng</button>
+        <button class="site-nav-backtop" type="button" data-nav-backtop>返回顶部 ↑</button>
+      </div>
+    </header>
 
     <div class="app-shell single-column">
       <main class="panel flow-panel">
