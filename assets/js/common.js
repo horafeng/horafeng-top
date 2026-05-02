@@ -806,7 +806,10 @@ function ensureStandaloneMobileChrome(options = {}) {
         <button class="hf-mobile-icon-btn hf-mobile-menu-btn" type="button" aria-label="打开菜单" aria-controls="hf-mobile-menu" aria-expanded="false">
           <span class="hf-mobile-menu-lines" aria-hidden="true"></span>
         </button>
-        <a class="hf-mobile-brand" href="${sitePath("index.html")}" data-no-transition="1">HoraFeng</a>
+        <a class="hf-mobile-brand" href="${sitePath("index.html")}" aria-label="HoraFeng" data-no-transition="1">
+          <span class="hf-mobile-brand-text" data-mobile-brand-main>HoraFeng</span>
+          <span class="hf-mobile-brand-text hf-mobile-brand-backtop" data-mobile-brand-backtop aria-hidden="true">返回顶部 ↑</span>
+        </a>
         <div class="hf-mobile-actions">
           <button class="hf-mobile-icon-btn" type="button" aria-label="打开搜索" data-hf-mobile-search-open>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20.4 19.2-4.2-4.2a7 7 0 1 0-1.2 1.2l4.2 4.2 1.2-1.2ZM5.5 10.5a5 5 0 1 1 10 0 5 5 0 0 1-10 0Z"></path></svg>
@@ -895,6 +898,7 @@ function ensureStandaloneMobileChrome(options = {}) {
   const mobileViewport = window.matchMedia("(max-width: 767px)");
   let lastMobileScrollY = window.scrollY || document.documentElement.scrollTop || 0;
   let mobileScrollTicking = false;
+  let suppressNextOutsideMenuClick = false;
 
   const setBodyLock = () => {
     document.body.classList.toggle(
@@ -915,7 +919,6 @@ function ensureStandaloneMobileChrome(options = {}) {
   const resetMobileBrandBacktop = () => {
     document.body.classList.remove("hf-mobile-brand-backtop-ready");
     if (mobileBrand instanceof HTMLElement) {
-      mobileBrand.textContent = "HoraFeng";
       mobileBrand.setAttribute("aria-label", "HoraFeng");
     }
   };
@@ -1055,7 +1058,6 @@ function ensureStandaloneMobileChrome(options = {}) {
       if (!document.body.classList.contains("hf-mobile-brand-backtop-ready")) {
         document.body.classList.add("hf-mobile-brand-backtop-ready");
         if (mobileBrand instanceof HTMLElement) {
-          mobileBrand.textContent = "返回顶部";
           mobileBrand.setAttribute("aria-label", "返回顶部");
         }
         return;
@@ -1100,9 +1102,23 @@ function ensureStandaloneMobileChrome(options = {}) {
         return;
       }
       if (!mobileMenu?.contains(target)) {
+        suppressNextOutsideMenuClick = true;
         closeMenu();
       }
     });
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (!suppressNextOutsideMenuClick) {
+          return;
+        }
+
+        suppressNextOutsideMenuClick = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      },
+      true,
+    );
     window.addEventListener("scroll", requestMobileScrollSync, { passive: true });
     window.addEventListener("resize", syncMobileScrollChrome);
   }

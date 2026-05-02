@@ -3885,7 +3885,12 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
   }
 
   .hf-mobile-brand {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
     justify-self: start;
+    min-width: 88px;
+    min-height: 44px;
     color: #344a66;
     text-decoration: none;
     font-size: 1.08rem;
@@ -3893,6 +3898,18 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     line-height: 1;
     white-space: nowrap;
     transition: left 190ms ease, transform 190ms ease, justify-self 190ms ease;
+  }
+
+  .hf-mobile-brand-text {
+    grid-area: 1 / 1;
+    display: inline-block;
+    transition: opacity 190ms ease, transform 220ms cubic-bezier(0.22, 0.78, 0.24, 1);
+  }
+
+  .hf-mobile-brand-backtop {
+    opacity: 0;
+    transform: translate3d(0, 9px, 0) scale(0.98);
+    pointer-events: none;
   }
 
   .hf-mobile-actions {
@@ -3963,6 +3980,16 @@ body.site-nav-condensed.site-nav-show-backtop .site-nav-backtop {
     justify-self: auto;
     transform: translateX(-50%);
     max-width: calc(100vw - 72px);
+  }
+
+  body.hf-mobile-topbar-condensed.hf-mobile-brand-backtop-ready:not(.hf-mobile-menu-open):not(.mobile-search-open):not(.hf-mobile-identity-open) [data-mobile-brand-main] {
+    opacity: 0;
+    transform: translate3d(0, -9px, 0) scale(0.98);
+  }
+
+  body.hf-mobile-topbar-condensed.hf-mobile-brand-backtop-ready:not(.hf-mobile-menu-open):not(.mobile-search-open):not(.hf-mobile-identity-open) [data-mobile-brand-backtop] {
+    opacity: 1;
+    transform: none;
   }
 
   body.hf-mobile-topbar-condensed:not(.hf-mobile-menu-open):not(.mobile-search-open):not(.hf-mobile-identity-open) .hf-mobile-menu-btn,
