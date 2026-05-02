@@ -659,29 +659,31 @@ function getMobileChromeNavItems() {
   const page = String(document.body.dataset.page || "").trim().toLowerCase();
 
   return [
-    { href: sitePath("index.html"), label: "首页", active: page === "home" && !content },
+    { href: sitePath("index.html"), label: "首页", icon: "🏠", active: page === "home" && !content },
     {
       label: "内容",
+      icon: "📚",
       group: "content",
       active: (page === "home" && ["article", "note", "notice"].includes(content)) || page === "article" || page === "archive",
       children: [
-        { href: `${sitePath("index.html")}?content=article`, label: "文章", active: (page === "home" && content === "article") || page === "article" },
-        { href: `${sitePath("index.html")}?content=note`, label: "小记", active: page === "home" && content === "note" || page === "entry" },
-        { href: sitePath("archive.html"), label: "归档", active: page === "archive" || page === "tags" },
-        { href: `${sitePath("index.html")}?content=notice`, label: "公告", active: page === "home" && content === "notice" },
+        { href: `${sitePath("index.html")}?content=article`, label: "文章", icon: "📕", active: (page === "home" && content === "article") || page === "article" },
+        { href: `${sitePath("index.html")}?content=note`, label: "小记", icon: "📝", active: page === "home" && content === "note" || page === "entry" },
+        { href: sitePath("archive.html"), label: "归档", icon: "📂", active: page === "archive" || page === "tags" },
+        { href: `${sitePath("index.html")}?content=notice`, label: "公告", icon: "📢", active: page === "home" && content === "notice" },
       ],
     },
-    { href: sitePath("friends/"), label: "友链", active: page === "friends" },
-    { href: sitePath("guestbook.html"), label: "留言板", active: page === "guestbook" },
+    { href: sitePath("friends/"), label: "友链", icon: "🔗", active: page === "friends" },
+    { href: sitePath("guestbook.html"), label: "留言板", icon: "💬", active: page === "guestbook" },
     {
       label: "项目",
+      icon: "🧩",
       group: "projects",
       active: false,
       children: [
-        { href: "https://earthshow.pages.dev/", label: "EarthShow", active: false, external: true },
+        { href: "https://earthshow.pages.dev/", label: "EarthShow", icon: "🌍", active: false, external: true },
       ],
     },
-    { href: sitePath("index.html#about"), label: "关于我", active: false },
+    { href: sitePath("index.html#about"), label: "关于我", icon: "👤", active: false },
   ];
 }
 
@@ -728,7 +730,7 @@ function renderMobileNavItems() {
         return `
           <div class="hf-mobile-nav-group${item.active ? " active" : ""}" data-mobile-nav-group="${escapeHtml(item.group)}">
             <button class="hf-mobile-nav-link hf-mobile-nav-toggle" type="button" aria-expanded="${expanded}" data-mobile-nav-toggle>
-              <span>${escapeHtml(item.label)}</span>
+              <span class="hf-mobile-nav-label"><span class="hf-mobile-nav-icon" aria-hidden="true">${escapeHtml(item.icon || "")}</span>${escapeHtml(item.label)}</span>
               <span class="hf-mobile-nav-caret" aria-hidden="true"></span>
             </button>
             <div class="hf-mobile-subnav">
@@ -736,7 +738,7 @@ function renderMobileNavItems() {
                 .map(
                   (child) => `
                     <a class="hf-mobile-subnav-link${child.active ? " active" : ""}" href="${child.href}"${child.external ? ' target="_blank" rel="noopener noreferrer"' : ""}>
-                      ${escapeHtml(child.label)}
+                      <span class="hf-mobile-nav-label"><span class="hf-mobile-nav-icon" aria-hidden="true">${escapeHtml(child.icon || "")}</span>${escapeHtml(child.label)}</span>
                     </a>
                   `,
                 )
@@ -748,7 +750,7 @@ function renderMobileNavItems() {
 
       return `
         <a class="hf-mobile-nav-link${item.active ? " active" : ""}" href="${item.href}">
-          <span>${escapeHtml(item.label)}</span>
+          <span class="hf-mobile-nav-label"><span class="hf-mobile-nav-icon" aria-hidden="true">${escapeHtml(item.icon || "")}</span>${escapeHtml(item.label)}</span>
         </a>
       `;
     })
@@ -889,6 +891,9 @@ function ensureStandaloneMobileChrome(options = {}) {
 
   const menuButton = chrome.querySelector(".hf-mobile-menu-btn");
   const mobileMenu = chrome.querySelector("#hf-mobile-menu");
+  const mobileViewport = window.matchMedia("(max-width: 767px)");
+  let lastMobileScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  let mobileScrollTicking = false;
 
   const setBodyLock = () => {
     document.body.classList.toggle(
@@ -897,6 +902,46 @@ function ensureStandaloneMobileChrome(options = {}) {
         document.body.classList.contains("mobile-search-open") ||
         document.body.classList.contains("hf-mobile-identity-open"),
     );
+  };
+
+  const closeMobileSubmenus = () => {
+    mobileMenu?.querySelectorAll(".hf-mobile-nav-group.is-open").forEach((group) => {
+      group.classList.remove("is-open");
+      group.querySelector("[data-mobile-nav-toggle]")?.setAttribute("aria-expanded", "false");
+    });
+  };
+
+  const syncMobileScrollChrome = () => {
+    if (!mobileViewport.matches) {
+      document.body.classList.remove("hf-mobile-topbar-condensed");
+      mobileScrollTicking = false;
+      return;
+    }
+
+    const currentY = window.scrollY || document.documentElement.scrollTop || 0;
+    const delta = currentY - lastMobileScrollY;
+    const hasOpenLayer =
+      document.body.classList.contains("hf-mobile-menu-open") ||
+      document.body.classList.contains("mobile-search-open") ||
+      document.body.classList.contains("hf-mobile-identity-open");
+
+    if (hasOpenLayer || currentY <= 16) {
+      document.body.classList.remove("hf-mobile-topbar-condensed");
+    } else if (delta > 7) {
+      document.body.classList.add("hf-mobile-topbar-condensed");
+    } else if (delta < -7) {
+      document.body.classList.remove("hf-mobile-topbar-condensed");
+    }
+
+    lastMobileScrollY = currentY;
+    mobileScrollTicking = false;
+  };
+
+  const requestMobileScrollSync = () => {
+    if (!mobileScrollTicking) {
+      mobileScrollTicking = true;
+      window.requestAnimationFrame(syncMobileScrollChrome);
+    }
   };
 
   const closeMenu = () => {
@@ -909,6 +954,7 @@ function ensureStandaloneMobileChrome(options = {}) {
   const openMenu = () => {
     closeSearch();
     closeIdentity();
+    document.body.classList.remove("hf-mobile-topbar-condensed");
     document.body.classList.add("hf-mobile-menu-open", "mobile-home-drawer-open");
     menuButton?.setAttribute("aria-expanded", "true");
     menuButton?.setAttribute("aria-label", "关闭菜单");
@@ -1007,6 +1053,20 @@ function ensureStandaloneMobileChrome(options = {}) {
         closeMenu();
       }
     });
+    document.addEventListener("pointerdown", (event) => {
+      if (!document.body.classList.contains("hf-mobile-menu-open")) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (!mobileMenu?.contains(target) && !menuButton?.contains(target)) {
+        closeMobileSubmenus();
+      }
+    });
+    window.addEventListener("scroll", requestMobileScrollSync, { passive: true });
+    window.addEventListener("resize", syncMobileScrollChrome);
   }
 
   mobileMenu?.querySelectorAll(".hf-mobile-nav-group").forEach((group) => {
