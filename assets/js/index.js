@@ -30,7 +30,7 @@ let lastOpenOrigin = null;
 let currentCommentWidget = null;
 let welcomeTypingTimer = null;
 
-const WELCOME_LINES = ["欢迎来到我的博客", "Welcome to my blog", "私のブログへようこそ"];
+const WELCOME_LINES = ["欢迎来到我的博客", "私のブログへようこそ", "Welcome to my blog"];
 const WELCOME_TYPE_DELAY_MS = 140;
 const WELCOME_DELETE_DELAY_MS = 80;
 const WELCOME_LINE_HOLD_MS = 5000;
@@ -800,12 +800,8 @@ function setupHomeGrowthSwitcher() {
   timer = window.setInterval(() => activate(activeIndex + 1), 10000);
 }
 
-async function renderHomeCuratedSections(entries, config) {
-  const [comments, notices] = await Promise.all([loadRecentComments(6), loadNoticeIndex()]);
-  renderHomeOverview(entries, config, comments, notices);
+async function renderHomeCuratedSections(entries, _config) {
   renderHomeLatest(entries.filter((entry) => entry.contentType !== "notice"));
-  renderHomeGrowth();
-  setupHomeGrowthSwitcher();
   window.dispatchEvent(new CustomEvent("home:curated-rendered"));
 }
 

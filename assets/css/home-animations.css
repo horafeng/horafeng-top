@@ -1672,3 +1672,109 @@ body[data-page="home"] {
     letter-spacing: 0;
   }
 }
+
+body[data-page="home"] .home-stage {
+  min-height: 100vh;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+body[data-page="home"] .home-stage::before {
+  background: transparent;
+}
+
+body[data-page="home"] .home-stage-content {
+  width: 100vw;
+}
+
+body[data-page="home"] .home-hero-card {
+  width: 100vw;
+  min-height: calc(100vh - var(--site-nav-height, 58px) - 28px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body[data-page="home"] .home-hero-bg,
+body[data-page="home"] .home-hero-overlay {
+  display: none;
+}
+
+body[data-page="home"] .home-hero-content {
+  z-index: 3;
+  padding: 0 18px;
+}
+
+body[data-page="home"] .home-hero-title {
+  font-family: "STXingkai", "华文行楷", "FZShuTi", "华文舒体", "KaiTi", "STKaiti", cursive;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: rgba(25, 34, 45, 0.95);
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.78),
+    0 18px 36px rgba(36, 55, 83, 0.18);
+}
+
+body[data-page="home"] .home-hero-signature,
+body[data-page="home"] .home-welcome-typing {
+  min-height: 1.7em;
+  font-family: "STKaiti", "KaiTi", "FangSong", "Noto Serif SC", serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(42, 59, 78, 0.78);
+  text-shadow: 0 10px 24px rgba(255, 255, 255, 0.72);
+}
+
+body[data-page="home"] .home-welcome-typing::after {
+  background: rgba(42, 59, 78, 0.72);
+}
+
+body[data-page="home"] .home-hero-scroll {
+  margin-top: 36px;
+}
+
+body[data-page="home"] .home-hero-text-flow {
+  inset: auto -10vw 8vh -10vw;
+  height: min(360px, 38vh);
+}
+
+body[data-page="home"] .home-hero-flow-text {
+  font-family: "STKaiti", "KaiTi", "FangSong", "Noto Serif SC", serif;
+  font-size: clamp(22px, 2.5vw, 36px);
+  font-weight: 700;
+  fill: rgba(31, 119, 122, 0.88);
+  stroke: rgba(255, 255, 255, 0.82);
+  stroke-width: 4px;
+}
+
+@media (max-width: 767px) {
+  body[data-page="home"] .home-stage {
+    min-height: 100vh;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  body[data-page="home"] .home-hero-card {
+    width: 100vw;
+    min-height: calc(100vh - env(safe-area-inset-top, 0px) - var(--mobile-home-topbar-height, 64px) - 18px);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body[data-page="home"] .home-hero-title {
+    font-size: clamp(2.8rem, 14vw, 4.5rem);
+    letter-spacing: 0.02em;
+  }
+
+  body[data-page="home"] .home-hero-text-flow {
+    inset: auto -42vw 8vh -34vw;
+    height: 250px;
+  }
+
+  body[data-page="home"] .home-hero-flow-text {
+    font-size: 25px;
+  }
+}

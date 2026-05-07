@@ -4,8 +4,8 @@ const pointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
 let entryObserver = null;
 let terminalTypingTimer = null;
 let heroFlowFrame = 0;
-const DEFAULT_HERO_SIGNATURE = "在尝试各种各样的事情";
-const MOJIBAKE_PATTERN = /[�锟]|[鍦浜鎴鐨涓绋嬫熀]/;
+const DEFAULT_HERO_SIGNATURE = "\u6b22\u8fce\u6765\u5230\u6211\u7684\u535a\u5ba2";
+const MOJIBAKE_PATTERN = /[\uFFFD\u951F]|[\u9356\u6D5C\u9394\u9436\u4E32\u7ECB\u71B7]/;
 
 function readableText(value, fallback = "") {
   const text = String(value || "").trim();
@@ -24,7 +24,7 @@ function setHeroCopy(config = {}) {
   const signatureText = readableText(profile.signature || profile.bio, DEFAULT_HERO_SIGNATURE);
 
   if (title) {
-    title.textContent = `${readableText(profile.name, "HoraFeng")}的博客`;
+    title.textContent = `${readableText(profile.name, "HoraFeng")}\u7684\u535a\u5ba2`;
   }
 
   if (signature) {
