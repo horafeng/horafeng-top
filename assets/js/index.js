@@ -36,6 +36,8 @@ const WELCOME_DELETE_DELAY_MS = 80;
 const WELCOME_LINE_HOLD_MS = 5000;
 const NOTICE_STORAGE_KEY = "hf-latest-notice-token";
 const DEFAULT_SITE_ORIGIN = "https://horafeng.top";
+const DEFAULT_HERO_SIGNATURE = "在尝试各种各样的事情";
+const MOJIBAKE_PATTERN = /[�锟]|[鍦浜鎴鐨涓绋嬫熀]/;
 
 const FALLBACK_COVERS = [
   "assets/images/diary/cover-01.svg",
@@ -45,6 +47,30 @@ const FALLBACK_COVERS = [
 
 function escapeAttr(text) {
   return String(text).replaceAll('"', "&quot;");
+}
+
+function readableText(value, fallback = "") {
+  const text = String(value || "").trim();
+  if (!text || MOJIBAKE_PATTERN.test(text)) {
+    return fallback;
+  }
+  return text;
+}
+
+function compactText(value, limit = 72, fallback = "") {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) {
+    return fallback;
+  }
+  return text.length > limit ? `${text.slice(0, Math.max(0, limit - 1)).trimEnd()}…` : text;
+}
+
+function formatHomeDate(dateText) {
+  const value = String(dateText || "").trim();
+  if (!value) {
+    return "";
+  }
+  return value.slice(0, 10);
 }
 
 function toAbsoluteUrl(url) {
@@ -466,6 +492,321 @@ async function renderHomePinnedNotice() {
       <a class="chip" href="index.html?content=notice">查看公告列表</a>
     </article>
   `;
+}
+
+function getHomeEntryExcerpt(entry, limit = 78) {
+  const summary = entry?.summary || (Array.isArray(entry?.content) ? entry.content.join(" ") : "");
+  const fallback = entry?.contentType === "article" ? "点击阅读全文。" : "这条内容暂时没有摘要。";
+  return compactText(summary, limit, fallback);
+}
+
+function getHomeStats(entries, comments, notices) {
+  return {
+    articleCount: entries.filter((entry) => entry.contentType === "article").length,
+    noteCount: entries.filter((entry) => entry.contentType === "note").length,
+    commentCount: Array.isArray(comments) ? comments.length : 0,
+    noticeCount: Array.isArray(notices) ? notices.length : 0,
+  };
+}
+
+function renderOverviewMiniCards(items, type) {
+  if (!items.length) {
+    return `<p class="home-overview-empty">暂时还没有可展示的内容。</p>`;
+  }
+
+  return `
+    <div class="home-overview-mini-grid">
+      ${items
+        .map((item) => {
+          if (type === "comment") {
+            const author = escapeHtml(compactText(item.nickname || "访客", 16, "访客"));
+            const text = escapeHtml(compactText(item.content, 58, "这条评论暂时没有正文。"));
+            const time = escapeHtml(formatCommentTime(item.created_at));
+            return `
+              <article class="home-overview-mini-card">
+                <p class="home-overview-mini-text">${text}</p>
+                <p class="home-overview-mini-meta"><span>${author}</span><time>${time}</time></p>
+              </article>
+            `;
+          }
+
+          const title = escapeHtml(compactText(item.title, 28, type === "notice" ? "公告" : "小记"));
+          const text = escapeHtml(getHomeEntryExcerpt(item, 56));
+          const date = escapeHtml(formatHomeDate(item.date || item.updatedAt));
+          const href =
+            type === "notice"
+              ? "index.html?content=notice"
+              : `index.html?post=${encodeURIComponent(item.id)}`;
+
+          return `
+            <a class="home-overview-mini-card" href="${escapeAttr(href)}">
+              <p class="home-overview-mini-title">${title}</p>
+              <p class="home-overview-mini-text">${text}</p>
+              <p class="home-overview-mini-meta"><time>${date}</time></p>
+            </a>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function setupHomeOverviewTabs() {
+  const section = document.getElementById("home-overview-section");
+  if (!section) {
+    return;
+  }
+
+  const tabs = [...section.querySelectorAll("[data-home-overview-tab]")];
+  const panels = [...section.querySelectorAll("[data-home-overview-panel]")];
+  const activate = (name) => {
+    tabs.forEach((tab) => {
+      const active = tab.dataset.homeOverviewTab === name;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    panels.forEach((panel) => {
+      panel.classList.toggle("is-active", panel.dataset.homeOverviewPanel === name);
+    });
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => activate(tab.dataset.homeOverviewTab));
+  });
+  activate("profile");
+}
+
+function renderHomeOverview(entries, config, comments, notices) {
+  const host = document.getElementById("home-overview-section");
+  if (!host) {
+    return;
+  }
+
+  const profile = config?.profile || {};
+  const stats = getHomeStats(entries, comments, notices);
+  const profileName = readableText(profile.name, "HoraFeng");
+  const profileHandle = readableText(profile.handle, "@horafeng");
+  const signature = readableText(profile.signature || profile.bio, DEFAULT_HERO_SIGNATURE);
+  const avatar = profile.avatar || "assets/images/Profile.png";
+  const notes = entries.filter((entry) => entry.contentType === "note").slice(0, 6);
+  const noticeItems = notices.slice(0, 6);
+  const commentItems = comments.slice(0, 6);
+
+  host.innerHTML = `
+    <div class="home-overview-tabs" role="tablist" aria-label="首页信息切换">
+      <button class="home-overview-tab is-active" type="button" role="tab" data-home-overview-tab="profile" aria-selected="true">博主</button>
+      <button class="home-overview-tab" type="button" role="tab" data-home-overview-tab="notes" aria-selected="false">小记</button>
+      <button class="home-overview-tab" type="button" role="tab" data-home-overview-tab="comments" aria-selected="false">评论</button>
+      <button class="home-overview-tab" type="button" role="tab" data-home-overview-tab="notices" aria-selected="false">公告</button>
+    </div>
+    <div class="home-overview-panels">
+      <article class="home-overview-panel home-profile-overview is-active" data-home-overview-panel="profile">
+        <img class="home-profile-avatar" src="${escapeAttr(avatar)}" alt="博主头像" loading="lazy" />
+        <div class="home-profile-copy">
+          <p class="home-profile-kicker">${escapeHtml(profileHandle)}</p>
+          <h2>${escapeHtml(profileName)}</h2>
+          <p>${escapeHtml(signature)}</p>
+          <div class="home-profile-stats" aria-label="站点统计">
+            <span><strong>${stats.articleCount}</strong>文章</span>
+            <span><strong>${stats.noteCount}</strong>小记</span>
+            <span><strong>${stats.commentCount}</strong>近期评论</span>
+            <span><strong>${stats.noticeCount}</strong>公告</span>
+          </div>
+          <div class="profile-actions compact" aria-label="联系方式">
+            ${renderProfileActionLinks(profile)}
+          </div>
+        </div>
+      </article>
+      <article class="home-overview-panel" data-home-overview-panel="notes">
+        ${renderOverviewMiniCards(notes, "note")}
+      </article>
+      <article class="home-overview-panel" data-home-overview-panel="comments">
+        ${renderOverviewMiniCards(commentItems, "comment")}
+      </article>
+      <article class="home-overview-panel" data-home-overview-panel="notices">
+        ${renderOverviewMiniCards(noticeItems, "notice")}
+      </article>
+    </div>
+  `;
+
+  setupHomeOverviewTabs();
+}
+
+function getLatestDisplayEntries(entries) {
+  const articles = entries.filter((entry) => entry.contentType === "article");
+  const used = new Set(articles.map((entry) => entry.id || entry.slug || entry.title));
+  const supplements = entries
+    .filter((entry) => entry.contentType !== "notice")
+    .filter((entry) => !used.has(entry.id || entry.slug || entry.title));
+  return [...articles, ...supplements].slice(0, 6);
+}
+
+function renderLatestArticleCard(entry, index) {
+  const title = escapeHtml(compactText(entry.title, index === 0 ? 42 : 34, "未命名内容"));
+  const excerpt = escapeHtml(getHomeEntryExcerpt(entry, index === 0 ? 92 : 58));
+  const date = escapeHtml(formatHomeDate(entry.date));
+  const category = escapeHtml(readableText(entry.category || entry.tags?.[0], entry.contentType === "article" ? "文章" : "小记"));
+  const cover = entry.cover || entry.images?.[0] || getFallbackCover(entry.id || entry.slug || entry.title);
+  const href = entry.contentType === "article" && entry.slug ? getArticleUrl(entry) : `index.html?post=${encodeURIComponent(entry.id)}`;
+  const sizeClass = index === 0 ? "is-large" : index <= 2 ? "is-medium" : "is-small";
+
+  return `
+    <article class="home-latest-card ${sizeClass}">
+      <a href="${escapeAttr(href)}" class="home-latest-link">
+        <div class="home-latest-cover-wrap">
+          <img class="home-latest-cover" src="${escapeAttr(cover)}" data-fallback="${escapeAttr(getFallbackCover(entry.id))}" alt="${escapeAttr(title)}" loading="lazy" />
+        </div>
+        <div class="home-latest-copy">
+          <p class="home-latest-meta"><span>${category}</span><time>${date}</time></p>
+          <h3>${title}</h3>
+          <p class="home-latest-excerpt">${excerpt}</p>
+        </div>
+      </a>
+    </article>
+  `;
+}
+
+function renderHomeLatest(entries) {
+  const host = document.getElementById("home-latest-section");
+  if (!host) {
+    return;
+  }
+
+  const latest = getLatestDisplayEntries(entries);
+  const emptySlots = Array.from({ length: Math.max(0, 6 - latest.length) });
+
+  host.innerHTML = `
+    <div class="home-section-head">
+      <h2>最新文章</h2>
+      <p>按现有内容时间排序，优先展示文章，数据不足时用已有小记补足。</p>
+    </div>
+    <div class="home-latest-grid">
+      ${latest.map((entry, index) => renderLatestArticleCard(entry, index)).join("")}
+      ${emptySlots.map(() => '<div class="home-latest-card is-empty"><span>等待下一篇内容同步</span></div>').join("")}
+    </div>
+  `;
+
+  bindImageFallbacks(host);
+}
+
+function renderGrowthVisual(key) {
+  const visuals = {
+    earthshow: `
+      <div class="growth-earth" aria-hidden="true"><span></span></div>
+    `,
+    photo: `
+      <div class="growth-camera" aria-hidden="true"><span class="camera-body"></span><span class="camera-lens"></span><span class="camera-flash"></span><span class="photo-card"></span></div>
+    `,
+    website: `
+      <div class="growth-code" aria-hidden="true"><span></span><span></span><span></span><i></i></div>
+    `,
+    model: `
+      <div class="growth-brain" aria-hidden="true"><span></span><span></span><i></i><i></i></div>
+    `,
+    video: `
+      <div class="growth-video" aria-hidden="true"><span class="film"></span><span class="cut cut-a"></span><span class="cut cut-b"></span></div>
+    `,
+    language: `
+      <div class="growth-language" aria-hidden="true"><span></span><span></span><i></i><i></i></div>
+    `,
+  };
+  return visuals[key] || visuals.earthshow;
+}
+
+function renderHomeGrowth() {
+  const host = document.getElementById("home-growth-section");
+  if (!host) {
+    return;
+  }
+
+  const directions = [
+    { key: "earthshow", label: "EarthShow", desc: "把世界装进一个缓慢旋转的小地球里。" },
+    { key: "photo", label: "摄影", desc: "记录真实好瞬间，留住光线和现场感。" },
+    { key: "website", label: "做网站", desc: "把想法搭成页面，也把页面做成作品。" },
+    { key: "model", label: "大模型", desc: "理解智能工具，尝试把想象力接进工作流。" },
+    { key: "video", label: "剪视频", desc: "用时间轴、节奏和画面讲清楚一件事。" },
+    { key: "language", label: "学外语", desc: "把语言练成通向别人世界的路。" },
+  ];
+
+  host.innerHTML = `
+    <div class="home-growth-head">
+      <h2>成长路线图 / 方向切换器</h2>
+      <p>每 10 秒自动切换，也可以手动选择方向。</p>
+    </div>
+    <div class="home-growth-tabs" role="tablist" aria-label="成长方向">
+      ${directions
+        .map(
+          (item, index) => `
+            <button class="home-growth-tab${index === 0 ? " is-active" : ""}" type="button" role="tab" data-growth-tab="${item.key}" aria-selected="${index === 0 ? "true" : "false"}">
+              ${escapeHtml(item.label)}
+            </button>
+          `,
+        )
+        .join("")}
+    </div>
+    <div class="home-growth-panels">
+      ${directions
+        .map(
+          (item, index) => `
+            <article class="home-growth-panel${index === 0 ? " is-active" : ""}" data-growth-panel="${item.key}">
+              ${renderGrowthVisual(item.key)}
+              <div class="home-growth-copy">
+                <h3>${escapeHtml(item.label)}</h3>
+                <p>${escapeHtml(item.desc)}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function setupHomeGrowthSwitcher() {
+  const host = document.getElementById("home-growth-section");
+  if (!host || host.dataset.growthBound === "1") {
+    return;
+  }
+
+  host.dataset.growthBound = "1";
+  const tabs = [...host.querySelectorAll("[data-growth-tab]")];
+  const panels = [...host.querySelectorAll("[data-growth-panel]")];
+  if (!tabs.length) {
+    return;
+  }
+
+  let activeIndex = 0;
+  let timer = null;
+  const activate = (nextIndex, resetTimer = false) => {
+    activeIndex = (nextIndex + tabs.length) % tabs.length;
+    const key = tabs[activeIndex].dataset.growthTab;
+    tabs.forEach((tab, index) => {
+      const active = index === activeIndex;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    panels.forEach((panel) => {
+      panel.classList.toggle("is-active", panel.dataset.growthPanel === key);
+    });
+    if (resetTimer) {
+      window.clearInterval(timer);
+      timer = window.setInterval(() => activate(activeIndex + 1), 10000);
+    }
+  };
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => activate(index, true));
+  });
+  timer = window.setInterval(() => activate(activeIndex + 1), 10000);
+}
+
+async function renderHomeCuratedSections(entries, config) {
+  const [comments, notices] = await Promise.all([loadRecentComments(6), loadNoticeIndex()]);
+  renderHomeOverview(entries, config, comments, notices);
+  renderHomeLatest(entries.filter((entry) => entry.contentType !== "notice"));
+  renderHomeGrowth();
+  setupHomeGrowthSwitcher();
+  window.dispatchEvent(new CustomEvent("home:curated-rendered"));
 }
 
 function renderProfileActionLinks(profile, options = {}) {
@@ -1967,6 +2308,7 @@ async function main() {
   applyHomeSeo(config, visibleEntries);
   renderTimeline(visibleEntries);
   renderSidebar(entries.filter((entry) => entry.contentType !== "notice"), config);
+  await renderHomeCuratedSections(entries, config);
   notifyHomeRendered();
   await renderHomePinnedNotice();
 

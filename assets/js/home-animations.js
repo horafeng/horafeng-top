@@ -3,26 +3,32 @@ const pointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
 
 let entryObserver = null;
 let terminalTypingTimer = null;
+let heroFlowFrame = 0;
+const DEFAULT_HERO_SIGNATURE = "在尝试各种各样的事情";
+const MOJIBAKE_PATTERN = /[�锟]|[鍦浜鎴鐨涓绋嬫熀]/;
+
+function readableText(value, fallback = "") {
+  const text = String(value || "").trim();
+  if (!text || MOJIBAKE_PATTERN.test(text)) {
+    return fallback;
+  }
+  return text;
+}
 
 function setHeroCopy(config = {}) {
   const profile = config.profile || {};
   const title = document.getElementById("home-hero-title");
   const signature = document.getElementById("home-hero-signature");
-  const flowCopy = document.getElementById("home-hero-flow-copy");
   const hero = document.querySelector("[data-home-hero]");
   const cover = profile.cover || getComputedStyle(document.querySelector(".bg-layer")).backgroundImage.replace(/^url\(["']?|["']?\)$/g, "");
-  const signatureText = String(profile.signature || profile.bio || "\u5728\u65e5\u5e38\u91cc\u6536\u96c6\u4e00\u70b9\u70b9\u95ea\u5149").trim();
+  const signatureText = readableText(profile.signature || profile.bio, DEFAULT_HERO_SIGNATURE);
 
   if (title) {
-    title.textContent = `${profile.name || "HoraFeng"} \u7684\u535a\u5ba2`;
+    title.textContent = `${readableText(profile.name, "HoraFeng")}的博客`;
   }
 
   if (signature) {
     signature.textContent = signatureText;
-  }
-
-  if (flowCopy) {
-    flowCopy.textContent = signatureText || "HoraFeng \u7684\u65e5\u8bb0\u6d41";
   }
 
   if (hero && cover) {
@@ -87,6 +93,32 @@ function setupHeroParallax() {
     }
   });
   hero.addEventListener("pointerleave", reset);
+}
+
+function setupHeroTextFlow() {
+  const textPath = document.getElementById("home-hero-flow-text-path");
+  if (!textPath || heroFlowFrame) {
+    return;
+  }
+
+  if (reduceMotionQuery.matches) {
+    textPath.setAttribute("startOffset", "4%");
+    return;
+  }
+
+  let offset = -52;
+  let lastTime = performance.now();
+  const speed = 1.45;
+
+  const tick = (time) => {
+    const delta = Math.min(48, time - lastTime);
+    lastTime = time;
+    offset = ((offset + (delta / 1000) * speed + 52) % 52) - 52;
+    textPath.setAttribute("startOffset", `${offset}%`);
+    heroFlowFrame = window.requestAnimationFrame(tick);
+  };
+
+  heroFlowFrame = window.requestAnimationFrame(tick);
 }
 
 function setupInteractiveShowcase() {
@@ -218,6 +250,7 @@ window.addEventListener("home:timeline-rendered", () => {
 document.addEventListener("DOMContentLoaded", () => {
   setHeroCopy();
   setupHeroParallax();
+  setupHeroTextFlow();
   setupInteractiveShowcase();
   setupTimelineMutationObserver();
 });

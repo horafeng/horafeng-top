@@ -14,7 +14,7 @@
     <meta name="twitter:image" content="https://horafeng.top/assets/images/Profile.png" />
     <title>日记流 | HoraFeng</title>
     <link rel="stylesheet" href="assets/css/diary.css?v=cd240a865e" />
-    <link rel="stylesheet" href="assets/css/home-animations.css?v=15d081a2fe" />
+    <link rel="stylesheet" href="assets/css/home-animations.css?v=d4ec8ebd4a" />
   </head>
   <body data-page="home">
     <div class="bg-layer"></div>
@@ -61,77 +61,45 @@
         <section class="home-welcome-banner home-hero-card" aria-label="首页介绍" data-home-hero>
           <div class="home-hero-bg" aria-hidden="true"></div>
           <div class="home-hero-overlay" aria-hidden="true"></div>
+          <div class="home-hero-text-flow" aria-hidden="true">
+            <svg class="home-hero-flow-svg" viewBox="0 0 1200 320" preserveAspectRatio="none">
+              <defs>
+                <path
+                  id="home-hero-flow-path"
+                  d="M -120 198 C 40 166 132 142 128 92 C 124 46 68 42 50 84 C 16 164 150 220 292 206 C 510 184 660 142 842 150 C 1002 158 1110 190 1320 168"
+                />
+              </defs>
+              <text class="home-hero-flow-text">
+                <textPath id="home-hero-flow-text-path" href="#home-hero-flow-path" startOffset="0%">
+                  EarthShow 摄影 做网站 大模型 剪视频 学外语 阅读 写作 采访 记录 成长 探索 分享 思考 EarthShow 摄影 做网站 大模型 剪视频 学外语 阅读 写作 采访 记录 成长 探索 分享 思考
+                </textPath>
+              </text>
+            </svg>
+          </div>
           <div class="home-hero-content">
-            <p class="home-hero-kicker home-hero-reveal">Personal Notebook</p>
-            <h1 id="home-hero-title" class="home-hero-title home-hero-reveal">HoraFeng 的博客</h1>
-            <p id="home-welcome-typing" class="home-welcome-typing home-hero-reveal" aria-live="polite"></p>
-            <p id="home-hero-signature" class="home-hero-signature home-hero-reveal"></p>
-            <div class="home-hero-actions home-hero-reveal" aria-label="首页快捷操作">
-              <a class="home-hero-btn primary" href="#timeline">浏览日记</a>
-              <a class="home-hero-btn" href="archive.html">查看归档</a>
-            </div>
+            <h1 id="home-hero-title" class="home-hero-title home-hero-reveal">HoraFeng的博客</h1>
+            <p id="home-hero-signature" class="home-hero-signature home-hero-reveal">在尝试各种各样的事情</p>
+            <a class="home-hero-scroll home-hero-reveal" href="#home-overview-section" aria-label="向下滑动探索">
+              <span aria-hidden="true">↓</span>
+              向下滑动探索
+            </a>
           </div>
         </section>
-
-        <div class="home-stage-cards">
-          <section class="interactive-showcase" aria-label="首页互动入口" data-interactive-showcase data-active="diary">
-            <div class="showcase-copy">
-              <p class="showcase-kicker">Explore</p>
-              <h2>把日常、项目和灵感放在同一个缓慢生长的地方。</h2>
-              <p>移动鼠标或点选入口，看看不同部分如何运转。这里不追求炫技，更像是在桌面上摊开几张纸、一个终端和一段声波。</p>
-              <div class="showcase-tabs" role="tablist" aria-label="首页互动分类">
-                <button class="showcase-tab active" type="button" data-showcase-target="diary">Diary</button>
-                <button class="showcase-tab" type="button" data-showcase-target="projects">Projects</button>
-                <button class="showcase-tab" type="button" data-showcase-target="speech">Speech Recognition</button>
-                <button class="showcase-tab" type="button" data-showcase-target="archive">Blog Archive</button>
-                <button class="showcase-tab" type="button" data-showcase-target="about">About Me</button>
-              </div>
-            </div>
-          </section>
-
-          <section class="home-about-card showcase-display" aria-label="互动展示面板" data-showcase-display>
-            <article class="showcase-panel showcase-diary is-active" data-showcase-panel="diary">
-              <div class="paper-card paper-card-one">今天也记录一点生活。</div>
-              <div class="paper-card paper-card-two">把普通日子慢慢存档。</div>
-              <div class="paper-card paper-card-three">一些碎片，也值得被留下。</div>
-            </article>
-            <article class="showcase-panel showcase-projects" data-showcase-panel="projects">
-              <div class="terminal-window">
-                <div class="terminal-bar"><span></span><span></span><span></span></div>
-                <pre data-project-terminal>&gt; build blog
-&gt; sync notion
-&gt; deploy cloudflare</pre>
-              </div>
-            </article>
-            <article class="showcase-panel showcase-speech" data-showcase-panel="speech">
-              <div class="wave-bars" aria-hidden="true">
-                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              </div>
-              <div class="speech-map">
-                <p>洞 幺 两 三 四 五 六 拐 八 勾</p>
-                <p>0 1 2 3 4 5 6 7 8 9</p>
-              </div>
-            </article>
-            <article class="showcase-panel showcase-archive" data-showcase-panel="archive">
-              <ul class="archive-mini-list">
-                <li><span>2024</span><strong>Blog rebuild</strong></li>
-                <li><span>2025</span><strong>Projects</strong></li>
-                <li><span>2026</span><strong>Notes</strong></li>
-              </ul>
-            </article>
-            <article class="showcase-panel showcase-about" data-showcase-panel="about">
-              <img class="showcase-avatar" src="assets/images/Profile.png" alt="" />
-              <div class="about-tags">
-                <span>Automation</span>
-                <span>Control Engineering</span>
-                <span>Blog</span>
-                <span>Robotics</span>
-                <span>Speech Recognition</span>
-              </div>
-            </article>
-          </section>
-        </div>
       </div>
+    </section>
+
+    <section class="home-curated-sections" aria-label="首页精选内容">
+      <section id="home-overview-section" class="home-overview-section home-section-panel" aria-label="首页切换信息">
+        <div class="home-section-loading subtle">正在读取站点内容...</div>
+      </section>
+
+      <section id="home-latest-section" class="home-latest-section" aria-label="最新文章">
+        <div class="home-section-loading subtle">正在读取最新文章...</div>
+      </section>
+
+      <section id="home-growth-section" class="home-growth-section home-section-panel" aria-label="成长路线图">
+        <div class="home-section-loading subtle">正在读取成长方向...</div>
+      </section>
     </section>
 
     <div class="app-shell home-shell">
@@ -299,7 +267,7 @@
       </article>
     </div>
 
-    <script type="module" src="assets/js/home-animations.js?v=0604d93bb4"></script>
-    <script type="module" src="assets/js/index.js?v=77c2da2123"></script>
+    <script type="module" src="assets/js/home-animations.js?v=ab86c3c952"></script>
+    <script type="module" src="assets/js/index.js?v=0e3792b7df"></script>
   </body>
 </html>
