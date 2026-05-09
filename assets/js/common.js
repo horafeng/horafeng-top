@@ -541,43 +541,97 @@ export function searchEntries(entries, query) {
   return entries.filter((entry) => normalizeText(entry).includes(q));
 }
 
+const PAGE_TRANSITION_KEY = "horafeng-page-transition";
+
+function ensureSplashScreen() {
+  let splash = document.getElementById("splash-screen");
+  if (splash) {
+    return splash;
+  }
+
+  splash = document.createElement("div");
+  splash.id = "splash-screen";
+  splash.className = "splash-screen";
+  splash.setAttribute("aria-hidden", "true");
+  splash.innerHTML = '<span class="splash-logo">HoraFeng</span>';
+  document.body.appendChild(splash);
+  return splash;
+}
+
+function showSplashScreen(mode = "page") {
+  const splash = ensureSplashScreen();
+  splash.classList.remove("exiting");
+  splash.classList.add("visible");
+  splash.dataset.mode = mode;
+  document.body.classList.add("no-scroll", "page-loading");
+  return splash;
+}
+
+function hideSplashScreen(splash = document.getElementById("splash-screen")) {
+  if (!splash) {
+    document.body.classList.remove("no-scroll", "page-loading");
+    return;
+  }
+
+  splash.classList.add("exiting");
+  window.setTimeout(() => {
+    splash.remove();
+    document.body.classList.remove("no-scroll", "page-loading");
+  }, 360);
+}
+
 export function setupSplash() {
   setupGlobalFooter();
 
-  const splash = document.getElementById("splash-screen");
-  if (!splash) {
-    return;
-  }
-
-  const key = "horafeng-splash-played";
+  const firstVisitKey = "horafeng-splash-played";
   const navigation = performance.getEntriesByType("navigation")[0];
   const navType = navigation?.type || "navigate";
+  const isPageTransition = sessionStorage.getItem(PAGE_TRANSITION_KEY) === "1";
 
   if (navType === "reload") {
-    sessionStorage.removeItem(key);
+    sessionStorage.removeItem(firstVisitKey);
   }
 
-  if (sessionStorage.getItem(key)) {
-    splash.remove();
+  if (!isPageTransition && sessionStorage.getItem(firstVisitKey)) {
+    document.getElementById("splash-screen")?.remove();
     return;
   }
 
-  document.body.classList.add("no-scroll");
-  splash.classList.add("visible");
-  sessionStorage.setItem(key, "1");
+  const splash = showSplashScreen(isPageTransition ? "page" : "intro");
+  sessionStorage.setItem(firstVisitKey, "1");
 
-  window.setTimeout(() => {
-    document.body.classList.remove("no-scroll");
-    splash.remove();
-  }, 1220);
+  const startedAt = performance.now();
+  const minDuration = isPageTransition ? 780 : 1220;
+  const maxDuration = isPageTransition ? 1900 : 1220;
+  let dismissed = false;
+
+  const dismiss = () => {
+    if (dismissed) {
+      return;
+    }
+    dismissed = true;
+    const elapsed = performance.now() - startedAt;
+    window.setTimeout(() => hideSplashScreen(splash), Math.max(0, minDuration - elapsed));
+  };
+
+  if (isPageTransition) {
+    if (document.readyState === "complete") {
+      dismiss();
+    } else {
+      window.addEventListener("load", dismiss, { once: true });
+      window.setTimeout(dismiss, maxDuration);
+    }
+    return;
+  }
+
+  window.setTimeout(dismiss, minDuration);
 }
 
 export function setupPageTransition() {
-  const markerKey = "horafeng-page-transition";
-  const enterFlag = sessionStorage.getItem(markerKey) === "1";
+  const enterFlag = sessionStorage.getItem(PAGE_TRANSITION_KEY) === "1";
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const resetPageState = () => {
-    document.body.classList.remove("page-entering", "page-enter-active", "page-leaving", "no-scroll");
+    document.body.classList.remove("page-entering", "page-enter-active", "page-leaving", "no-scroll", "page-loading");
   };
 
   if (enterFlag) {
@@ -587,13 +641,13 @@ export function setupPageTransition() {
     });
     window.setTimeout(() => {
       document.body.classList.remove("page-entering", "page-enter-active");
-      sessionStorage.removeItem(markerKey);
+      sessionStorage.removeItem(PAGE_TRANSITION_KEY);
     }, 320);
   }
 
   window.addEventListener("pageshow", () => {
     resetPageState();
-    sessionStorage.removeItem(markerKey);
+    sessionStorage.removeItem(PAGE_TRANSITION_KEY);
   });
 
   window.addEventListener("pagehide", resetPageState);
@@ -637,19 +691,12 @@ export function setupPageTransition() {
       return;
     }
 
-    if (document.startViewTransition && !reduceMotion) {
-      sessionStorage.setItem(markerKey, "1");
-      document.startViewTransition(() => {
-        window.location.assign(nextUrl.toString());
-      });
-      return;
-    }
-
     document.body.classList.add("page-leaving");
-    sessionStorage.setItem(markerKey, "1");
+    sessionStorage.setItem(PAGE_TRANSITION_KEY, "1");
+    showSplashScreen("page");
     window.setTimeout(() => {
       window.location.assign(nextUrl.toString());
-    }, 180);
+    }, reduceMotion ? 80 : 460);
   });
 }
 

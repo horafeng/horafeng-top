@@ -1,4 +1,4 @@
-import { getStats, linkify, loadEntries, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import { getStats, linkify, loadEntries, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js?v=f6e0c5dd3d";
 
 function renderTags(tagsMap) {
   const tagList = document.getElementById("tag-list");

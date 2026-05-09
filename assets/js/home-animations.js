@@ -3,7 +3,6 @@ const pointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
 
 let entryObserver = null;
 let terminalTypingTimer = null;
-let heroFlowFrame = 0;
 const DEFAULT_HERO_SIGNATURE = "\u6b22\u8fce\u6765\u5230\u6211\u7684\u535a\u5ba2";
 const MOJIBAKE_PATTERN = /[\uFFFD\u951F]|[\u9356\u6D5C\u9394\u9436\u4E32\u7ECB\u71B7]/;
 
@@ -93,32 +92,6 @@ function setupHeroParallax() {
     }
   });
   hero.addEventListener("pointerleave", reset);
-}
-
-function setupHeroTextFlow() {
-  const textPath = document.getElementById("home-hero-flow-text-path");
-  if (!textPath || heroFlowFrame) {
-    return;
-  }
-
-  if (reduceMotionQuery.matches) {
-    textPath.setAttribute("startOffset", "4%");
-    return;
-  }
-
-  let offset = -52;
-  let lastTime = performance.now();
-  const speed = 1.45;
-
-  const tick = (time) => {
-    const delta = Math.min(48, time - lastTime);
-    lastTime = time;
-    offset = ((offset + (delta / 1000) * speed + 52) % 52) - 52;
-    textPath.setAttribute("startOffset", `${offset}%`);
-    heroFlowFrame = window.requestAnimationFrame(tick);
-  };
-
-  heroFlowFrame = window.requestAnimationFrame(tick);
 }
 
 function setupInteractiveShowcase() {
@@ -250,7 +223,6 @@ window.addEventListener("home:timeline-rendered", () => {
 document.addEventListener("DOMContentLoaded", () => {
   setHeroCopy();
   setupHeroParallax();
-  setupHeroTextFlow();
   setupInteractiveShowcase();
   setupTimelineMutationObserver();
 });

@@ -11,7 +11,7 @@
   setupSiteChrome,
   setupPageTransition,
   setupSplash,
-} from "./common.js";
+} from "./common.js?v=f6e0c5dd3d";
 import { mountContentComments } from "./content-comments.js";
 
 let allEntries = [];

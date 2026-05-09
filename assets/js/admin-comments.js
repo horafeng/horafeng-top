@@ -1,4 +1,4 @@
-import { escapeHtml, linkify } from "./common.js";
+import { escapeHtml, linkify } from "./common.js?v=f6e0c5dd3d";
 
 const TEXT = {
   loginSuccess: "\u767b\u5f55\u6210\u529f\u3002",

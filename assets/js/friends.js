@@ -1,4 +1,4 @@
-import { escapeHtml, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import { escapeHtml, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js?v=f6e0c5dd3d";
 import { mountContentComments } from "./content-comments.js";
 
 const TEXT = {

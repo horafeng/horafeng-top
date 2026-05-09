@@ -1,4 +1,4 @@
-import { escapeHtml, linkify } from "./common.js";
+import { escapeHtml, linkify } from "./common.js?v=f6e0c5dd3d";
 import {
   clearCommentIdentity,
   getPendingComments,

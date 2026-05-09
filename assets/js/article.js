@@ -1,4 +1,4 @@
-import { escapeHtml, loadArticleDetail, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js";
+import { escapeHtml, loadArticleDetail, loadSiteConfig, setupPageTransition, setupSiteChrome, setupSplash } from "./common.js?v=f6e0c5dd3d";
 import { mountContentComments } from "./content-comments.js";
 
 const LABEL_EXTERNAL_LINK = "\u5916\u90e8\u94fe\u63a5";

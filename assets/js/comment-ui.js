@@ -1,4 +1,4 @@
-import { escapeHtml } from "./common.js";
+import { escapeHtml } from "./common.js?v=f6e0c5dd3d";
 
 const STORAGE_KEY = "hf-pending-comments-v1";
 const IDENTITY_KEY = "hf-comment-identity-v1";
