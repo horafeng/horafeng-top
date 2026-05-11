@@ -14,10 +14,15 @@
     <meta name="twitter:image" content="https://horafeng.top/assets/images/Profile.png" />
     <title>日记流 | HoraFeng</title>
     <link rel="stylesheet" href="assets/css/diary.css?v=2fc870643b" />
-    <link rel="stylesheet" href="assets/css/home-animations.css?v=4cc239ea0e" />
+    <link rel="stylesheet" href="assets/css/home-animations.css?v=mlsharp-ply-source-color-20260511c" />
   </head>
   <body data-page="home">
     <div class="bg-layer"></div>
+    <div class="home-gaussian-scene" data-home-gaussian aria-hidden="true">
+      <div class="home-gaussian-fallback"></div>
+      <canvas class="home-gaussian-canvas" data-home-gaussian-canvas></canvas>
+      <div class="home-gaussian-vignette"></div>
+    </div>
 
     <div id="splash-screen" class="splash-screen" aria-hidden="true">
       <span class="splash-logo">HoraFeng</span>
@@ -66,7 +71,7 @@
             <p id="home-welcome-typing" class="home-welcome-typing home-hero-signature home-hero-reveal" aria-live="polite"></p>
             <a class="home-hero-scroll home-hero-reveal" href="#home-latest-section" aria-label="向下滑动探索">
               <span aria-hidden="true">↓</span>
-              向下滑动探索
+              向下浏览
             </a>
           </div>
         </section>
@@ -244,6 +249,16 @@
       </article>
     </div>
 
+    <div class="home-gaussian-copy" data-home-gaussian-copy>
+      <h1>HoraFeng的博客</h1>
+      <p data-home-gaussian-typing aria-live="polite"></p>
+      <a href="#home-latest-section" aria-label="向下浏览">
+        <span aria-hidden="true">↓</span>
+        向下浏览
+      </a>
+    </div>
+
+    <script type="module" src="assets/js/home-gaussian.js?v=mlsharp-ply-source-color-20260511d"></script>
     <script type="module" src="assets/js/home-animations.js?v=43ed29f162"></script>
     <script type="module" src="assets/js/index.js?v=677fcfed68"></script>
   </body>
