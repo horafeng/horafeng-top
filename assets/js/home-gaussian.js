@@ -1,6 +1,6 @@
 const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-const MODEL_VERSION = "source-color-20260511a";
+const MODEL_VERSION = "source-color-480k-20260512b";
 const MODEL_URL = `assets/models/interior-mlsharp-splats.bin?v=${MODEL_VERSION}`;
 const MODEL_META_URL = `assets/models/interior-mlsharp-splats.json?v=${MODEL_VERSION}`;
 const RECORD_FLOATS = 15;
@@ -124,12 +124,12 @@ void main() {
   gl_Position = projectCamera(world);
 
   v_corner = a_corner;
-  float shimmer = 0.96 + 0.04 * sin(u_time * 0.85 + seed * 11.0);
   vec3 sourceColor = clamp(a_color.rgb, 0.0, 1.0);
+  sourceColor = pow(sourceColor, vec3(0.88));
   float luma = dot(sourceColor, vec3(0.2126, 0.7152, 0.0722));
-  float saturation = mix(1.36, 2.05, progress) * mix(1.0, 0.92, chaos);
+  float saturation = mix(1.12, 1.28, progress) * mix(1.0, 0.94, chaos);
   vec3 colorized = clamp(mix(vec3(luma), sourceColor, saturation), 0.0, 1.0);
-  v_color = vec4(colorized * shimmer * mix(1.16, 1.34, progress), a_color.a * mix(0.86, 1.08, progress) * mix(1.0, 0.62, chaos));
+  v_color = vec4(colorized * mix(1.02, 1.08, progress), a_color.a * mix(0.84, 1.0, progress) * mix(1.0, 0.62, chaos));
   v_depthFade = smoothstep(0.6, 3.4, a_position.z);
 }
 `;
@@ -147,15 +147,12 @@ void main() {
     discard;
   }
 
-  float core = exp(-dist2 * 2.15);
-  float glow = exp(-dist2 * 4.8);
-  float alpha = (core * 0.94 + glow * 0.28) * v_color.a * v_depthFade;
-  if (alpha < 0.025) {
+  float alpha = exp(-dist2 * 2.0) * v_color.a * v_depthFade;
+  if (alpha < 0.05) {
     discard;
   }
 
-  vec3 color = v_color.rgb * (0.96 + glow * 0.2);
-  gl_FragColor = vec4(color, alpha);
+  gl_FragColor = vec4(v_color.rgb, alpha);
 }
 `;
 
@@ -417,7 +414,7 @@ function initGaussianScene() {
     gl.uniform1f(uniforms.chaos, state.chaos);
     gl.uniform1f(uniforms.viewAspect, viewAspect);
     gl.uniform1f(uniforms.imageAspect, imageAspect);
-    gl.uniform1f(uniforms.splatScale, mobile ? 3.1 : 2.65);
+    gl.uniform1f(uniforms.splatScale, mobile ? 2.8 : 2.45);
     gl.uniform1f(uniforms.flowAmp, mobile ? 5.2 : 8.0);
     gl.uniform1f(uniforms.flowFreq, 0.28);
     gl.uniform1f(uniforms.flowSpeed, 0.58);

@@ -7,8 +7,8 @@ const SH_C0 = 0.28209479177387814;
 const DEFAULT_INPUT = "D:/MLSharp_3D_Maker/MLSharp-3D-Maker-by-GemosDodo/temp_workspace/4e8add0f/output.ply";
 const DEFAULT_OUTPUT = "D:/Horafeng.top/assets/models/interior-mlsharp-splats.bin";
 const DEFAULT_META = "D:/Horafeng.top/assets/models/interior-mlsharp-splats.json";
-const TARGET_COUNT = 260000;
-const MIN_OPACITY = 0.04;
+const TARGET_COUNT = 480000;
+const MIN_OPACITY = 0.025;
 const RECORD_FLOATS = 15;
 
 const input = process.argv[2] || DEFAULT_INPUT;

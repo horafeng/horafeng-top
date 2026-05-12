@@ -2,19 +2,19 @@
   "source": "MLSharp_3D_Maker output.ply with source-image projected color",
   "input": "D:\\MLSharp_3D_Maker\\MLSharp-3D-Maker-by-GemosDodo\\temp_workspace\\4e8add0f\\output.ply",
   "image": "D:\\素材\\室内.jpg",
-  "count": 260000,
+  "count": 480000,
   "recordFloats": 15,
-  "minOpacity": 0.04,
+  "minOpacity": 0.025,
   "bounds": {
     "min": [
       -45.10179901123047,
       -43.69881820678711,
-      1.4301310777664185
+      1.421810507774353
     ],
     "max": [
       72.6063232421875,
       3.630500555038452,
-      154.0084228515625
+      156.92108154296875
     ]
   },
   "intrinsic": {

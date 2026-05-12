@@ -12,8 +12,8 @@ DEFAULT_INPUT = Path(r"D:\MLSharp_3D_Maker\MLSharp-3D-Maker-by-GemosDodo\temp_wo
 DEFAULT_IMAGE = Path(r"D:\素材\室内.jpg")
 DEFAULT_OUTPUT = Path(r"D:\Horafeng.top\assets\models\interior-mlsharp-splats.bin")
 DEFAULT_META = Path(r"D:\Horafeng.top\assets\models\interior-mlsharp-splats.json")
-TARGET_COUNT = 260000
-MIN_OPACITY = 0.04
+TARGET_COUNT = 480000
+MIN_OPACITY = 0.025
 RECORD_FLOATS = 15
 INTRINSIC = {
     "width": 3840,

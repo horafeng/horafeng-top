@@ -1729,8 +1729,8 @@ body[data-page="home"] .home-gaussian-scene {
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 44%, rgba(255, 247, 220, 0.12), transparent 34%),
-    linear-gradient(180deg, #151b20, #080b10 72%);
+    radial-gradient(circle at 50% 44%, rgba(255, 241, 204, 0.16), transparent 42%),
+    linear-gradient(180deg, #181b1b, #090b0e 78%);
 }
 
 body[data-page="home"] {
@@ -1866,8 +1866,8 @@ body[data-page="home"] .home-gaussian-fallback {
 }
 
 body[data-page="home"].gaussian-webgl-ready .home-gaussian-fallback {
-  opacity: 0.18;
-  filter: blur(22px) saturate(1.28);
+  opacity: 0.12;
+  filter: blur(24px) saturate(1.28) brightness(1.06);
 }
 
 body[data-page="home"].gaussian-reduced-motion .home-gaussian-fallback,
@@ -1892,9 +1892,9 @@ body[data-page="home"].gaussian-webgl-ready.gaussian-text-ready .home-gaussian-c
 
 body[data-page="home"] .home-gaussian-vignette {
   background:
-    radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.06), transparent 34%),
-    linear-gradient(180deg, rgba(246, 250, 255, 0.04), rgba(15, 23, 32, 0.04) 42%, rgba(10, 14, 20, 0.24)),
-    radial-gradient(circle at 50% 52%, transparent 32%, rgba(7, 10, 15, 0.42) 100%);
+    radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.04), transparent 38%),
+    linear-gradient(180deg, rgba(246, 250, 255, 0.02), rgba(15, 23, 32, 0.02) 42%, rgba(10, 14, 20, 0.14)),
+    radial-gradient(circle at 50% 52%, transparent 38%, rgba(7, 10, 15, 0.28) 100%);
 }
 
 body[data-page="home"] .site-nav,
