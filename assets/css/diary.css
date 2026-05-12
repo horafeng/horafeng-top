@@ -11,6 +11,10 @@
   --shadow: 0 10px 34px rgba(30, 52, 86, 0.12);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -3664,6 +3668,7 @@ body.with-site-nav:not(.site-nav-frosted) .site-nav {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
+  z-index: 130;
   min-width: 126px;
   border-radius: 12px;
   border: 1px solid rgba(92, 112, 141, 0.18);

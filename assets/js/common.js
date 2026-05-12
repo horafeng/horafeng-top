@@ -1406,7 +1406,8 @@ export function setupSiteChrome(options = {}) {
   scrollTarget.addEventListener("scroll", applyNavState, { passive: true });
 
   if (dropdownToggle && dropdown) {
-    dropdownToggle.addEventListener("click", () => {
+    dropdownToggle.addEventListener("click", (event) => {
+      event.stopPropagation();
       dropdown.classList.toggle("open");
     });
   }

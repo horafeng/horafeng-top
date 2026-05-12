@@ -94,6 +94,31 @@ function setupHeroParallax() {
   hero.addEventListener("pointerleave", reset);
 }
 
+function setupHomeHeroScrollState() {
+  const hero = document.querySelector("[data-home-hero]");
+  if (!hero) {
+    return;
+  }
+
+  let ticking = false;
+  const sync = () => {
+    const threshold = Math.max(80, Math.min(window.innerHeight * 0.18, hero.offsetHeight * 0.18));
+    document.body.classList.toggle("home-hero-scrolled", window.scrollY > threshold);
+    ticking = false;
+  };
+
+  const requestSync = () => {
+    if (!ticking) {
+      ticking = true;
+      window.requestAnimationFrame(sync);
+    }
+  };
+
+  window.addEventListener("scroll", requestSync, { passive: true });
+  window.addEventListener("resize", requestSync);
+  sync();
+}
+
 function setupInteractiveShowcase() {
   const showcase = document.querySelector("[data-interactive-showcase]");
   const display = document.querySelector("[data-showcase-display]");
@@ -223,6 +248,7 @@ window.addEventListener("home:timeline-rendered", () => {
 document.addEventListener("DOMContentLoaded", () => {
   setHeroCopy();
   setupHeroParallax();
+  setupHomeHeroScrollState();
   setupInteractiveShowcase();
   setupTimelineMutationObserver();
 });

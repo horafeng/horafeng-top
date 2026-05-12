@@ -1183,7 +1183,7 @@ function filterByParams(entries) {
   return list;
 }
 
-function setupSearch() {
+function setupSearch(noticeController = null) {
   const form = document.getElementById("search-form");
   const input = document.getElementById("search-input");
   const hint = document.getElementById("search-hint");
@@ -1196,7 +1196,7 @@ function setupSearch() {
     const query = String(rawQuery || "");
     const results = searchEntries(visibleEntries, query);
     renderTimeline(results);
-    bindTimelineClicks();
+    bindTimelineClicks(noticeController);
     hint.textContent = query.trim() ? `关键词 “${query.trim()}” 命中 ${results.length} 条` : "";
     return results;
   };
@@ -2126,10 +2126,16 @@ function setupOverlayControls() {
   modal.addEventListener("pointercancel", endDismissGesture);
 }
 
-function bindTimelineClicks() {
+function bindTimelineClicks(noticeController = null) {
   document.querySelectorAll(".entry-card[data-entry-id]").forEach((card) => {
     card.addEventListener("click", async (event) => {
       event.preventDefault();
+      const entry = allEntries.find((item) => item.id === card.dataset.entryId);
+      if (entry?.contentType === "notice") {
+        noticeController?.open?.(entry);
+        return;
+      }
+
       const origin = {
         x: event.clientX || card.getBoundingClientRect().left + card.getBoundingClientRect().width / 2,
         y: event.clientY || card.getBoundingClientRect().top + card.getBoundingClientRect().height / 2,
@@ -2143,6 +2149,12 @@ function bindTimelineClicks() {
       }
 
       event.preventDefault();
+      const entry = allEntries.find((item) => item.id === card.dataset.entryId);
+      if (entry?.contentType === "notice") {
+        noticeController?.open?.(entry);
+        return;
+      }
+
       const rect = card.getBoundingClientRect();
       await openPostById(card.dataset.entryId, true, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     });
@@ -2308,12 +2320,12 @@ async function main() {
   notifyHomeRendered();
   await renderHomePinnedNotice();
 
-  const searchController = setupSearch();
+  const searchController = setupSearch(noticeController);
   setupDesktopSidebarLayout();
   setupOverlayControls();
   setupMobileDrawer(searchController);
   setupMobileHomeChrome(searchController);
-  bindTimelineClicks();
+  bindTimelineClicks(noticeController);
 
   const params = new URLSearchParams(window.location.search);
   const postId = params.get("post");

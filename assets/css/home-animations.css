@@ -1900,10 +1900,19 @@ body[data-page="home"] .site-nav,
 body[data-page="home"] .mobile-home-topbar,
 body[data-page="home"] .home-stage,
 body[data-page="home"] .home-curated-sections,
-body[data-page="home"] .app-shell,
-body[data-page="home"] .post-overlay {
+body[data-page="home"] .app-shell {
   position: relative;
   z-index: 4;
+}
+
+body[data-page="home"] .site-nav {
+  position: fixed;
+  z-index: 120;
+}
+
+body[data-page="home"] .post-overlay {
+  position: fixed;
+  z-index: 140;
 }
 
 body[data-page="home"] .home-stage {
@@ -1987,6 +1996,20 @@ body[data-page="home"] .home-hero-scroll {
 
 body[data-page="home"] .home-hero-scroll span {
   animation: gaussianScrollArrow 1.35s ease-in-out infinite;
+}
+
+body[data-page="home"].home-hero-scrolled .home-stage {
+  pointer-events: none;
+}
+
+body[data-page="home"].home-hero-scrolled .home-hero-content {
+  opacity: 0;
+  transform: translate3d(-50%, calc(-50% - 24px), 0) !important;
+  pointer-events: none;
+}
+
+body[data-page="home"].home-hero-scrolled .home-hero-content::before {
+  opacity: 0;
 }
 
 body[data-page="home"].gaussian-home-enabled:not(.gaussian-text-ready) .home-hero-reveal {
